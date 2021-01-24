@@ -1,0 +1,39 @@
+:host(.primary) {
+    color: var(--gcl-color-primary);
+}
+
+:host(.secondary) {
+    color: var(--gcl-color-secondary);
+}
+
+:host(.tertiary) {
+    color: var(--gcl-color-tertiary);
+}
+
+:host(.info) {
+    color: var(--gcl-color-info);
+}
+
+:host(.success) {
+    color: var(--gcl-color-success);
+}
+
+:host(.warning) {
+    color: var(--gcl-color-warning);
+}
+
+:host(.danger) {
+    color: var(--gcl-color-danger);
+}
+
+:host(.light) {
+    color: var(--gcl-color-light);
+}
+
+:host(.medium) {
+    color: var(--gcl-color-medium);
+}
+
+:host(.dark) {
+    color: var(--gcl-color-dark);
+}

@@ -1,0 +1,11 @@
+:host(.size-small) {
+    font-size: var(--gcl-small-icon-size);
+}
+
+:host(.size-medium) {
+    font-size: var(--gcl-medium-icon-size);
+}
+
+:host(.size-large) {
+    font-size: var(--gcl-large-icon-size);
+}

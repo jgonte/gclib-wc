@@ -1,0 +1,56 @@
+{
+  "name": "gclib-wc",
+  "version": "1.0.0",
+  "description": "Web Components Library",
+  "main": "index.js",
+  "scripts": {
+    "prebuild": "rimraf lib",
+    "build": "tsc && rollup -c && npm run copyAssets",
+    "copyAssets": "copyfiles --verbose -u 1 src/components/**/*.css src/components/**/*.svg lib",
+    "test": "jest --coverage",
+    "test:watch": "jest --coverage --watch",
+    "test:prod": "npm run lint && npm run test -- --no-cache"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "testEnvironment": "@happy-dom/jest-environment",
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json",
+      "node"
+    ]
+  },
+  "author": "Jorge Rivera Gonte",
+  "license": "MIT",
+  "devDependencies": {
+    "@happy-dom/jest-environment": "^2.1.6",
+    "@types/jest": "^26.0.20",
+    "copyfiles": "^2.3.0",
+    "jest": "^26.6.3",
+    "prettier": "^2.1.1",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.37.1",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "ts-jest": "^26.4.4",
+    "typescript": "^4.0.5"
+  },
+  "dependencies": {
+    "gclib-utils": "^0.4.3",
+    "gclib-vdom": "^1.7.11"
+  },
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "keywords": [
+    "web-components",
+    "wc"
+  ]
+}
