@@ -139,7 +139,12 @@ function setAttribute(element, name, value) {
             };
         }
         else {
-            element[name] = value.bind(element);
+            if (element.setProperty !== undefined) {
+                element.setProperty(name, value);
+            }
+            else {
+                element[name] = value.bind(element);
+            }
         }
     }
     else {
@@ -160,7 +165,18 @@ function setAttribute(element, name, value) {
             }
         }
         else {
-            element.setAttribute(name, value);
+            if (typeof value === 'object') {
+                if (element.setProperty !== undefined) {
+                    element.setProperty(name, value);
+                }
+                else {
+                    value = JSON.stringify(value);
+                    element.setAttribute(name, value);
+                }
+            }
+            else {
+                element.setAttribute(name, value);
+            }
         }
     }
 }
@@ -220,6 +236,7 @@ var VirtualNode = (function () {
 var VirtualText = (function () {
     function VirtualText(text) {
         this.text = text;
+        this.isVirtualText = true;
     }
     VirtualText.prototype.render = function () {
         var element = document.createTextNode(this.text.toString());
@@ -271,6 +288,9 @@ function h(name, attributes) {
     children.forEach(function (child) {
         if (child === null) ;
         else if (child.isVirtualNode) {
+            childrenNodes.push(child);
+        }
+        else if (child.isVirtualText) {
             childrenNodes.push(child);
         }
         else if (child.isFragmentNode) {
@@ -517,15 +537,16 @@ function replaceAttribute(element, name, newValue) {
             if (typeof newValue === 'object') {
                 newValue = getCSSClass(newValue);
             }
-            if (newValue.trim() !== '') {
-                element.className = newValue;
-            }
+            element.className = newValue.trim();
         }
         else if (name === 'style') {
             if (typeof newValue === 'object') {
                 newValue = getCSSStyle(newValue);
             }
-            if (newValue.trim() !== '') {
+            if (newValue.trim() === '') {
+                element.removeAttribute(name);
+            }
+            else {
                 element.setAttribute(name, newValue);
             }
         }
@@ -1216,6 +1237,21 @@ function mount(rootNode, currentNode, previousNode, node, hooks) {
     patches.applyPatches(rootNode, node, hooks);
 }
 
+function createVirtualNode(o) {
+    if (typeof o === 'string') {
+        return new VirtualText(o);
+    }
+    if (o.isVirtualNode === true) {
+        return new VirtualNode(o.name, o.props, o.children.map(c => createVirtualNode(c)));
+    }
+    else if (o.IsFragmentNode) {
+        return new FragmentNode(o.props, o.children.map(c => createVirtualNode(c)));
+    }
+    else {
+        return new VirtualText(o.text);
+    }
+}
+
 const defaultPropertyValueConverter = {
     toProperty: (value, type) => {
         switch (type) {
@@ -1223,16 +1259,31 @@ const defaultPropertyValueConverter = {
                 return value !== null && value !== 'false';
             case Number:
                 return value === null ? null : Number(value);
-            case Object:
+            case Object: // It can also be a string
+                try {
+                    value = JSON.parse(value);
+                }
+                catch (error) {
+                    return value;
+                }
             case Array:
                 return JSON.parse(value);
+            case VirtualNode: {
+                try {
+                    value = JSON.parse(value);
+                }
+                catch (error) {
+                    // Value is a string but not a JSON one, do nothing
+                }
+                return createVirtualNode(value);
+            }
         }
         return value;
     },
     toAttribute: (value, type) => {
         switch (type) {
             case Boolean:
-                return value ? '' : null;
+                return value ? 'true' : 'false';
             case Object:
             case Array:
                 return value == null ? value : JSON.stringify(value);
@@ -1309,10 +1360,9 @@ const MetadataInitializerMixin = Base => class MetadataInitializer extends Base 
                 if (reflect) { // This will trigger the attributeChangedCallback
                     this.setAttribute(attribute, defaultPropertyValueConverter.toAttribute(val, type));
                 }
-                // else {
-                //     this.props[name] = val;
-                //     this.requestUpdate();
-                // }
+                else {
+                    this.setProperty(name, val);
+                }
             };
             var setterName = this.getSetterName(name);
             this[setterName] = setter.bind(this);
@@ -1359,10 +1409,9 @@ const MetadataInitializerMixin = Base => class MetadataInitializer extends Base 
         return attributes;
     }
     attributeChangedCallback(attributeName, oldValue, newValue) {
-        if (newValue == oldValue) {
+        if (newValue === oldValue) {
             return; // Nothing to update
         }
-        console.log(`Attribute: '${attributeName}' of custom element: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
         // Update the internal property
         const propDescriptor = this.constructor.propertiesByAttribute[attributeName];
         this.props[propDescriptor.name] = defaultPropertyValueConverter.toProperty(newValue, propDescriptor.type);
@@ -1429,11 +1478,9 @@ class CustomElement extends VirtualDomComponentMixin(MetadataInitializerMixin(HT
         this.attachShadow({ mode: 'open' });
     }
     connectedCallback() {
-        console.log(`connectedCallback called for custom element: [${this.constructor.name}]`);
         this.requestUpdate();
     }
     requestUpdate() {
-        console.log('Requesting update');
         if (this._isUpdating) {
             return;
         }
@@ -1464,6 +1511,24 @@ class CustomElement extends VirtualDomComponentMixin(MetadataInitializerMixin(HT
         for (let i = 0; i < styleUrls.length; ++i) {
             vnode.appendChildNode(h("style", null, `@import '${styleUrls[i]}'`));
         }
+    }
+    /**
+     * Sets the property bypassing any serialization
+     * @param name The name of the property
+     * @param value The value of the property
+     */
+    setProperty(name, value) {
+        const oldValue = this.props[name];
+        if (oldValue === value) {
+            return;
+        }
+        if (typeof value === 'function') {
+            this.props[name] = value.bind(this);
+        }
+        else {
+            this.props[name] = value;
+        }
+        this.requestUpdate();
     }
 }
 
@@ -1734,51 +1799,81 @@ Alert.state = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-alert`, Alert);
 
-const PassPropertiesToChildrenMixin = Base => class PassPropertiesToChildren extends Base {
-    nodeDidUpdate(node, nodeChanges) {
-        if (super.nodeDidUpdate) {
-            super.nodeDidUpdate(node, nodeChanges);
-        }
-        const componentMetadata = this.constructor.componentMetadata;
-        const properties = Object.values(componentMetadata.properties)
-            .filter(p => p.passToChildren === true);
-        if (properties.length === 0) {
-            return;
-        }
-        const childNodes = this.getChildNodes(nodeChanges);
-        // Pass the properties to the children
-        childNodes.forEach(childNode => {
-            if (!(childNode instanceof HTMLElement)) {
+const ContainerMixin = Base => { var _a; return _a = class Container extends Base {
+        notifyChildren() {
+            const { children } = this.state;
+            const componentMetadata = this.constructor.componentMetadata;
+            const properties = Object.values(componentMetadata.properties)
+                .filter(p => p.passToChildren === true);
+            if (properties.length === 0) {
                 return;
             }
-            properties.forEach(p => {
-                const propertyName = p.name;
-                const attributeName = p.attribute;
-                if (childNode.props.hasOwnProperty(propertyName)) {
-                    if (childNode.props[propertyName] === p.value) { // A value different from the default one has not been set
-                        childNode.setAttribute(attributeName, this.props[propertyName]);
-                    }
+            // Pass the properties to the children
+            children.forEach(childNode => {
+                if (!(childNode instanceof HTMLElement)) {
+                    return;
                 }
+                properties.forEach(p => {
+                    var _a;
+                    const propertyName = p.name;
+                    const attributeName = p.attribute;
+                    if ((_a = childNode.props) === null || _a === void 0 ? void 0 : _a.hasOwnProperty(propertyName)) {
+                        if (childNode.props[propertyName] === p.value) { // A value different from the default one has not been set
+                            childNode.setAttribute(attributeName, this.props[propertyName]);
+                        }
+                    }
+                });
             });
-        });
-    }
-};
+        }
+        nodeDidUpdate(node, nodeChanges) {
+            if (super.nodeDidUpdate) {
+                super.nodeDidUpdate(node, nodeChanges);
+            }
+            const { hasInsertedChildren, children } = this.getChildren(nodeChanges);
+            if (hasInsertedChildren) {
+                this.setChildren(children);
+            }
+            this.notifyChildren();
+        }
+    },
+    _a.state = {
+        /**
+         * The children elements of this container
+         */
+        children: {
+            value: []
+        },
+    },
+    _a; };
 
-//@ts-ignore
-class Button extends PassPropertiesToChildrenMixin(DirectionMixin(VariantMixin(CustomElement))) {
+class Button extends ContainerMixin(DirectionMixin(VariantMixin(CustomElement))) {
     render() {
-        const { type } = this.props;
-        return (h("button", { type: type, class: this.getCSSClass(), onClick: this.onclick },
+        const { type, click } = this.props;
+        return (h("button", { type: type, class: this.getCSSClass(), onClick: click },
             h("slot", null)));
     }
-    getChildNodes(nodeChanges) {
+    // Needed to pass properties to children
+    getChildren(nodeChanges) {
+        const { inserted } = nodeChanges;
+        if (inserted.length === 0) {
+            return {
+                hasInsertedChildren: false,
+                children: []
+            };
+        }
         // Get the first inserted item which is the button component
         const button = nodeChanges.inserted.filter(b => b instanceof HTMLButtonElement)[0];
         const slot = button.querySelector('slot');
         if (slot !== null) {
-            return slot.assignedNodes({ flatten: true });
+            return {
+                hasInsertedChildren: true,
+                children: slot.assignedNodes({ flatten: true })
+            };
         }
-        return [];
+        return {
+            hasInsertedChildren: true,
+            children: []
+        };
     }
 }
 Button.component = {
@@ -1793,18 +1888,57 @@ Button.properties = {
     type: {
         type: String,
         value: "button" // Options: "button" | "reset" | "submit"
+    },
+    /**
+     * Callback when the button is clicked
+     */
+    click: {
+        type: Function
     }
 };
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-button`, Button);
 
+class Overlay extends CustomElement {
+    render() {
+        const { visible } = this.props;
+        return visible === true ?
+            (h(Fragment, { class: this.getCSSClass() },
+                h("slot", null))) : null;
+    }
+    getCSSClass() {
+        return {
+            "center": true // Center the content by default
+        };
+    }
+}
+Overlay.component = {
+    styleUrls: [
+        `${config.assetsFolder}/overlay/Overlay.css`
+    ]
+};
+Overlay.properties = {
+    /**
+     * Whether the overlay is shown
+     */
+    visible: {
+        type: Boolean,
+        value: false,
+        mutable: true,
+        reflect: true
+    }
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-overlay`, Overlay);
+
 class Table extends CustomElement {
     render() {
+        const { caption, header, body, footer } = this.props;
         return (h("table", null,
-            this.caption || null,
-            this.header || this.renderHeader(),
-            this.body || this.renderBody(),
-            this.footer || null));
+            caption || null,
+            header || this.renderHeader(),
+            body || this.renderBody(),
+            footer || null));
     }
     renderHeader() {
         const { columns } = this.props;
@@ -1825,8 +1959,8 @@ class Table extends CustomElement {
         })));
     }
     renderRecord(record, i) {
-        const { rowClick, rowDoubleClick, cellClick } = this.props;
-        return (h("tr", { onClick: () => rowClick && rowClick(record, i), onDblClick: () => rowDoubleClick && rowDoubleClick(record, i) }, this.columns.map((c, j) => {
+        const { columns, rowClick, rowDoubleClick, cellClick } = this.props;
+        return (h("tr", { onClick: () => rowClick && rowClick(record, i), onDblClick: () => rowDoubleClick && rowDoubleClick(record, i) }, columns.map((c, j) => {
             if (c.render) {
                 return (h("td", { onClick: () => cellClick && cellClick(record, i, j) }, c.render(record)));
             }
@@ -1886,4 +2020,452 @@ Table.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-table`, Table);
 
-export { Alert, App, Button, Icon, Table, Text };
+const SelectableMixin = Base => { var _a; return _a = class Selectable extends ContainerMixin(Base) {
+        constructor() {
+            super();
+            this.toggleSelect = this.toggleSelect.bind(this);
+        }
+        attributeChangedCallback(attributeName, oldValue, newValue) {
+            if (super.attributeChangedCallback) {
+                super.attributeChangedCallback(attributeName, oldValue, newValue);
+            }
+            if (attributeName === "selectable") {
+                if (newValue === "true" || newValue === "") {
+                    this.addEventListener('click', this.toggleSelect);
+                }
+                else { // newValue === "false"
+                    if (this.props.selected) { // Unselect if selected
+                        this.setSelected(false);
+                        this.dispatchEvent(new CustomEvent('selectionChanged', {
+                            detail: {
+                                child: this,
+                                removed: this.props.value
+                            },
+                            bubbles: true,
+                            composed: true
+                        }));
+                    }
+                    this.removeEventListener('click', this.toggleSelect);
+                }
+            }
+        }
+        toggleSelect() {
+            const { selectable, selected, value } = this.props;
+            if (!selectable) {
+                return;
+            }
+            this.setSelected(!selected);
+            this.dispatchEvent(new CustomEvent('selectionChanged', {
+                detail: this.props.selected ? // Need to read again since the property was updated
+                    {
+                        child: this,
+                        added: value
+                    } :
+                    {
+                        child: this,
+                        removed: value
+                    },
+                bubbles: true,
+                composed: true
+            }));
+        }
+        getCSSClass() {
+            let cssClass;
+            const { selectable, selected } = this.props;
+            if (super.getCSSClass) {
+                cssClass = super.getCSSClass();
+            }
+            if (!selectable) {
+                return cssClass;
+            }
+            return Object.assign(Object.assign({}, cssClass), { 'selectable': selectable, 'selected': selected });
+        }
+    },
+    _a.component = {
+        styleUrls: [
+            `${config.assetsFolder}/mixins/selectable/Selectable.css`
+        ]
+    },
+    _a.properties = {
+        /**
+         * Whether the item is selectable
+         */
+        selectable: {
+            type: Boolean,
+            value: true,
+            reflect: true,
+            passToChildren: true // Maybe the children are selectable too
+        },
+        /**
+         * Whether the item is selected
+         */
+        selected: {
+            type: Boolean,
+            reflect: true,
+            mutable: true,
+            passToChildren: true // Maybe the children want to show some UI that they were selected
+        },
+        /**
+         * The value to select in the event
+         */
+        value: {
+            type: Object
+        }
+    },
+    _a; };
+
+class ListItem extends SelectableMixin(CustomElement) {
+    render() {
+        return (h("li", { class: this.getCSSClass() },
+            h("slot", null)));
+    }
+    // Needed to pass properties to children
+    getChildren(nodeChanges) {
+        // Get the first inserted item which is the button component
+        const listItem = nodeChanges.inserted[0];
+        if (listItem !== undefined) { // It might be other changes such as attribute change
+            const slot = listItem.querySelector('slot');
+            if (slot !== null) {
+                return slot.assignedNodes({ flatten: true });
+            }
+        }
+        return [];
+    }
+}
+ListItem.component = {
+    styleUrls: [
+        `${config.assetsFolder}/list/listItem/ListItem.css`
+    ]
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-list-item`, ListItem);
+
+const SelectionContainerMixin = Base => { var _a; return _a = 
+//@ts-ignore
+class SelectionContainer extends ContainerMixin(Base) {
+        constructor() {
+            super();
+            this.updateSelection = this.updateSelection.bind(this);
+        }
+        attributeChangedCallback(attributeName, oldValue, newValue) {
+            if (super.attributeChangedCallback) {
+                super.attributeChangedCallback(attributeName, oldValue, newValue);
+            }
+            if (attributeName === "selectable") {
+                if (newValue === "true" || newValue === "") {
+                    this.addEventListener('selectionChanged', this.updateSelection);
+                }
+                else { // newValue === "false"
+                    this.removeEventListener('selectionChanged', this.updateSelection);
+                }
+            }
+        }
+        updateSelection(e) {
+            const { multiple, selection, selectionChanged } = this.props;
+            const { added, removed, child } = e.detail;
+            if (multiple !== undefined) { // Add values to the selection
+                if (added != undefined) {
+                    this.setSelection([...selection, added]);
+                }
+                else if (removed != undefined) {
+                    const index = selection.indexOf(removed);
+                    selection.splice(index, 1);
+                    this.setSelection(selection);
+                }
+            }
+            else { // Replace the old selected value with the new selected one
+                const { selectedChild } = this.state;
+                // Deselect previous selected attribute
+                if (selectedChild !== undefined) {
+                    selectedChild.setAttribute("selected", "false");
+                }
+                if (added != undefined) {
+                    this.setSelection([added]);
+                    this.setSelectedChild(child);
+                }
+                else if (removed != undefined) {
+                    this.setSelection([]);
+                    this.setSelectedChild(undefined);
+                }
+            }
+            if (selectionChanged !== undefined) {
+                selectionChanged(this.props.selection); // Re-read from the updated selection props
+            }
+        }
+        notifyChildren() {
+            if (super.notifyChildren) {
+                super.notifyChildren();
+            }
+            const { children } = this.state;
+            const { multiple, selection } = this.props;
+            // Select the children whose values match the ones of the selection of the container
+            children.forEach(child => {
+                var _a;
+                if (!(child instanceof HTMLElement)) {
+                    return;
+                }
+                if (selection.indexOf((_a = child.props) === null || _a === void 0 ? void 0 : _a.value) > -1 &&
+                    child.setSelected !== undefined) {
+                    child.setSelected(true);
+                    if (multiple === undefined) { // Set the selected child for single selection model
+                        this.setSelectedChild(child);
+                    }
+                }
+            });
+        }
+    },
+    _a.properties = {
+        /**
+         * Whether the container is selectable
+         */
+        selectable: {
+            type: Boolean,
+            value: true,
+            reflect: true,
+            passToChildren: true
+        },
+        /**
+         * Whether we can process multiple selection (false by default)
+         */
+        multiple: {
+            type: Boolean,
+            reflect: true
+        },
+        /**
+         * The selected item or items. It is an attribute since it can be passed through a property initally
+         */
+        selection: {
+            type: Array,
+            value: [],
+            mutable: true,
+            reflect: true
+        },
+        /**
+         * The callback when the selection is changed
+         */
+        selectionChanged: {
+            type: Function
+        }
+    },
+    _a.state = {
+        /**
+         * To track the current selected child for a single selection model
+         */
+        selectedChild: {
+            value: undefined
+        }
+    },
+    _a; };
+
+class List extends SelectionContainerMixin(CustomElement) {
+    render() {
+        return (h("ul", null,
+            h("slot", null)));
+    }
+    // Needed to pass properties to children
+    getChildren(nodeChanges) {
+        const { inserted } = nodeChanges;
+        if (inserted.length === 0) {
+            return {
+                hasInsertedChildren: false,
+                children: []
+            };
+        }
+        // Get the first inserted item which is the button component
+        const list = nodeChanges.inserted[0];
+        const slot = list.querySelector('slot');
+        if (slot !== null) {
+            return {
+                hasInsertedChildren: true,
+                children: slot.assignedNodes({ flatten: true })
+            };
+        }
+        return {
+            hasInsertedChildren: true,
+            children: []
+        };
+    }
+}
+List.component = {
+    styleUrls: [
+        `${config.assetsFolder}/list/List.css`
+    ]
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-list`, List);
+
+class Form extends CustomElement {
+    render() {
+        return (h("form", null,
+            h("slot", null)));
+    }
+}
+Form.component = {
+    styleUrls: [
+        `${config.assetsFolder}/form/Form.css`
+    ]
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-form`, Form);
+
+class MyTable extends CustomElement {
+    render() {
+        return (h("gcl-table", { caption: h("caption", null,
+                h("gcl-text", { "intl-key": "goodMorning", lang: "fr", variant: "secondary" })), columns: [
+                {
+                    name: 'company',
+                    title: 'Company',
+                    renderLabel: () => (h("gcl-text", { "intl-key": "goodMorning", lang: "de", variant: "primary" }))
+                },
+                {
+                    name: 'contact',
+                    title: 'Contact'
+                },
+                {
+                    name: 'country',
+                    title: 'Country',
+                    render: record => (h("span", { style: "color: green;" }, record.country))
+                }
+            ], data: [
+                {
+                    company: 'Alfreds Futterkiste',
+                    contact: 'Maria Anders',
+                    country: 'Germany'
+                },
+                {
+                    company: 'Centro comercial Moctezuma',
+                    contact: 'Francisco Chang',
+                    country: 'Mexico'
+                },
+                {
+                    company: 'Ernst Handel',
+                    contact: 'Roland Mendel',
+                    country: 'Austria'
+                }
+            ], 
+            //rowClick={(record, i) => alert(`Row clicked! at row index: ${i} and record: ${JSON.stringify(record)}`)} // onXXX is only used for stantard HTML events
+            rowDoubleClick: (record, i) => alert(`Row double clicked! at row index: ${i} and record: ${JSON.stringify(record)}`), 
+            //cellClick={(record, i, j) => alert(`Cell clicked! at row index: ${i}, column index: ${j} and record: ${JSON.stringify(record)}`)} // onXXX is only used for stantard HTML events
+            // header={
+            //     <thead>
+            //         <tr>
+            //             <th>Company</th>
+            //             <th>Contact</th>
+            //             <th>Country</th>
+            //         </tr>
+            //     </thead>
+            // }
+            // body={
+            //     <tbody>
+            //         <tr>
+            //             <td>Alfreds Futterkiste</td>
+            //             <td>Maria Anders</td>
+            //             <td>Germany</td>
+            //         </tr>
+            //         <tr>
+            //             <td>Centro comercial Moctezuma</td>
+            //             <td>Francisco Chang</td>
+            //             <td>Mexico</td>
+            //         </tr>
+            //         <tr>
+            //             <td>Ernst Handel</td>
+            //             <td>Roland Mendel</td>
+            //             <td>Austria</td>
+            //         </tr>
+            //         <tr>
+            //             <td>Island Trading</td>
+            //             <td>Helen Bennett</td>
+            //             <td>UK</td>
+            //         </tr>
+            //         <tr>
+            //             <td>Laughing Bacchus Winecellars</td>
+            //             <td>Yoshi Tannamuri</td>
+            //             <td>Canada</td>
+            //         </tr>
+            //         <tr>
+            //             <td>Magazzini Alimentari Riuniti</td>
+            //             <td>Giovanni Rovelli</td>
+            //             <td>Italy</td>
+            //         </tr>
+            //     </tbody>
+            // }
+            footer: h("tfoot", null,
+                h("tr", null,
+                    h("td", null, "Sum"),
+                    h("td", null, "$180"))) }));
+    }
+}
+//@ts-ignore
+customElements.define('my-table', MyTable);
+
+class MyListSingleSelection extends CustomElement {
+    render() {
+        return (h("gcl-list", { selection: '["a"]', selectable: true, selectionChanged: this.showSelection },
+            h("gcl-list-item", { id: "listItem", value: "a" },
+                h("gcl-icon", { name: "alarm-fill" }),
+                h("gcl-text", { "intl-key": "goodMorning", lang: "en" })),
+            h("gcl-list-item", { id: "listItem", value: "b" },
+                h("gcl-icon", { name: "alarm-fill" }),
+                h("gcl-text", { "intl-key": "goodMorning", lang: "fr" })),
+            h("gcl-list-item", { id: "listItem", value: "c" },
+                h("gcl-icon", { name: "alarm-fill" }),
+                h("gcl-text", { "intl-key": "goodMorning", lang: "de" }))));
+    }
+    showSelection(selection) {
+        alert('Selection: ' + JSON.stringify(selection));
+    }
+}
+//@ts-ignore
+customElements.define('my-list-single-selection', MyListSingleSelection);
+
+class MyListMultipleSelection extends CustomElement {
+    render() {
+        return (h("gcl-list", { selection: '["a", "c"]', selectable: true, multiple: true, selectionChanged: this.showSelection },
+            h("gcl-list-item", { id: "listItem", value: "a" },
+                h("gcl-icon", { name: "alarm-fill" }),
+                h("gcl-text", { "intl-key": "goodMorning", lang: "en" })),
+            h("gcl-list-item", { id: "listItem", value: "b" },
+                h("gcl-icon", { name: "alarm-fill" }),
+                h("gcl-text", { "intl-key": "goodMorning", lang: "fr" })),
+            h("gcl-list-item", { id: "listItem", value: "c" },
+                h("gcl-icon", { name: "alarm-fill" }),
+                h("gcl-text", { "intl-key": "goodMorning", lang: "de" }))));
+    }
+    showSelection(selection) {
+        alert('Selection: ' + JSON.stringify(selection));
+    }
+}
+//@ts-ignore
+customElements.define('my-list-multiple-selection', MyListMultipleSelection);
+
+class MyCounter extends CustomElement {
+    constructor() {
+        super();
+        this.increment = this.increment.bind(this);
+    }
+    increment() {
+        let { count } = this.props;
+        this.setCount(++count);
+    }
+    render() {
+        return (h("div", null,
+            h("h4", null, "Counter"),
+            this.props.count,
+            h("gcl-button", { click: this.increment }, "Increment")));
+    }
+}
+MyCounter.properties = {
+    /**
+     * The initial count
+     */
+    count: {
+        type: Number,
+        value: 0,
+        mutable: true,
+        reflect: true
+    }
+};
+//@ts-ignore
+customElements.define('my-counter', MyCounter);
+
+export { Alert, App, Button, Form, Icon, List, ListItem, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyTable, Overlay, Table, Text };

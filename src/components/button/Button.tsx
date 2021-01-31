@@ -3,11 +3,10 @@ import { h } from 'gclib-vdom';
 import { config } from '../config';
 import VariantMixin from '../mixins/variant/VariantMixin';
 import DirectionMixin from '../mixins/direction/DirectionMixin';
-import PassPropertiesToChildrenMixin from '../../core/mixins/PassPropertiesToChildrenMixin';
+import ContainerMixin from '../../core/mixins/ContainerMixin';
 
-//@ts-ignore
 export class Button extends
-    PassPropertiesToChildrenMixin(
+    ContainerMixin(
         DirectionMixin(
             VariantMixin(
                 CustomElement
@@ -17,6 +16,7 @@ export class Button extends
 {
 
     static component = {
+
         styleUrls: [
             `${config.assetsFolder}/button/Button.css`
         ]
@@ -30,27 +30,48 @@ export class Button extends
         type: {
             type: String,
             value: "button" // Options: "button" | "reset" | "submit"
+        },
+
+        /**
+         * Callback when the button is clicked
+         */
+        click: {
+            type: Function
         }
     };
 
     render() {
 
         const {
-            type
+            type,
+            click
         } = this.props;
 
         return (
             <button
                 type={type}
                 class={this.getCSSClass()}
-                onClick={this.onclick}
+                onClick={click}
             >
                 <slot />
             </button>
         );
     }
 
-    getChildNodes(nodeChanges) {
+    // Needed to pass properties to children
+    getChildren(nodeChanges) {
+
+        const {
+            inserted
+        } = nodeChanges;
+
+        if (inserted.length === 0) {
+
+            return {
+                hasInsertedChildren: false,
+                children: []
+            };
+        }
 
         // Get the first inserted item which is the button component
         const button = nodeChanges.inserted.filter(b => b instanceof HTMLButtonElement)[0];
@@ -59,10 +80,16 @@ export class Button extends
 
         if (slot !== null) {
 
-            return slot.assignedNodes({ flatten: true });
+            return {
+                hasInsertedChildren: true,
+                children: slot.assignedNodes({ flatten: true })
+            };
         }
 
-        return [];
+        return {
+            hasInsertedChildren: true,
+            children: []
+        };
     }
 
 }

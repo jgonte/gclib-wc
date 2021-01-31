@@ -21,7 +21,7 @@
   },
   "include": [
     "src"
-, "temp/todo-list.tsx", "temp/my-table.tsx", "temp/my-null.tsx", "temp/my-icon.tsx", "temp/my-element.tsx", "temp/my-counter.tsx", "temp/FunctionalComponent.ts", "temp/core", "temp/components"  ],
+, "temp/todo-list.tsx", "temp/my-table.tsx", "temp/my-null.tsx", "temp/my-icon.tsx", "temp/my-element.tsx", "temp/my-counter.tsx", "temp/FunctionalComponent.ts", "temp/core", "temp/components", "examples"  ],
   "exclude": [
     "node_modules"
   ]

@@ -77,12 +77,10 @@ const MetadataInitializerMixin = Base =>
 
                         this.setAttribute(attribute, defaultPropertyValueConverter.toAttribute(val, type));
                     }
-                    // else {
+                    else {
 
-                    //     this.props[name] = val;
-
-                    //     this.requestUpdate();
-                    // }
+                        this.setProperty(name, val);
+                    }
                 };
 
                 var setterName = this.getSetterName(name);
@@ -163,14 +161,12 @@ const MetadataInitializerMixin = Base =>
             return attributes;
         }
 
-        attributeChangedCallback(attributeName, oldValue, newValue) {
+        attributeChangedCallback(attributeName: string, oldValue: string, newValue: string) {
 
-            if (newValue == oldValue) {
+            if (newValue === oldValue) {
 
                 return; // Nothing to update
             }
-
-            console.log(`Attribute: '${attributeName}' of custom element: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
 
             // Update the internal property
             const propDescriptor = (this.constructor as unknown as MetadataInitializerConstructor).propertiesByAttribute[attributeName];

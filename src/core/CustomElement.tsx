@@ -20,14 +20,10 @@ export default abstract class CustomElement extends
 
     connectedCallback() {
 
-        console.log(`connectedCallback called for custom element: [${this.constructor.name}]`);
-
         this.requestUpdate();
     }
 
     requestUpdate() {
-
-        console.log('Requesting update');
 
         if (this._isUpdating) {
 
@@ -78,5 +74,31 @@ export default abstract class CustomElement extends
                 <style>{`@import '${styleUrls[i]}'`}</style>
             );
         }
+    }
+
+    /**
+     * Sets the property bypassing any serialization
+     * @param name The name of the property
+     * @param value The value of the property
+     */
+    setProperty(name: string, value: any) {
+
+        const oldValue = this.props[name];
+
+        if (oldValue === value) {
+
+            return;
+        }
+
+        if (typeof value === 'function') {
+
+            this.props[name] = (value as Function).bind(this);
+        }
+        else {
+
+            this.props[name] = value;
+        }
+
+        this.requestUpdate();
     }
 }

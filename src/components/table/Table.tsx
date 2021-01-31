@@ -63,12 +63,19 @@ export class Table extends CustomElement {
 
     render() {
 
+        const {
+            caption,
+            header,
+            body,
+            footer
+        } = this.props;
+
         return (
             <table>
-                {this.caption || null}
-                {this.header || this.renderHeader()}
-                {this.body || this.renderBody()}
-                {this.footer || null}
+                {caption || null}
+                {header || this.renderHeader()}
+                {body || this.renderBody()}
+                {footer || null}
             </table>
         );
     }
@@ -120,6 +127,7 @@ export class Table extends CustomElement {
     renderRecord(record, i) {
 
         const {
+            columns,
             rowClick,
             rowDoubleClick,
             cellClick
@@ -130,7 +138,7 @@ export class Table extends CustomElement {
                 onClick={() => rowClick && rowClick(record, i)}
                 onDblClick={() => rowDoubleClick && rowDoubleClick(record, i)}
             >
-                {this.columns.map((c, j) => {
+                {columns.map((c, j) => {
 
                     if (c.render) {
 
