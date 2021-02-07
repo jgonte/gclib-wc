@@ -34,11 +34,11 @@
 		<gcl-icon name="bug" style="color:orangered; font-size: 64px;"></gcl-icon>
 
 		<h4>Text</h4>
-		<gcl-text intl-key="goodMorning" variant="primary"></gcl-text>
+		<gcl-text intl-key="goodMorning" variant="primary" size="large"></gcl-text>
 		<br />
 		<gcl-text intl-key="goodMorning" lang="fr" variant="secondary"></gcl-text>
 		<br />
-		<gcl-text value="Buenos días in value" variant="tertiary"></gcl-text>
+		<gcl-text value="Buenos días in value" variant="tertiary" size="small"></gcl-text>
 		<br />
 		<gcl-text variant="info">Buenos días in slot</gcl-text>
 		<br />
@@ -50,19 +50,25 @@
 		<br />
 
 		<h4>Alerts</h4>
-		<gcl-alert message="Some info alert"></gcl-alert>
+		<gcl-alert message="Some info alert" size="large"></gcl-alert>
 		<gcl-alert type="success" message="Some success alert"></gcl-alert>
 		<gcl-alert type="warning" message="Some warning alert"></gcl-alert>
-		<gcl-alert type="error" message="Some error alert"></gcl-alert>
+		<gcl-alert type="error" message="Some error alert" size="small"></gcl-alert>
 
 		<h4>Button</h4>
-		<gcl-button click="onButtonClicked()">
+		<gcl-button size="small" click="onButtonClicked()">
 			<gcl-icon name="alarm-fill" variant="secondary"></gcl-icon>
 			<gcl-text>Some text</gcl-text>
 			<gcl-icon name="archive" variant="tertiary"></gcl-icon>
 		</gcl-button>
 		<br />
 		<gcl-button variant="primary" click="onButtonClicked()">
+			<gcl-icon name="alarm-fill"></gcl-icon>
+			<gcl-text>Some text</gcl-text>
+			<gcl-icon name="archive"></gcl-icon>
+		</gcl-button>
+		<br />
+		<gcl-button variant="success" size="large" click="onButtonClicked()">
 			<gcl-icon name="alarm-fill"></gcl-icon>
 			<gcl-text>Some text</gcl-text>
 			<gcl-icon name="archive"></gcl-icon>
@@ -85,7 +91,7 @@
 		<my-table></my-table>
 
 		<h4>List Single Selection</h4>
-		<my-list-single-selection></my-list-single-selection>
+		<my-list-single-selection id="singleList"></my-list-single-selection>
 
 		<h4>List Multiple Selection</h4>
 		<my-list-multiple-selection></my-list-multiple-selection>
@@ -96,15 +102,16 @@
 
 		<!-- Buttons to operate the list -->
 		<gcl-button variant="primary" click="toggleSelectable()">
-			<gcl-icon name="alarm-fill" class="secondary" style="padding: 5px;"></gcl-icon>
-			<gcl-text id="toggleSelectableText" value="Selectable On" style="padding: 5px;"></gcl-text>
+			<gcl-icon name="alarm-fill" class="secondary"></gcl-icon>
+			<gcl-text class="text" id="toggleSelectableText" value="Selectable On"></gcl-text>
 		</gcl-button>
 
-		<!-- <h4>Field</h4>
-    <gcl-text-field name="field1" value="abc"></gcl-text-field>
-    <br />
-    <gcl-select name="select"></gcl-select>
-    <br /> -->
+		<h4>Field</h4>
+		<gcl-text-field label="Field 1" name="field1" value="abc" error="Invalid value" required></gcl-text-field>
+		<br />
+
+		<!-- <gcl-select name="select"></gcl-select>
+		<br /> -->
 
 	</gcl-app>
 
@@ -114,9 +121,9 @@
 
 		const alarmIcon = document.querySelector("#alarm-icon");
 
-		setTimeout(function () {
-			alarmIcon.setAttribute("variant", "tertiary");
-		}, 10000)
+		// setTimeout(function () {
+		// 	alarmIcon.setAttribute("variant", "tertiary");
+		// }, 10000)
 
 		function onButtonClicked() {
 
@@ -179,13 +186,13 @@
 
 		function toggleSelectable() {
 
-			const listItem = document.querySelector("#listItem");
+			const list = document.querySelector("#singleList");
 
 			const toggleSelectableText = document.querySelector("#toggleSelectableText");
 
-			listItem.setAttribute("selectable", !listItem.props.selectable);
+			list.setAttribute("selectable", !list.props.selectable);
 
-			toggleSelectableText.setValue(listItem.props.selectable ? "Selectable On" : "Selectable Off");
+			toggleSelectableText.setValue(list.props.selectable ? "Selectable On" : "Selectable Off");
 		}
 
 	</script>

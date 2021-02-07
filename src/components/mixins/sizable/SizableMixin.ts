@@ -1,7 +1,16 @@
+import { config } from "../../config";
+
 const SizableMixin = Base =>
 
     class Sizable extends Base {
 
+        static component = {
+
+            styleUrls: [
+                `${config.assetsFolder}/mixins/sizable/Sizable.css`
+            ]
+        };
+        
         static properties = {
 
             size: {

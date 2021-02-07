@@ -1,4 +1,5 @@
 :host {
-  display: inline;
+  display: inline-block;
   font-family: var(--gcl-font-family);
+  flex-grow: 1;
 }

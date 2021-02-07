@@ -2,13 +2,17 @@ import CustomElement from '../../../core/CustomElement';
 import { h } from 'gclib-vdom';
 import { config } from '../../config';
 import SelectableMixin from '../../mixins/selectable/SelectableMixin';
+import SizableMixin from '../../mixins/sizable/SizableMixin';
 
-export class ListItem extends SelectableMixin(CustomElement) {
+export class ListItem extends
+    SelectableMixin(
+        SizableMixin(
+            CustomElement)
+    ) {
 
     static component = {
 
         styleUrls: [
-
             `${config.assetsFolder}/list/listItem/ListItem.css`
         ]
     };
@@ -20,25 +24,6 @@ export class ListItem extends SelectableMixin(CustomElement) {
                 <slot />
             </li>
         );
-    }
-
-    // Needed to pass properties to children
-    getChildren(nodeChanges) {
-
-        // Get the first inserted item which is the button component
-        const listItem = nodeChanges.inserted[0];
-
-        if (listItem !== undefined) { // It might be other changes such as attribute change
-
-            const slot = listItem.querySelector('slot');
-
-            if (slot !== null) {
-
-                return slot.assignedNodes({ flatten: true });
-            }
-        }
-
-        return [];
     }
 }
 

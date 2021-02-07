@@ -1,40 +1,26 @@
 import { Fragment, h } from "gclib-vdom";
 import CustomElement from "../../core/CustomElement";
+import VisibleMixin, { renderWhenVisible } from "../mixins/visible/VisibleMixin";
 import { config } from "../config";
 
-export class Overlay extends CustomElement {
+export class Overlay extends VisibleMixin(
+    CustomElement
+) {
 
     static component = {
+
         styleUrls: [
             `${config.assetsFolder}/overlay/Overlay.css`
         ]
     };
 
-    static properties = {
+    [renderWhenVisible]() {
 
-        /** 
-         * Whether the overlay is shown
-         */
-        visible: {
-            type: Boolean,
-            value: false,
-            mutable: true,
-            reflect: true
-        }
-    };
-
-    render() {
-
-        const {
-            visible
-        } = this.props;
-
-        return visible === true ?
-            (
-                <Fragment class={this.getCSSClass()} >
-                    <slot />
-                </Fragment>
-            ) : null
+        return (
+            <Fragment class={this.getCSSClass()}>
+                <slot />
+            </Fragment>
+        );
     }
 
     getCSSClass() {
@@ -42,6 +28,13 @@ export class Overlay extends CustomElement {
         return {
             "center": true // Center the content by default
         };
+    }
+
+    connectedCallback() {
+
+        super.connectedCallback();
+
+        this.setVisible(false); // Initially invisible
     }
 }
 

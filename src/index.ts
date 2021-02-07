@@ -16,9 +16,10 @@ export { ListItem } from './components/list/listItem/ListItem';
 
 export { List } from './components/list/List';
 
-// export { TextField } from '../temp/components/fields/textField/TextField';
-// export { Select } from '../temp/components/fields/select/Select';
-// export { Option } from '../temp/components/fields/select/option/Option';
+export { TextField } from './components/field/textField/TextField';
+
+// export { Select } from './components/field/select/Select';
+// export { Option } from './components/field/select/option/Option';
 
 export { Form } from './components/form/Form';
 

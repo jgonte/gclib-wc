@@ -1,3 +1,4 @@
+import visitChildren from "../../../core/helpers/visitChildren";
 import ContainerMixin from "../../../core/mixins/ContainerMixin";
 
 const SelectionContainerMixin = Base =>
@@ -158,9 +159,7 @@ const SelectionContainerMixin = Base =>
                 selection
             } = this.props;
 
-            // Select the children whose values match the ones of the selection of the container
-            children.forEach(child => {
-
+            visitChildren(children, child => {
                 if (!(child instanceof HTMLElement)) {
 
                     return;

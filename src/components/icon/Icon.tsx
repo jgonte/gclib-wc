@@ -23,9 +23,9 @@ export class Icon extends
     ) {
 
     static component = {
+
         styleUrls: [
             `${assetsFolder}/icon/Icon.css`,
-            `${assetsFolder}/mixins/sizable/Sizable-Icon.css`,
             `${assetsFolder}/mixins/direction/Direction-Icon.css`
         ]
     };

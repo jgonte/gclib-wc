@@ -1,6 +1,10 @@
 import ContainerMixin from '../../../core/mixins/ContainerMixin';
 import { config } from '../../config';
 
+/**
+ * Allows a component to be selectable
+ * @param Base
+ */
 const SelectableMixin = Base =>
 
     class Selectable extends ContainerMixin(Base) {

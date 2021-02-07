@@ -1,16 +1,12 @@
 button {
-
-    display: inline-flex;
-  
-    border-radius: var(--gcl-border-radius);
-  
-    user-select: none;
-  
-    cursor: pointer;
-  
-    border-width: 1px;
-  
-    /* outline: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+  cursor: pointer;
+  border-width: var(--gcl-border-width);
+  background: #fff;
+  /* outline: 0;
     margin-right: 8px;
     margin-bottom: 12px;
     line-height: 1.5715;
@@ -28,16 +24,52 @@ button {
     user-select: none;
     -ms-touch-action: manipulation;
     touch-action: manipulation;
-    height: 32px;
-    padding: 4px 15px;
-    font-size: 14px;
-    border-radius: 2px;
+    
     color: rgba(0, 0, 0, .65);
-    background: #fff;
+    
     border-color: #d9d9d9; */
-  }
+}
 
-  button.primary {
-    border-color: var(--gcl-color-primary);
-  }
-  
+button.primary {
+  border-color: var(--gcl-color-primary);
+}
+
+button.primary:hover {
+  background-color: lightblue;
+}
+
+button.secondary {
+  border-color: var(--gcl-color-secondary);
+}
+
+button.tertiary {
+  border-color: var(--gcl-color-tertiary);
+}
+
+button.info {
+  border-color: var(--gcl-color-info);
+}
+
+button.success {
+  border-color: var(--gcl-color-success);
+}
+
+button.warning {
+  border-color: var(--gcl-color-warning);
+}
+
+button.danger {
+  border-color: var(--gcl-color-danger);
+}
+
+button.light {
+  border-color: var(--gcl-color-light);
+}
+
+button.medium {
+  border-color: var(--gcl-color-medium);
+}
+
+button.dark {
+  border-color: var(--gcl-color-dark);
+}

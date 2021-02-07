@@ -7,6 +7,7 @@ export class MyListMultipleSelection extends CustomElement {
 
         return (
             <gcl-list
+                size="large"
                 selection='["a", "c"]'
                 selectable
                 multiple

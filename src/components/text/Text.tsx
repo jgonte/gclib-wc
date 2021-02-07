@@ -1,13 +1,16 @@
 import { Fragment, h } from "gclib-vdom";
 import CustomElement from "../../core/CustomElement";
-import VariantMixin from "../mixins/variant/VariantMixin";
 import { config } from "../../components/config";
 import { appCtrl } from "gclib-utils";
+import SizableMixin from "../mixins/sizable/SizableMixin";
+import VariantMixin from "../mixins/variant/VariantMixin";
 
 //@ts-ignore
 export class Text extends
-    VariantMixin(
-        CustomElement
+    SizableMixin(
+        VariantMixin(
+            CustomElement
+        )
     ) {
 
     static component = {

@@ -2,8 +2,19 @@ import { Fragment, h, VirtualNode } from "gclib-vdom";
 import { config } from "../config";
 import CustomElement from "../../core/CustomElement";
 import { Icon } from "../../components/icon/Icon";
+import VisibleMixin, { renderWhenVisible } from "../mixins/visible/VisibleMixin";
+import SizableMixin from "../mixins/sizable/SizableMixin";
+import ContainerMixin from "../../core/mixins/ContainerMixin";
 
-export class Alert extends CustomElement {
+//@ts-ignore
+export class Alert extends
+    VisibleMixin(
+        SizableMixin(
+            ContainerMixin(
+                CustomElement
+            )
+        )
+    ) {
 
     static component = {
         styleUrls: [
@@ -41,100 +52,139 @@ export class Alert extends CustomElement {
          */
         message: {
             type: VirtualNode
-        }
-    };
+        },
 
-    static state = {
-
-        visible: {
+        /**
+         * Whether the alert has a close button
+         */
+        closable: {
+            type: Boolean,
             value: true
         }
     };
 
-    render() {
-
-        const {
-            showIcon,
-            message
-        } = this.props;
-
-        const {
-            visible
-        } = this.state;
-
-        if (visible === false) {
-
-            return null;
-        }
+    [renderWhenVisible]() {
 
         return (
             <Fragment class={this.getCSSClass()}>
-
-                {
-                    showIcon &&
-                    <span class="icon">
-                        {this.getIcon()}
-                    </span>
-                }
-
-                <span class="message">
-                    {message || '[Missing message]'}
-                </span>
-
-                <span class="close-button"
-                    onClick={() => {
-                        this.setVisible(false);
-                    }}
-                >
-                    &times;
-                </span>
+                {this.renderIcon()}
+                {this.renderMessage()}
+                {this.renderCloseButton()}
             </Fragment>
         );
     }
 
-    getIcon(): Icon {
+    renderIcon(): Icon {
 
         const {
-            type,
+            showIcon,
             icon
         } = this.props;
 
-        if (icon) {
+        if (showIcon !== true) {
 
-            return icon; // Return the configured icon
+            return null;
         }
 
-        switch (type) {
+        return icon !== undefined ?
+            { icon } :
+            (
+                <gcl-icon name={this.getDefaultIcon()} variant={this.getVariant()}></gcl-icon>
+            );
+    }
 
-            case "info": return (
-                <gcl-icon name="info-circle-fill" variant="primary"></gcl-icon>
+    renderMessage() {
+
+        const {
+            message
+        } = this.props;
+
+        if (message === undefined) {
+
+            return null;
+        }
+
+        if (message.isVirtualText) {
+
+            return (
+                <gcl-text variant={this.getVariant()} >
+                    {message}
+                </gcl-text>
             );
-            case "success": return (
-                <gcl-icon name="check-circle-fill" variant="success"></gcl-icon>
-            );
-            case "warning": return (
-                <gcl-icon name="exclamation-circle-fill" variant="warning"></gcl-icon>
-            );
-            default: return (
-                <gcl-icon name="exclamation-circle-fill" variant="danger"></gcl-icon>
-            );
+        }
+        else { // VirtualNode
+
+            return  message;
         }
     }
 
-    getCSSClass() {
+    getDefaultIcon() {
 
         const {
             type
         } = this.props;
 
+        switch (type) {
+            case "info": return "info-circle-fill";
+            case "success": return "check-circle-fill";
+            case "warning": return "exclamation-circle-fill";
+            default: return "exclamation-circle-fill";
+        }
+    }
+
+    getVariant() {
+
         const {
-            visible
-        } = this.state;
+            type
+        } = this.props;
+
+        switch (type) {
+            case "info": return "primary";
+            case "success": return "success";
+            case "warning": return "warning";
+            default: return "danger";
+        }
+    }
+
+    renderCloseButton() {
+
+        const {
+            closable
+        } = this.props;
+
+        if (closable !== true) {
+
+            return null;
+        }
+
+        return (
+            <span class="close-button"
+                onClick={() => {
+                    this.setVisible(false);
+                }}
+            >
+                <gcl-text variant={this.getVariant()} >
+                    &times;
+                </gcl-text>
+
+            </span>
+        );
+    }
+
+    getCSSClass() {
+
+        let cssClass;
+
+        if (super.getCSSClass) {
+
+            cssClass = super.getCSSClass();
+        }
+
+        const { type } = this.props;
 
         return {
-            //...super.getCSSClass(),
+            ...cssClass,
             'alert': true,
-            'hidden': !visible,
             [type]: true
         };
     }

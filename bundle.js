@@ -107,7 +107,10 @@ function isStandardEvent(name) {
         'onmouseout',
         'onmouseover',
         'onmouseup',
-        'onwheel'
+        'onwheel',
+        'onchange',
+        'onfocus',
+        'onblur',
     ].indexOf(name) > -1;
 }
 
@@ -1609,6 +1612,11 @@ const SizableMixin = Base => { var _a; return _a = class Sizable extends Base {
             return Object.assign(Object.assign({}, cssClass), { [`size-${size}`]: true });
         }
     },
+    _a.component = {
+        styleUrls: [
+            `${config.assetsFolder}/mixins/sizable/Sizable.css`
+        ]
+    },
     _a.properties = {
         size: {
             type: String,
@@ -1657,7 +1665,6 @@ class Icon extends SizableMixin(VariantMixin(DirectionMixin(CustomElement))) {
 Icon.component = {
     styleUrls: [
         `${assetsFolder}/icon/Icon.css`,
-        `${assetsFolder}/mixins/sizable/Sizable-Icon.css`,
         `${assetsFolder}/mixins/direction/Direction-Icon.css`
     ]
 };
@@ -1671,7 +1678,7 @@ Icon.properties = {
 customElements.define(`${config.tagPrefix}-icon`, Icon);
 
 //@ts-ignore
-class Text extends VariantMixin(CustomElement) {
+class Text extends SizableMixin(VariantMixin(CustomElement)) {
     render() {
         const { value } = this.props;
         return (h(Fragment, { class: this.getCSSClass() }, value !== undefined ? value : (h("slot", null))));
@@ -1720,42 +1727,172 @@ Text.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-text`, Text);
 
-class Alert extends CustomElement {
-    render() {
-        const { showIcon, message } = this.props;
-        const { visible } = this.state;
-        if (visible === false) {
+const renderWhenVisible = Symbol('renderWhenVisible');
+const VisibleMixin = Base => { var _a; return _a = class Visible extends Base {
+        render() {
+            const { visible } = this.props;
+            return visible === true ? this[renderWhenVisible]() : null;
+        }
+    },
+    _a.properties = {
+        /**
+         * Whether the element is shown
+         */
+        visible: {
+            type: Boolean,
+            value: true,
+            mutable: true,
+            reflect: true
+        }
+    },
+    _a; };
+
+function getChildren(node) {
+    if (node instanceof HTMLElement) {
+        const slot = node.querySelector('slot');
+        if (slot !== null) {
+            return slot.assignedNodes({ flatten: true });
+        }
+        else {
+            return Array.from(node.childNodes);
+        }
+    }
+    else {
+        return [];
+    }
+}
+function visitChildren(children, visit) {
+    children.forEach(child => {
+        visit(child);
+        visitChildren(getChildren(child), visit);
+    });
+}
+
+const ContainerMixin = Base => { var _a; return _a = class Container extends Base {
+        notifyChildren() {
+            const { children } = this.state;
+            const componentMetadata = this.constructor.componentMetadata;
+            const properties = Object.values(componentMetadata.properties)
+                .filter(p => p.passToChildren === true);
+            if (properties.length === 0) {
+                return;
+            }
+            properties.forEach(p => {
+                const propertyName = p.name;
+                const attributeName = p.attribute;
+                // Pass the property to the children
+                visitChildren(children, child => {
+                    var _a;
+                    if ((_a = child.props) === null || _a === void 0 ? void 0 : _a.hasOwnProperty(propertyName)) {
+                        if (child.props[propertyName] === p.value) { // A value different from the default one has not been set
+                            child.setAttribute(attributeName, this.props[propertyName]);
+                        }
+                    }
+                });
+            });
+        }
+        nodeDidUpdate(node, nodeChanges) {
+            if (super.nodeDidUpdate) {
+                super.nodeDidUpdate(node, nodeChanges);
+            }
+            const { hasChildren, children } = this.getChildren(nodeChanges);
+            if (hasChildren) {
+                this.setChildren(children);
+            }
+            this.notifyChildren();
+        }
+        getChildren(nodeChanges) {
+            const { inserted, moved } = nodeChanges;
+            if (inserted.length === 0 &&
+                moved.length === 0) {
+                return {
+                    hasChildren: false,
+                    children: []
+                };
+            }
+            return {
+                hasChildren: true,
+                children: [
+                    ...inserted,
+                    ...moved
+                ]
+            };
+        }
+    },
+    _a.state = {
+        /**
+         * The children elements of this container
+         */
+        children: {
+            value: []
+        },
+    },
+    _a; };
+
+//@ts-ignore
+class Alert extends VisibleMixin(SizableMixin(ContainerMixin(CustomElement))) {
+    [renderWhenVisible]() {
+        return (h(Fragment, { class: this.getCSSClass() },
+            this.renderIcon(),
+            this.renderMessage(),
+            this.renderCloseButton()));
+    }
+    renderIcon() {
+        const { showIcon, icon } = this.props;
+        if (showIcon !== true) {
             return null;
         }
-        return (h(Fragment, { class: this.getCSSClass() },
-            showIcon &&
-                h("span", { class: "icon" }, this.getIcon()),
-            h("span", { class: "message" }, message || '[Missing message]'),
-            h("span", { class: "close-button", onClick: () => {
-                    this.setVisible(false);
-                } }, "\u00D7")));
+        return icon !== undefined ?
+            { icon } :
+            (h("gcl-icon", { name: this.getDefaultIcon(), variant: this.getVariant() }));
     }
-    getIcon() {
-        const { type, icon } = this.props;
-        if (icon) {
-            return icon; // Return the configured icon
+    renderMessage() {
+        const { message } = this.props;
+        if (message === undefined) {
+            return null;
         }
+        if (message.isVirtualText) {
+            return (h("gcl-text", { variant: this.getVariant() }, message));
+        }
+        else { // VirtualNode
+            return message;
+        }
+    }
+    getDefaultIcon() {
+        const { type } = this.props;
         switch (type) {
-            case "info": return (h("gcl-icon", { name: "info-circle-fill", variant: "primary" }));
-            case "success": return (h("gcl-icon", { name: "check-circle-fill", variant: "success" }));
-            case "warning": return (h("gcl-icon", { name: "exclamation-circle-fill", variant: "warning" }));
-            default: return (h("gcl-icon", { name: "exclamation-circle-fill", variant: "danger" }));
+            case "info": return "info-circle-fill";
+            case "success": return "check-circle-fill";
+            case "warning": return "exclamation-circle-fill";
+            default: return "exclamation-circle-fill";
         }
+    }
+    getVariant() {
+        const { type } = this.props;
+        switch (type) {
+            case "info": return "primary";
+            case "success": return "success";
+            case "warning": return "warning";
+            default: return "danger";
+        }
+    }
+    renderCloseButton() {
+        const { closable } = this.props;
+        if (closable !== true) {
+            return null;
+        }
+        return (h("span", { class: "close-button", onClick: () => {
+                this.setVisible(false);
+            } },
+            h("gcl-text", { variant: this.getVariant() }, "\u00D7")));
     }
     getCSSClass() {
+        let cssClass;
+        if (super.getCSSClass) {
+            cssClass = super.getCSSClass();
+        }
         const { type } = this.props;
-        const { visible } = this.state;
-        return {
-            //...super.getCSSClass(),
-            'alert': true,
-            'hidden': !visible,
-            [type]: true
-        };
+        return Object.assign(Object.assign({}, cssClass), { 'alert': true, [type]: true });
     }
 }
 Alert.component = {
@@ -1789,91 +1926,24 @@ Alert.properties = {
      */
     message: {
         type: VirtualNode
-    }
-};
-Alert.state = {
-    visible: {
+    },
+    /**
+     * Whether the alert has a close button
+     */
+    closable: {
+        type: Boolean,
         value: true
     }
 };
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-alert`, Alert);
 
-const ContainerMixin = Base => { var _a; return _a = class Container extends Base {
-        notifyChildren() {
-            const { children } = this.state;
-            const componentMetadata = this.constructor.componentMetadata;
-            const properties = Object.values(componentMetadata.properties)
-                .filter(p => p.passToChildren === true);
-            if (properties.length === 0) {
-                return;
-            }
-            // Pass the properties to the children
-            children.forEach(childNode => {
-                if (!(childNode instanceof HTMLElement)) {
-                    return;
-                }
-                properties.forEach(p => {
-                    var _a;
-                    const propertyName = p.name;
-                    const attributeName = p.attribute;
-                    if ((_a = childNode.props) === null || _a === void 0 ? void 0 : _a.hasOwnProperty(propertyName)) {
-                        if (childNode.props[propertyName] === p.value) { // A value different from the default one has not been set
-                            childNode.setAttribute(attributeName, this.props[propertyName]);
-                        }
-                    }
-                });
-            });
-        }
-        nodeDidUpdate(node, nodeChanges) {
-            if (super.nodeDidUpdate) {
-                super.nodeDidUpdate(node, nodeChanges);
-            }
-            const { hasInsertedChildren, children } = this.getChildren(nodeChanges);
-            if (hasInsertedChildren) {
-                this.setChildren(children);
-            }
-            this.notifyChildren();
-        }
-    },
-    _a.state = {
-        /**
-         * The children elements of this container
-         */
-        children: {
-            value: []
-        },
-    },
-    _a; };
-
-class Button extends ContainerMixin(DirectionMixin(VariantMixin(CustomElement))) {
+//@ts-ignore
+class Button extends SizableMixin(VariantMixin(DirectionMixin(ContainerMixin(CustomElement)))) {
     render() {
         const { type, click } = this.props;
         return (h("button", { type: type, class: this.getCSSClass(), onClick: click },
             h("slot", null)));
-    }
-    // Needed to pass properties to children
-    getChildren(nodeChanges) {
-        const { inserted } = nodeChanges;
-        if (inserted.length === 0) {
-            return {
-                hasInsertedChildren: false,
-                children: []
-            };
-        }
-        // Get the first inserted item which is the button component
-        const button = nodeChanges.inserted.filter(b => b instanceof HTMLButtonElement)[0];
-        const slot = button.querySelector('slot');
-        if (slot !== null) {
-            return {
-                hasInsertedChildren: true,
-                children: slot.assignedNodes({ flatten: true })
-            };
-        }
-        return {
-            hasInsertedChildren: true,
-            children: []
-        };
     }
 }
 Button.component = {
@@ -1899,34 +1969,25 @@ Button.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-button`, Button);
 
-class Overlay extends CustomElement {
-    render() {
-        const { visible } = this.props;
-        return visible === true ?
-            (h(Fragment, { class: this.getCSSClass() },
-                h("slot", null))) : null;
+class Overlay extends VisibleMixin(CustomElement) {
+    [renderWhenVisible]() {
+        return (h(Fragment, { class: this.getCSSClass() },
+            h("slot", null)));
     }
     getCSSClass() {
         return {
             "center": true // Center the content by default
         };
     }
+    connectedCallback() {
+        super.connectedCallback();
+        this.setVisible(false); // Initially invisible
+    }
 }
 Overlay.component = {
     styleUrls: [
         `${config.assetsFolder}/overlay/Overlay.css`
     ]
-};
-Overlay.properties = {
-    /**
-     * Whether the overlay is shown
-     */
-    visible: {
-        type: Boolean,
-        value: false,
-        mutable: true,
-        reflect: true
-    }
 };
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-overlay`, Overlay);
@@ -2020,6 +2081,10 @@ Table.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-table`, Table);
 
+/**
+ * Allows a component to be selectable
+ * @param Base
+ */
 const SelectableMixin = Base => { var _a; return _a = class Selectable extends ContainerMixin(Base) {
         constructor() {
             super();
@@ -2114,22 +2179,10 @@ const SelectableMixin = Base => { var _a; return _a = class Selectable extends C
     },
     _a; };
 
-class ListItem extends SelectableMixin(CustomElement) {
+class ListItem extends SelectableMixin(SizableMixin(CustomElement)) {
     render() {
         return (h("li", { class: this.getCSSClass() },
             h("slot", null)));
-    }
-    // Needed to pass properties to children
-    getChildren(nodeChanges) {
-        // Get the first inserted item which is the button component
-        const listItem = nodeChanges.inserted[0];
-        if (listItem !== undefined) { // It might be other changes such as attribute change
-            const slot = listItem.querySelector('slot');
-            if (slot !== null) {
-                return slot.assignedNodes({ flatten: true });
-            }
-        }
-        return [];
     }
 }
 ListItem.component = {
@@ -2198,8 +2251,7 @@ class SelectionContainer extends ContainerMixin(Base) {
             }
             const { children } = this.state;
             const { multiple, selection } = this.props;
-            // Select the children whose values match the ones of the selection of the container
-            children.forEach(child => {
+            visitChildren(children, child => {
                 var _a;
                 if (!(child instanceof HTMLElement)) {
                     return;
@@ -2257,33 +2309,10 @@ class SelectionContainer extends ContainerMixin(Base) {
     },
     _a; };
 
-class List extends SelectionContainerMixin(CustomElement) {
+class List extends SelectionContainerMixin(SizableMixin(CustomElement)) {
     render() {
         return (h("ul", null,
             h("slot", null)));
-    }
-    // Needed to pass properties to children
-    getChildren(nodeChanges) {
-        const { inserted } = nodeChanges;
-        if (inserted.length === 0) {
-            return {
-                hasInsertedChildren: false,
-                children: []
-            };
-        }
-        // Get the first inserted item which is the button component
-        const list = nodeChanges.inserted[0];
-        const slot = list.querySelector('slot');
-        if (slot !== null) {
-            return {
-                hasInsertedChildren: true,
-                children: slot.assignedNodes({ flatten: true })
-            };
-        }
-        return {
-            hasInsertedChildren: true,
-            children: []
-        };
     }
 }
 List.component = {
@@ -2293,6 +2322,116 @@ List.component = {
 };
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-list`, List);
+
+const renderField = Symbol('renderField');
+//@ts-ignore
+class Field extends VisibleMixin(SizableMixin(CustomElement)) {
+    [renderWhenVisible]() {
+        return (h(Fragment, { class: this.getCSSClass() },
+            h("div", { class: "field" },
+                this.renderLabel(),
+                this[renderField]()),
+            this.renderError()));
+    }
+    renderLabel() {
+        const { label, name, size } = this.props;
+        if (label === undefined) {
+            return null;
+        }
+        const cssClass = {
+            "field-label": true,
+            [`size-${size}`]: true
+        };
+        if (label.isVirtualText) {
+            return (h("label", { class: cssClass, for: name }, label));
+        }
+        else { // VirtualNode
+            return label;
+        }
+    }
+    renderError() {
+        const { error } = this.props;
+        if (error === undefined) {
+            return null;
+        }
+        if (error.isVirtualText) {
+            return (h("gcl-alert", { type: "error", message: error, closable: false }));
+        }
+        else { // VirtualNode
+            return error;
+        }
+    }
+}
+Field.component = {
+    styleUrls: [
+        `${config.assetsFolder}/Field/Field.css`
+    ]
+};
+Field.properties = {
+    name: {
+        type: String
+    },
+    label: {
+        type: VirtualNode
+    },
+    error: {
+        type: VirtualNode,
+        mutable: true
+    },
+    disabled: {
+        type: Boolean
+    },
+    required: {
+        type: Boolean
+    }
+};
+
+//@ts-ignore
+class SingleValueField extends Field {
+    constructor() {
+        super();
+        this.onChange = this.onChange.bind(this);
+    }
+    onChange(event) {
+        const { name } = this.props;
+        // Retrieve the new value
+        const value = event.target.value;
+        this.setValue(value); // Update the current value
+        this.dispatchEvent(new CustomEvent('valueChanged', {
+            detail: {
+                name,
+                value
+            },
+            bubbles: true,
+            composed: true
+        }));
+    }
+}
+SingleValueField.properties = {
+    value: {
+        type: String,
+        mutable: true,
+        reflect: true
+    }
+};
+
+//@ts-ignore
+class TextField extends SingleValueField {
+    // static component = {
+    //     styleUrls: [
+    //         `${config.assetsFolder}/TextField/TextField.css`
+    //     ]
+    // };
+    [renderField]() {
+        const { name, value, required } = this.props;
+        return (h("input", { name: name, id: name, class: "field-input", required: required, 
+            // style={{ maxWidth, width }}
+            // className={inputClass}
+            value: value, onChange: this.onChange }));
+    }
+}
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-text-field`, TextField);
 
 class Form extends CustomElement {
     render() {
@@ -2420,7 +2559,7 @@ customElements.define('my-list-single-selection', MyListSingleSelection);
 
 class MyListMultipleSelection extends CustomElement {
     render() {
-        return (h("gcl-list", { selection: '["a", "c"]', selectable: true, multiple: true, selectionChanged: this.showSelection },
+        return (h("gcl-list", { size: "large", selection: '["a", "c"]', selectable: true, multiple: true, selectionChanged: this.showSelection },
             h("gcl-list-item", { id: "listItem", value: "a" },
                 h("gcl-icon", { name: "alarm-fill" }),
                 h("gcl-text", { "intl-key": "goodMorning", lang: "en" })),
@@ -2468,4 +2607,4 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
-export { Alert, App, Button, Form, Icon, List, ListItem, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyTable, Overlay, Table, Text };
+export { Alert, App, Button, Form, Icon, List, ListItem, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyTable, Overlay, Table, Text, TextField };

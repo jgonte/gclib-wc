@@ -1,3 +1,4 @@
+import visitChildren from "../helpers/visitChildren";
 import { ComponentMetadata, CustomPropertyDescriptor } from "../Interfaces";
 
 const ContainerMixin = Base =>
@@ -30,29 +31,23 @@ const ContainerMixin = Base =>
                 return;
             }
 
-            // Pass the properties to the children
-            children.forEach(childNode => {
+            properties.forEach(p => {
 
-                if (!(childNode instanceof HTMLElement)) {
+                const propertyName = p.name;
 
-                    return;
-                }
+                const attributeName = p.attribute;
 
-                properties.forEach(p => {
+                // Pass the property to the children
+                visitChildren(children, child => {
 
-                    const propertyName = p.name;
+                    if ((child as any).props?.hasOwnProperty(propertyName)) {
 
-                    const attributeName = p.attribute;
-
-                    if ((childNode as any).props?.hasOwnProperty(propertyName)) {
-
-                        if ((childNode as any).props[propertyName] === p.value) { // A value different from the default one has not been set
-
-                            childNode.setAttribute(attributeName, this.props[propertyName]);
+                        if ((child as any).props[propertyName] === p.value) { // A value different from the default one has not been set
+    
+                            child.setAttribute(attributeName, this.props[propertyName]);
                         }
                     }
                 });
-
             });
         }
 
@@ -64,16 +59,41 @@ const ContainerMixin = Base =>
             }
 
             const {
-                hasInsertedChildren,
+                hasChildren,
                 children
             } = this.getChildren(nodeChanges);
 
-            if (hasInsertedChildren) {
+            if (hasChildren) {
 
                 this.setChildren(children);
             }
-            
+
             this.notifyChildren();
+        }
+
+        getChildren(nodeChanges) {
+
+            const {
+                inserted,
+                moved
+            } = nodeChanges;
+
+            if (inserted.length === 0 &&
+                moved.length === 0) {
+
+                return {
+                    hasChildren: false,
+                    children: []
+                };
+            }
+
+            return {
+                hasChildren: true,
+                children: [
+                    ...inserted,
+                    ...moved
+                ]
+            };
         }
     }
 
