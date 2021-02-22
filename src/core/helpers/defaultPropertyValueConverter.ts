@@ -1,5 +1,5 @@
-import { VirtualNode } from "gclib-vdom";
-import createVirtualNode from "./createVirtualNode";
+import { VirtualNode } from 'gclib-vdom';
+import createVirtualNode from './createVirtualNode';
 
 const defaultPropertyValueConverter = {
 

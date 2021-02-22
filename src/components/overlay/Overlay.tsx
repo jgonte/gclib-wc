@@ -1,7 +1,8 @@
-import { Fragment, h } from "gclib-vdom";
-import CustomElement from "../../core/CustomElement";
-import VisibleMixin, { renderWhenVisible } from "../mixins/visible/VisibleMixin";
-import { config } from "../config";
+import { Fragment, h } from 'gclib-vdom';
+import CustomElement from '../../core/CustomElement';
+import VisibleMixin, { renderWhenVisible } from '../mixins/visible/VisibleMixin';
+import { config } from '../config';
+import { isInvisible } from '../alert/Alert';
 
 export class Overlay extends VisibleMixin(
     CustomElement
@@ -34,7 +35,7 @@ export class Overlay extends VisibleMixin(
 
         super.connectedCallback();
 
-        this.setVisible(false); // Initially invisible
+        this.addEventListener(isInvisible, () => this.setVisible(false));
     }
 }
 

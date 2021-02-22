@@ -1,10 +1,12 @@
-import { Fragment, h, VirtualNode } from "gclib-vdom";
-import { config } from "../config";
-import CustomElement from "../../core/CustomElement";
-import { Icon } from "../../components/icon/Icon";
-import VisibleMixin, { renderWhenVisible } from "../mixins/visible/VisibleMixin";
-import SizableMixin from "../mixins/sizable/SizableMixin";
-import ContainerMixin from "../../core/mixins/ContainerMixin";
+import { Fragment, h, VirtualNode } from 'gclib-vdom';
+import { config } from '../config';
+import CustomElement from '../../core/CustomElement';
+import { Icon } from '../../components/icon/Icon';
+import VisibleMixin, { renderWhenVisible } from '../mixins/visible/VisibleMixin';
+import SizableMixin from '../mixins/sizable/SizableMixin';
+import ContainerMixin from '../../core/mixins/ContainerMixin';
+
+export const isInvisible = 'isInvisible';
 
 //@ts-ignore
 export class Alert extends
@@ -160,7 +162,17 @@ export class Alert extends
         return (
             <span class="close-button"
                 onClick={() => {
-                    this.setVisible(false);
+
+                    this.setVisible(false); // Hide this alert
+
+                    // Send a message up that the alert is not longer visible
+                    this.dispatchEvent(new CustomEvent(isInvisible, {
+                        detail: { 
+                            child: this
+                        },
+                        bubbles: true,
+                        composed: true
+                    }));
                 }}
             >
                 <gcl-text variant={this.getVariant()} >

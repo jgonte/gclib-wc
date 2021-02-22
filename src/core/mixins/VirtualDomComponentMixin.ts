@@ -1,4 +1,4 @@
-import { VirtualText, VirtualNode, FragmentNode, mount } from "gclib-vdom";
+import { VirtualText, VirtualNode, FragmentNode, mount } from 'gclib-vdom';
 
 const VirtualDomComponentMixin = Base =>
 
@@ -17,8 +17,8 @@ const VirtualDomComponentMixin = Base =>
         }
 
         /**
-     * The root element of this component
-     */
+         * The root element of this component
+         */
         get rootElement() {
 
             const element = (this._mountedNode || {}).element;

@@ -1,6 +1,7 @@
-import { FragmentNode, h } from "gclib-vdom";
-import MetadataInitializerMixin from "./mixins/MetadataInitializerMixin";
-import VirtualDomComponentMixin from "./mixins/VirtualDomComponentMixin";
+import { FragmentNode, h } from 'gclib-vdom';
+import { MetadataInitializerConstructor } from './Interfaces';
+import MetadataInitializerMixin from './mixins/MetadataInitializerMixin';
+import VirtualDomComponentMixin from './mixins/VirtualDomComponentMixin';
 
 export default abstract class CustomElement extends
     VirtualDomComponentMixin(
@@ -15,7 +16,14 @@ export default abstract class CustomElement extends
 
         super();
 
-        this.attachShadow({ mode: 'open' });
+        const {
+            componentMetadata
+        } = this.constructor as unknown as MetadataInitializerConstructor;
+
+        if (componentMetadata.component.shadow === true) {
+
+            this.attachShadow({ mode: 'open' });
+        }
     }
 
     connectedCallback() {
@@ -30,14 +38,14 @@ export default abstract class CustomElement extends
             return;
         }
 
+        this._isUpdating = true;
+
         requestAnimationFrame(() => {
 
-            this._isUpdating = false;
-
             this.update();
-        });
 
-        this._isUpdating = true;
+            this._isUpdating = false;
+        });    
     }
 
     /** 
@@ -45,25 +53,9 @@ export default abstract class CustomElement extends
      */
     get document() {
 
-        if (this.shadowRoot !== null) {
-
-            return this.shadowRoot;
-        }
-
-        // Find the parent that has a shadow root
-        let parent = this.parentElement;
-
-        while (parent !== undefined) {
-
-            if (parent.shadowRoot !== null) {
-
-                return parent; // We are not returning the parent's shadow root!
-            }
-
-            parent = parent.parentElement;
-        }
-
-        return undefined;
+        return this.shadowRoot !== null ?
+            this.shadowRoot :
+            this;
     }
 
     applyStyles(vnode: FragmentNode, styleUrls: string[]) {

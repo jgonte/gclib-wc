@@ -57,6 +57,55 @@ function __extends(d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 }
 
+var __assign = function() {
+    __assign = Object.assign || function __assign(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
+
+function __awaiter(thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+}
+
+function __generator(thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+}
+
 var IntlProvider = (function (_super) {
     __extends(IntlProvider, _super);
     function IntlProvider(lang, data) {
@@ -94,6 +143,745 @@ var AppCtrl = (function () {
     return AppCtrl;
 }());
 var appCtrl = new AppCtrl();
+
+function toTypeOf(typeFunction) {
+    switch (typeFunction) {
+        case String: return 'string';
+        case Boolean: return 'boolean';
+        case Number: return 'number';
+        case BigInt: return 'bigint';
+        default: return 'object';
+    }
+}
+var DataField = (function () {
+    function DataField(fieldDescriptor, subscriber) {
+        this._observer = new Observer('onValueSet');
+        this._fieldDescriptor = fieldDescriptor;
+        if (fieldDescriptor.value !== undefined) {
+            this.initialize(fieldDescriptor.value);
+        }
+        this._observer.subscribe(subscriber);
+    }
+    Object.defineProperty(DataField.prototype, "name", {
+        get: function () {
+            return this._fieldDescriptor.name;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(DataField.prototype, "isId", {
+        get: function () {
+            return this._fieldDescriptor.id;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    DataField.prototype.initialize = function (value) {
+        if (value !== undefined &&
+            value != null &&
+            typeof value !== toTypeOf(this._fieldDescriptor.type)) {
+            value = this._fieldDescriptor.converter.fromString(value, this._fieldDescriptor.type);
+        }
+        this._value = value;
+        this._initialValue = value;
+    };
+    Object.defineProperty(DataField.prototype, "value", {
+        get: function () {
+            return this._value;
+        },
+        set: function (value) {
+            var oldValue = this._value;
+            if (value !== undefined &&
+                value != null &&
+                typeof value !== toTypeOf(this._fieldDescriptor.type)) {
+                value = this._fieldDescriptor.converter.fromString(value, this._fieldDescriptor.type);
+            }
+            this._value = value;
+            this._observer.notify(this._fieldDescriptor, this._value, oldValue, this._initialValue);
+        },
+        enumerable: false,
+        configurable: true
+    });
+    DataField.prototype.reset = function () {
+        this.value = this._initialValue;
+    };
+    DataField.prototype.validate = function (context) {
+        var validators = this._fieldDescriptor.validators;
+        if (validators === undefined) {
+            return true;
+        }
+        var valid = true;
+        var length = validators.length;
+        for (var i = 0; i < length; ++i) {
+            var validator = validators[i];
+            var r = validator.validate(this, context);
+            if (r === false) {
+                if (valid === true) {
+                    valid = false;
+                }
+                if (context.stopWhenInvalid === true) {
+                    break;
+                }
+            }
+        }
+        return valid;
+    };
+    return DataField;
+}());
+
+function areEqual(o1, o2) {
+    var type1 = typeof o1;
+    var type2 = typeof o2;
+    if (type1 !== type2) {
+        return false;
+    }
+    if (type1 == 'object') {
+        if (Object.getOwnPropertyNames(o1).length !== Object.getOwnPropertyNames(o2).length) {
+            return false;
+        }
+        for (var prop in o1) {
+            if (o1.hasOwnProperty(prop)) {
+                if (o2.hasOwnProperty(prop)) {
+                    if (typeof o1[prop] === 'object') {
+                        if (!areEqual(o1[prop], o2[prop])) {
+                            return false;
+                        }
+                    }
+                    else {
+                        if (o1[prop] !== o2[prop]) {
+                            return false;
+                        }
+                    }
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    else {
+        return o1 === o2;
+    }
+}
+
+var DataRecord = (function () {
+    function DataRecord(recordDescriptor) {
+        this._fields = {};
+        this._modifiedFields = {};
+        this._data = undefined;
+        if (recordDescriptor === undefined ||
+            recordDescriptor === null ||
+            recordDescriptor.fieldDescriptors.length === 0) {
+            throw Error('Undefined or invalid record descriptor for a data record');
+        }
+        this._recordDescriptor = recordDescriptor;
+        this._recordDescriptor.createFields(this._fields, this);
+    }
+    DataRecord.prototype.initialize = function (data) {
+        var _fields = this._fields;
+        for (var key in data) {
+            if (data.hasOwnProperty(key)) {
+                if (_fields.hasOwnProperty(key)) {
+                    _fields[key].initialize(data[key]);
+                }
+                else {
+                    console.warn("There is no field for property: '" + key + "' that was passed as data");
+                }
+            }
+        }
+        this._id = undefined;
+        this._data = undefined;
+        this._modifiedFields = {};
+    };
+    DataRecord.prototype.getData = function () {
+        var _a = this, _data = _a._data, _fields = _a._fields;
+        if (_data !== undefined) {
+            return _data;
+        }
+        var data = {};
+        for (var key in _fields) {
+            if (_fields.hasOwnProperty(key)) {
+                data[key] = _fields[key].value;
+            }
+        }
+        this._data = data;
+        return data;
+    };
+    Object.defineProperty(DataRecord.prototype, "id", {
+        get: function () {
+            var _fields = this._fields;
+            if (this._id === undefined) {
+                var idInfo = this._recordDescriptor.getId(_fields, function (f) { return f.value; });
+                this._id = idInfo.value;
+            }
+            return this._id;
+        },
+        set: function (id) {
+            this._id = id;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(DataRecord.prototype, "isModified", {
+        get: function () {
+            return Object.keys(this._modifiedFields).length > 0;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    DataRecord.prototype.setData = function (data) {
+        for (var key in data) {
+            if (data.hasOwnProperty(key)) {
+                this._fields[key].value = data[key];
+            }
+        }
+        this._id = undefined;
+    };
+    DataRecord.prototype.reset = function () {
+        if (!this.isModified) {
+            return;
+        }
+        var _fields = this._fields;
+        for (var key in _fields) {
+            if (_fields.hasOwnProperty(key)) {
+                _fields[key].reset();
+            }
+        }
+    };
+    DataRecord.prototype.onValueSet = function (descriptor, value, oldValue, initialValue) {
+        if (areEqual(value, oldValue)) {
+            return;
+        }
+        var name = descriptor.name;
+        var _a = this, _fields = _a._fields, _modifiedFields = _a._modifiedFields;
+        if (!areEqual(value, initialValue)) {
+            _modifiedFields[name] = _fields[name];
+        }
+        else {
+            delete _modifiedFields[name];
+        }
+        this._data = undefined;
+    };
+    DataRecord.prototype.commit = function (callback) {
+        if (!this.isModified) {
+            return;
+        }
+        callback(this._data);
+        this.initialize(this._data);
+    };
+    DataRecord.prototype.validate = function (context) {
+        var _this = this;
+        var _a = this, _fields = _a._fields, _recordDescriptor = _a._recordDescriptor;
+        var valid = true;
+        Object.values(_fields).forEach(function (f) {
+            var r = f.validate(context);
+            if (r === false && valid === true) {
+                valid = false;
+            }
+        });
+        var recordValidators = _recordDescriptor.recordValidators;
+        recordValidators === null || recordValidators === void 0 ? void 0 : recordValidators.forEach(function (v) {
+            var r = v.validate(_this, context);
+            if (r === false && valid === true) {
+                valid = false;
+            }
+        });
+        return valid;
+    };
+    return DataRecord;
+}());
+
+var DataRecordSet = (function () {
+    function DataRecordSet(recordDescriptor) {
+        this._records = {};
+        this._addedRecords = {};
+        this._modifiedRecords = {};
+        this._removedRecords = {};
+        this._data = undefined;
+        this._recordDescriptor = recordDescriptor;
+    }
+    DataRecordSet.prototype.initialize = function (data) {
+        this._records = {};
+        for (var i = 0; i < data.length; ++i) {
+            var dataRecord = new DataRecord(this._recordDescriptor);
+            dataRecord.initialize(data[i]);
+            this._records[JSON.stringify(dataRecord.id)] = dataRecord;
+        }
+        this._addedRecords = {};
+        this._modifiedRecords = {};
+        this._removedRecords = {};
+        this._data = undefined;
+    };
+    DataRecordSet.prototype.getData = function () {
+        var _a = this, _data = _a._data, _records = _a._records, _addedRecords = _a._addedRecords;
+        if (_data !== undefined) {
+            return _data;
+        }
+        var data = [];
+        for (var key in _records) {
+            data.push(_records[key].getData());
+        }
+        for (var key in _addedRecords) {
+            data.push(_addedRecords[key].getData());
+        }
+        this._data = data;
+        return data;
+    };
+    Object.defineProperty(DataRecordSet.prototype, "isModified", {
+        get: function () {
+            return Object.keys(this._addedRecords).length > 0 ||
+                Object.keys(this._modifiedRecords).length > 0 ||
+                Object.keys(this._removedRecords).length > 0;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    DataRecordSet.prototype.findById = function (id) {
+        var strId = typeof id === 'string' ?
+            id :
+            JSON.stringify(id);
+        var record = this._records[strId];
+        if (record === undefined) {
+            record = this._addedRecords[strId];
+        }
+        return record;
+    };
+    DataRecordSet.prototype.set = function (data) {
+        var _a;
+        var idInfo = (_a = this._recordDescriptor) === null || _a === void 0 ? void 0 : _a.getId(data);
+        var value = idInfo.value, noDescriptorsId = idInfo.noDescriptorsId, hasUndefinedIdentifiers = idInfo.hasUndefinedIdentifiers;
+        var idStr = JSON.stringify(value);
+        var record = this.findById(idStr);
+        if (record !== undefined) {
+            record.setData(data);
+            if (record.isModified) {
+                this._modifiedRecords[idStr] = record;
+            }
+            else {
+                delete this._modifiedRecords[idStr];
+            }
+        }
+        else {
+            var removedRecord = this._removedRecords[idStr];
+            if (removedRecord !== undefined) {
+                delete this._removedRecords[idStr];
+                this._records[idStr] = removedRecord;
+            }
+            else {
+                var newRecord = new DataRecord(this._recordDescriptor);
+                newRecord.id = value;
+                newRecord.initialize(data);
+                this._addedRecords[idStr] = newRecord;
+            }
+        }
+        this._data = undefined;
+    };
+    DataRecordSet.prototype.update = function (oldData, newData) {
+        var _a;
+        var idInfo = (_a = this._recordDescriptor) === null || _a === void 0 ? void 0 : _a.getId(oldData);
+        var value = idInfo.value, noDescriptorsId = idInfo.noDescriptorsId, hasUndefinedIdentifiers = idInfo.hasUndefinedIdentifiers;
+        var idStr = JSON.stringify(value);
+        var record = this.findById(idStr);
+        if (record !== undefined) {
+            if (this._addedRecords[idStr] !== undefined) {
+                record.initialize(newData);
+                delete this._addedRecords[idStr];
+                var newIdStr = JSON.stringify(record.id);
+                this._addedRecords[newIdStr] = record;
+            }
+            else {
+                record.setData(newData);
+                delete this._records[idStr];
+                var newIdStr = JSON.stringify(record.id);
+                this._records[newIdStr] = record;
+                if (record.isModified) {
+                    this._modifiedRecords[newIdStr] = record;
+                }
+                else {
+                    delete this._modifiedRecords[newIdStr];
+                }
+            }
+        }
+        this._data = undefined;
+    };
+    DataRecordSet.prototype.remove = function (data) {
+        var _a;
+        var idInfo = (_a = this._recordDescriptor) === null || _a === void 0 ? void 0 : _a.getId(data);
+        var value = idInfo.value, noDescriptorsId = idInfo.noDescriptorsId, hasUndefinedIdentifiers = idInfo.hasUndefinedIdentifiers;
+        var idStr = JSON.stringify(value);
+        var record = this.findById(idStr);
+        if (record !== undefined) {
+            if (this._addedRecords[idStr] !== undefined) {
+                delete this._addedRecords[idStr];
+            }
+            else {
+                delete this._records[idStr];
+                this._removedRecords[idStr] = record;
+            }
+            this._data = undefined;
+        }
+    };
+    DataRecordSet.prototype.reset = function () {
+        if (!this.isModified) {
+            return;
+        }
+        this._addedRecords = {};
+        for (var key in this._removedRecords) {
+            var removedRecord = this._removedRecords[key];
+            delete this._removedRecords[key];
+            this._records[key] = removedRecord;
+        }
+        for (var key in this._records) {
+            var record = this._records[key];
+            record.reset();
+        }
+        this._modifiedRecords = {};
+        this._data = undefined;
+    };
+    DataRecordSet.prototype.commit = function (callback) {
+        if (!this.isModified) {
+            return;
+        }
+        var addedRecords = Object.values(this._addedRecords).map(function (r) { return r.getData(); });
+        var modifiedRecords = Object.values(this._modifiedRecords).map(function (r) { return r.getData(); });
+        var removedRecords = Object.values(this._removedRecords).map(function (r) { return r.getData(); });
+        callback(addedRecords, modifiedRecords, removedRecords);
+        this.initialize(this._data);
+    };
+    return DataRecordSet;
+}());
+
+function deserializeXmlDocument(document) {
+    var o = {};
+    var childNodes = document.documentElement.childNodes;
+    var length = childNodes.length;
+    for (var i = 0; i < length; ++i) {
+        var childNode = childNodes[i];
+        if (childNode.nodeType === Node.ELEMENT_NODE) {
+            o[childNode.nodeName] = childNode.childNodes[0].nodeValue;
+        }
+    }
+    return o;
+}
+
+function template(text, data) {
+    var result = {
+        keysNotInData: []
+    };
+    if (!data) {
+        result.text = text;
+        return result;
+    }
+    result.keysNotInData = Object.keys(data);
+    function processMatch(match, offset, str) {
+        var key = match
+            .replace('{{', '')
+            .replace('}}', '')
+            .trim();
+        if (data.hasOwnProperty(key)) {
+            var index = result.keysNotInData.indexOf(key);
+            if (index > -1) {
+                result.keysNotInData.splice(index, 1);
+            }
+            return data[key];
+        }
+        else {
+            return match;
+        }
+    }
+    result.text = text.replace(/\{{\S+?\}}/g, processMatch);
+    return result;
+}
+
+var Fetcher = (function () {
+    function Fetcher(onResponse, onError, onData) {
+        if (onResponse !== undefined) {
+            this.onResponse = onResponse.bind(this);
+        }
+        if (onError !== undefined) {
+            this.onError = onError.bind(this);
+        }
+        if (onData !== undefined) {
+            this.onData = onData.bind(this);
+        }
+    }
+    Fetcher.prototype.fetch = function (request) {
+        return __awaiter(this, void 0, void 0, function () {
+            var _a, method, cors, authProvider, url, response, _b, _c, error_1;
+            var _d;
+            return __generator(this, function (_e) {
+                switch (_e.label) {
+                    case 0:
+                        _a = request.method, method = _a === void 0 ? 'GET' : _a, cors = request.cors, authProvider = request.authProvider;
+                        url = this.buildUrl(request);
+                        _e.label = 1;
+                    case 1:
+                        _e.trys.push([1, 6, , 7]);
+                        _b = fetch;
+                        _c = [url];
+                        _d = {
+                            method: method
+                        };
+                        return [4, this.buildHeaders(request)];
+                    case 2: return [4, _b.apply(void 0, _c.concat([(_d.headers = _e.sent(),
+                                _d.body = this.buildBody(request),
+                                _d.mode = cors === false ? 'same-origin' : 'cors',
+                                _d.credentials = authProvider !== undefined ? 'include' : undefined,
+                                _d)]))];
+                    case 3:
+                        response = _e.sent();
+                        if (!(response.status != 204)) return [3, 5];
+                        return [4, this.processResponse(response)];
+                    case 4:
+                        _e.sent();
+                        _e.label = 5;
+                    case 5: return [3, 7];
+                    case 6:
+                        error_1 = _e.sent();
+                        this.handleError(error_1);
+                        return [3, 7];
+                    case 7: return [2];
+                }
+            });
+        });
+    };
+    Fetcher.prototype.buildUrl = function (request) {
+        var url = request.url, params = request.params;
+        var _a = template(url, params), text = _a.text, keysNotInData = _a.keysNotInData;
+        var queryParams = keysNotInData
+            .map(function (key) { return key + "=" + params[key]; })
+            .join('&');
+        return text.indexOf('?') > -1 ? text + "&" + queryParams : text + "?" + queryParams;
+    };
+    Fetcher.prototype.buildHeaders = function (request) {
+        return __awaiter(this, void 0, void 0, function () {
+            var requestHeaders, contentTypeHeader, key, headers, key, authHeader, key;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        requestHeaders = request.headers || {};
+                        for (key in requestHeaders) {
+                            if (key.toLowerCase() === 'content-type') {
+                                contentTypeHeader = requestHeaders[key];
+                            }
+                        }
+                        if (contentTypeHeader === undefined) {
+                            requestHeaders['content-type'] = 'application/json';
+                        }
+                        headers = new Headers();
+                        for (key in requestHeaders) {
+                            if (requestHeaders.hasOwnProperty(key)) {
+                                headers.append(key, requestHeaders[key]);
+                            }
+                        }
+                        if (!request.authProvider) return [3, 2];
+                        return [4, request.authProvider.authorize()];
+                    case 1:
+                        authHeader = _a.sent();
+                        if (authHeader) {
+                            for (key in authHeader) {
+                                if (authHeader.hasOwnProperty(key)) {
+                                    headers.append(key, authHeader[key]);
+                                }
+                            }
+                        }
+                        _a.label = 2;
+                    case 2: return [2, headers];
+                }
+            });
+        });
+    };
+    Fetcher.prototype.buildBody = function (request) {
+        var data = request.data;
+        return data !== undefined ? JSON.stringify(data) : undefined;
+    };
+    Fetcher.prototype.processResponse = function (response) {
+        return __awaiter(this, void 0, void 0, function () {
+            var error, _a;
+            var _b, _c;
+            return __generator(this, function (_d) {
+                switch (_d.label) {
+                    case 0:
+                        if (this.onResponse) {
+                            this.onResponse(response);
+                        }
+                        if (!(response.status > 299)) return [3, 2];
+                        _b = {
+                            status: response.status,
+                            statusText: response.statusText
+                        };
+                        return [4, this.parseContent(response)];
+                    case 1:
+                        error = (_b.payload = _d.sent(),
+                            _b);
+                        this.handleError(error);
+                        return [2];
+                    case 2:
+                        if (!(this.onData !== undefined)) return [3, 4];
+                        _a = this.onData;
+                        _c = {
+                            headers: response.headers
+                        };
+                        return [4, this.parseContent(response)];
+                    case 3:
+                        _a.apply(this, [(_c.payload = _d.sent(),
+                                _c)]);
+                        _d.label = 4;
+                    case 4: return [2];
+                }
+            });
+        });
+    };
+    Fetcher.prototype.parseContent = function (response) {
+        return __awaiter(this, void 0, void 0, function () {
+            var contentType, content, document_1;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        contentType = response.headers.get('content-type');
+                        return [4, response.text()];
+                    case 1:
+                        content = _a.sent();
+                        if (contentType !== null) {
+                            contentType = contentType.split(';')[0].trim();
+                            switch (contentType) {
+                                case 'application/json': return [2, JSON.parse(content)];
+                                case 'application/xml': {
+                                    document_1 = (new window.DOMParser()).parseFromString(content, "text/xml");
+                                    return [2, deserializeXmlDocument(document_1)];
+                                }
+                                default: return [2, content];
+                            }
+                        }
+                        else {
+                            return [2, content];
+                        }
+                }
+            });
+        });
+    };
+    Fetcher.prototype.handleError = function (error) {
+        if (this.onError !== undefined) {
+            this.onError(error);
+        }
+        else {
+            throw error;
+        }
+    };
+    return Fetcher;
+}());
+
+var SelectUrlBuilder = (function () {
+    function SelectUrlBuilder(cfg) {
+        if (cfg === void 0) { cfg = {}; }
+        this.selectProperty = cfg.selectProperty || "$select";
+    }
+    SelectUrlBuilder.prototype.build = function (cfg) {
+        var url = cfg.url, select = cfg.select;
+        var selectProperty = this.selectProperty;
+        if (select !== undefined && select.length > 0) {
+            var fieldList = selectProperty + "=" + select.join(',');
+            return url.indexOf('?') > -1 ? url + "&" + fieldList : url + "?" + fieldList;
+        }
+        return url;
+    };
+    return SelectUrlBuilder;
+}());
+
+var SingleItemLoader = (function (_super) {
+    __extends(SingleItemLoader, _super);
+    function SingleItemLoader(cfg) {
+        var _this = _super.call(this, cfg.onResponse, cfg.onError, cfg.onData) || this;
+        _this.urlBuilder = new SelectUrlBuilder(cfg.urlBuilder);
+        return _this;
+    }
+    SingleItemLoader.prototype.load = function (request) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, this.fetch(__assign(__assign({}, request), { url: this.urlBuilder.build(request) }))];
+                    case 1:
+                        _a.sent();
+                        return [2];
+                }
+            });
+        });
+    };
+    return SingleItemLoader;
+}(Fetcher));
+
+var CollectionUrlBuilder = (function (_super) {
+    __extends(CollectionUrlBuilder, _super);
+    function CollectionUrlBuilder(cfg) {
+        if (cfg === void 0) { cfg = {}; }
+        var _this = _super.call(this, cfg) || this;
+        _this.topProperty = cfg.topProperty || "$top";
+        _this.skipProperty = cfg.skipProperty || "$skip";
+        _this.filterProperty = cfg.filterProperty || "$filter";
+        _this.orderByProperty = cfg.orderByProperty || "$orderby";
+        return _this;
+    }
+    CollectionUrlBuilder.prototype.build = function (cfg) {
+        var qs = [];
+        var top = cfg.top, skip = cfg.skip, filter = cfg.filter, orderBy = cfg.orderBy;
+        var _a = this, topProperty = _a.topProperty, skipProperty = _a.skipProperty, filterProperty = _a.filterProperty, orderByProperty = _a.orderByProperty;
+        var url = _super.prototype.build.call(this, cfg);
+        if (top !== undefined) {
+            qs.push(topProperty + "=" + top);
+        }
+        if (skip !== undefined && skip > 0) {
+            qs.push(skipProperty + "=" + skip);
+        }
+        if (filter !== undefined) {
+            qs.push(filterProperty + "=" + filter.build());
+        }
+        if (orderBy !== undefined && orderBy.length > 0) {
+            qs.push(orderByProperty + "=" + orderBy.map(function (item) { return item.field + " " + item.order; }).join(', '));
+        }
+        if (qs.length > 0) {
+            return url.indexOf('?') > -1 ? url + "&" + qs.join('&') : url + "?" + qs.join('&');
+        }
+        else {
+            return url;
+        }
+    };
+    return CollectionUrlBuilder;
+}(SelectUrlBuilder));
+
+var CollectionLoader = (function (_super) {
+    __extends(CollectionLoader, _super);
+    function CollectionLoader(cfg) {
+        var _this = _super.call(this, cfg.onResponse, cfg.onError, cfg.onData) || this;
+        _this.urlBuilder = new CollectionUrlBuilder(cfg.urlBuilder);
+        return _this;
+    }
+    CollectionLoader.prototype.load = function (request) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, this.fetch(__assign(__assign({}, request), { url: this.urlBuilder.build(request) }))];
+                    case 1:
+                        _a.sent();
+                        return [2];
+                }
+            });
+        });
+    };
+    return CollectionLoader;
+}(Fetcher));
+
+function formatDate(date, format, options) {
+    if (options === void 0) { options = {
+        year: 'numeric', month: 'numeric', day: 'numeric'
+    }; }
+    if (typeof date === 'string') {
+        date = new Date(date);
+    }
+    switch (format) {
+        default: return date.toLocaleDateString(undefined, options);
+    }
+}
 
 function isStandardEvent(name) {
     return [
@@ -1301,6 +2089,9 @@ function getComponentMetadata(ctor) {
         properties: {},
         state: {}
     };
+    // Set the shadow prpoerty
+    metadata.component.shadow = (ctor.component || {}).shadow === undefined ? true : ctor.component.shadow;
+    // Merge the URL styles
     const set = new Set(); // To avoid URL duplicates
     while (ctor !== HTMLElement) {
         const { component, properties, state } = ctor;
@@ -1430,8 +2221,8 @@ const VirtualDomComponentMixin = Base => class VirtualDomComponent extends Base 
         }
     }
     /**
- * The root element of this component
- */
+     * The root element of this component
+     */
     get rootElement() {
         const element = (this._mountedNode || {}).element;
         if (element === undefined) {
@@ -1478,7 +2269,10 @@ const VirtualDomComponentMixin = Base => class VirtualDomComponent extends Base 
 class CustomElement extends VirtualDomComponentMixin(MetadataInitializerMixin(HTMLElement)) {
     constructor() {
         super();
-        this.attachShadow({ mode: 'open' });
+        const { componentMetadata } = this.constructor;
+        if (componentMetadata.component.shadow === true) {
+            this.attachShadow({ mode: 'open' });
+        }
     }
     connectedCallback() {
         this.requestUpdate();
@@ -1487,28 +2281,19 @@ class CustomElement extends VirtualDomComponentMixin(MetadataInitializerMixin(HT
         if (this._isUpdating) {
             return;
         }
-        requestAnimationFrame(() => {
-            this._isUpdating = false;
-            this.update();
-        });
         this._isUpdating = true;
+        requestAnimationFrame(() => {
+            this.update();
+            this._isUpdating = false;
+        });
     }
     /**
      * The DOM document in which this component is updated
      */
     get document() {
-        if (this.shadowRoot !== null) {
-            return this.shadowRoot;
-        }
-        // Find the parent that has a shadow root
-        let parent = this.parentElement;
-        while (parent !== undefined) {
-            if (parent.shadowRoot !== null) {
-                return parent; // We are not returning the parent's shadow root!
-            }
-            parent = parent.parentElement;
-        }
-        return undefined;
+        return this.shadowRoot !== null ?
+            this.shadowRoot :
+            this;
     }
     applyStyles(vnode, styleUrls) {
         for (let i = 0; i < styleUrls.length; ++i) {
@@ -1639,6 +2424,9 @@ const DirectionMixin = Base => { var _a; return _a = class Direction extends Bas
         }
     },
     _a.properties = {
+        /**
+         * The direction of the element
+         */
         flipRtl: {
             attribute: 'flip-rtl',
             type: Boolean,
@@ -1663,12 +2451,16 @@ class Icon extends SizableMixin(VariantMixin(DirectionMixin(CustomElement))) {
     }
 }
 Icon.component = {
+    //shadow:  false,
     styleUrls: [
         `${assetsFolder}/icon/Icon.css`,
         `${assetsFolder}/mixins/direction/Direction-Icon.css`
     ]
 };
 Icon.properties = {
+    /**
+     * The name of the icon
+     */
     name: {
         type: String,
         value: ''
@@ -1703,6 +2495,7 @@ class Text extends SizableMixin(VariantMixin(CustomElement)) {
     }
 }
 Text.component = {
+    //shadow: false,
     styleUrls: [
         `${config.assetsFolder}/text/Text.css`
     ]
@@ -1731,12 +2524,14 @@ const renderWhenVisible = Symbol('renderWhenVisible');
 const VisibleMixin = Base => { var _a; return _a = class Visible extends Base {
         render() {
             const { visible } = this.props;
-            return visible === true ? this[renderWhenVisible]() : null;
+            return visible === true ?
+                this[renderWhenVisible]() :
+                null;
         }
     },
     _a.properties = {
         /**
-         * Whether the element is shown
+         * Whether the element is visible
          */
         visible: {
             type: Boolean,
@@ -1829,6 +2624,7 @@ const ContainerMixin = Base => { var _a; return _a = class Container extends Bas
     },
     _a; };
 
+const isInvisible = 'isInvisible';
 //@ts-ignore
 class Alert extends VisibleMixin(SizableMixin(ContainerMixin(CustomElement))) {
     [renderWhenVisible]() {
@@ -1882,7 +2678,15 @@ class Alert extends VisibleMixin(SizableMixin(ContainerMixin(CustomElement))) {
             return null;
         }
         return (h("span", { class: "close-button", onClick: () => {
-                this.setVisible(false);
+                this.setVisible(false); // Hide this alert
+                // Send a message up that the alert is not longer visible
+                this.dispatchEvent(new CustomEvent(isInvisible, {
+                    detail: {
+                        child: this
+                    },
+                    bubbles: true,
+                    composed: true
+                }));
             } },
             h("gcl-text", { variant: this.getVariant() }, "\u00D7")));
     }
@@ -1981,7 +2785,7 @@ class Overlay extends VisibleMixin(CustomElement) {
     }
     connectedCallback() {
         super.connectedCallback();
-        this.setVisible(false); // Initially invisible
+        this.addEventListener(isInvisible, () => this.setVisible(false));
     }
 }
 Overlay.component = {
@@ -1992,7 +2796,207 @@ Overlay.component = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-overlay`, Overlay);
 
-class Table extends CustomElement {
+/**
+ * Render when there has been an error
+ */
+const renderError = Symbol('renderError');
+const ErrorableMixin = Base => { var _a; return _a = class Errorable extends Base {
+        render() {
+            const { error } = this.state;
+            return error !== undefined ?
+                this[renderError]() :
+                super.render();
+        }
+        [renderError]() {
+            const { error } = this.state;
+            if (this.props.renderError !== undefined) {
+                return (h(Fragment, null,
+                    this.props.renderError(error),
+                    super.render()));
+            }
+            else { // Show the user the error
+                return (h(Fragment, null,
+                    h("gcl-overlay", null,
+                        h("gcl-alert", { type: "error", message: this.getErrorMessage(error) })),
+                    super.render()));
+            }
+        }
+        getErrorMessage(error) {
+            if (error instanceof Error) {
+                return error.message;
+            }
+            else {
+                return JSON.stringify(error);
+            }
+        }
+    },
+    _a.properties = {
+        renderError: {
+            type: Function
+        }
+    },
+    _a.state = {
+        error: {
+            value: undefined
+        }
+    },
+    _a; };
+
+/**
+ * Render when the data property has been passed to the element
+ */
+const renderData = Symbol('renderData');
+/**
+ * Render when the data property has been passed to the element but it is an empty array
+ */
+const renderEmptyData = Symbol('renderEmptyData');
+/**
+ * Render when no data property has been passed to the element
+ */
+const renderNoData = Symbol('renderNoData');
+const DataLoadableMixin = Base => { var _a; return _a = class DataLoadable extends Base {
+        render() {
+            const { data } = this.props;
+            return data !== undefined ?
+                this[renderData]() :
+                // The derived components must implement this method to allow to display their children if no data was provided
+                this[renderNoData]();
+        }
+        [renderData]() {
+            const { data, renderData: renderRecord } = this.props;
+            if (data.length === 0) { // The data was provided but it was empty
+                return this[renderEmptyData]();
+            }
+            if (renderRecord !== undefined) {
+                return (h(Fragment, null, data.map(record => renderRecord(record))));
+            }
+            else { // Show the user the data
+                return JSON.stringify(data);
+            }
+        }
+        [renderEmptyData]() {
+            return 'There is no data to display';
+        }
+    },
+    _a.properties = {
+        /**
+         * The data fed into the element
+         */
+        data: {
+            type: Array,
+            mutable: true
+        },
+        /**
+         * The function to render the data item
+         */
+        renderData: {
+            type: Function
+        }
+    },
+    _a; };
+
+const AsyncDataLoadableMixin = Base => { var _a; return _a = 
+//@ts-ignore
+class AsyncDataLoadable extends ErrorableMixin(DataLoadableMixin(Base)) {
+        constructor() {
+            super();
+            this.onData = this.onData.bind(this);
+            this.onError = this.onError.bind(this);
+        }
+        render() {
+            const { loading } = this.state;
+            if (loading === true) {
+                const { renderLoading } = this.props;
+                if (renderLoading !== undefined) {
+                    return renderLoading();
+                }
+                else {
+                    return (h(Fragment, null,
+                        h("gcl-overlay", null,
+                            h("gcl-alert", { closable: "false", type: "info", message: "...Loading" })),
+                        super.render()));
+                }
+            }
+            else {
+                return super.render();
+            }
+        }
+        load() {
+            const { loadUrl } = this.props;
+            this.setError(undefined);
+            this.setLoading(true);
+            this._loader.load({
+                url: loadUrl
+            });
+        }
+        connectedCallback() {
+            const { loadUrl, autoLoad, isCollection } = this.props;
+            if (loadUrl !== undefined) {
+                this._loader = isCollection === true ?
+                    new CollectionLoader({
+                        onData: this.onData,
+                        onError: this.onError
+                    }) :
+                    new SingleItemLoader({
+                        onData: this.onData,
+                        onError: this.onError
+                    });
+                if (autoLoad === true) {
+                    this.load();
+                }
+            }
+            else {
+                super.connectedCallback();
+            }
+        }
+        onData(data) {
+            this.setLoading(false);
+            this.setData(data.payload);
+        }
+        onError(error) {
+            this.setLoading(false);
+            this.setError(error);
+        }
+    },
+    _a.properties = {
+        /**
+         * The URL to retrieve the data from
+         */
+        loadUrl: {
+            attribute: 'load-url',
+            type: String,
+            required: true
+        },
+        /**
+         * Whether to load the data for the component when the component is connected
+         */
+        autoLoad: {
+            type: Boolean,
+            value: true
+        },
+        /**
+         * Whether the loader loads a collection of items vs a single one
+         */
+        isCollection: {
+            type: Boolean,
+            value: true
+        },
+        /**
+         * To render a custom loading if wanted
+         */
+        renderLoading: {
+            type: Function
+        }
+    },
+    _a.state = {
+        loading: {
+            value: false
+        }
+    },
+    _a; };
+
+//@ts-ignore
+class Table extends AsyncDataLoadableMixin(CustomElement) {
     render() {
         const { caption, header, body, footer } = this.props;
         return (h("table", null,
@@ -2067,12 +3071,6 @@ Table.properties = {
      */
     columns: {
         type: Array // Array<TableColumnDefinition>
-    },
-    /**
-     * The data fed into the table
-     */
-    data: {
-        type: Array
     },
     rowClick: {
         type: Function
@@ -2309,8 +3307,11 @@ class SelectionContainer extends ContainerMixin(Base) {
     },
     _a; };
 
-class List extends SelectionContainerMixin(SizableMixin(CustomElement)) {
-    render() {
+class List extends SelectionContainerMixin(SizableMixin(AsyncDataLoadableMixin(CustomElement))) {
+    /**
+     * When there is no data provided to the component, render its children
+     */
+    [renderNoData]() {
         return (h("ul", null,
             h("slot", null)));
     }
@@ -2540,13 +3541,13 @@ customElements.define('my-table', MyTable);
 class MyListSingleSelection extends CustomElement {
     render() {
         return (h("gcl-list", { selection: '["a"]', selectable: true, selectionChanged: this.showSelection },
-            h("gcl-list-item", { id: "listItem", value: "a" },
+            h("gcl-list-item", { value: "a" },
                 h("gcl-icon", { name: "alarm-fill" }),
                 h("gcl-text", { "intl-key": "goodMorning", lang: "en" })),
-            h("gcl-list-item", { id: "listItem", value: "b" },
+            h("gcl-list-item", { value: "b" },
                 h("gcl-icon", { name: "alarm-fill" }),
                 h("gcl-text", { "intl-key": "goodMorning", lang: "fr" })),
-            h("gcl-list-item", { id: "listItem", value: "c" },
+            h("gcl-list-item", { value: "c" },
                 h("gcl-icon", { name: "alarm-fill" }),
                 h("gcl-text", { "intl-key": "goodMorning", lang: "de" }))));
     }
@@ -2560,13 +3561,13 @@ customElements.define('my-list-single-selection', MyListSingleSelection);
 class MyListMultipleSelection extends CustomElement {
     render() {
         return (h("gcl-list", { size: "large", selection: '["a", "c"]', selectable: true, multiple: true, selectionChanged: this.showSelection },
-            h("gcl-list-item", { id: "listItem", value: "a" },
+            h("gcl-list-item", { value: "a" },
                 h("gcl-icon", { name: "alarm-fill" }),
                 h("gcl-text", { "intl-key": "goodMorning", lang: "en" })),
-            h("gcl-list-item", { id: "listItem", value: "b" },
+            h("gcl-list-item", { value: "b" },
                 h("gcl-icon", { name: "alarm-fill" }),
                 h("gcl-text", { "intl-key": "goodMorning", lang: "fr" })),
-            h("gcl-list-item", { id: "listItem", value: "c" },
+            h("gcl-list-item", { value: "c" },
                 h("gcl-icon", { name: "alarm-fill" }),
                 h("gcl-text", { "intl-key": "goodMorning", lang: "de" }))));
     }
@@ -2576,6 +3577,84 @@ class MyListMultipleSelection extends CustomElement {
 }
 //@ts-ignore
 customElements.define('my-list-multiple-selection', MyListMultipleSelection);
+
+class MyListSingleSelectionLoadData extends CustomElement {
+    render() {
+        return (h("gcl-list", { id: "listWithData", size: "small", selection: '["c"]', selectable: true, selectionChanged: this.showSelection, data: [
+                {
+                    value: 'a',
+                    iconName: 'alarm-fill',
+                    textKey: 'goodMorning',
+                    lang: 'en'
+                },
+                {
+                    value: 'b',
+                    iconName: 'alarm-fill',
+                    textKey: 'goodMorning',
+                    lang: 'fr'
+                },
+                {
+                    value: 'c',
+                    iconName: 'alarm-fill',
+                    textKey: 'goodMorning',
+                    lang: 'de'
+                }
+            ], renderData: record => {
+                const { value, iconName, textKey, lang } = record;
+                return (h("gcl-list-item", { value: value },
+                    h("gcl-icon", { name: iconName }),
+                    h("gcl-text", { "intl-key": textKey, lang: lang })));
+            } }));
+    }
+    showSelection(selection) {
+        alert('Selection: ' + JSON.stringify(selection));
+    }
+}
+//@ts-ignore
+customElements.define('my-list-single-selection-load-data', MyListSingleSelectionLoadData);
+
+class MyListSingleSelectionLoadEmptyData extends CustomElement {
+    render() {
+        return (h("gcl-list", { id: "listWithEmptyData", size: "small", selection: '["c"]', selectable: true, selectionChanged: this.showSelection, data: [
+            // Empty
+            ], renderData: record => {
+                const { value, iconName, textKey, lang } = record;
+                return (h("gcl-list-item", { value: value },
+                    h("gcl-icon", { name: iconName }),
+                    h("gcl-text", { "intl-key": textKey, lang: lang })));
+            } }));
+    }
+    showSelection(selection) {
+        alert('Selection: ' + JSON.stringify(selection));
+    }
+}
+//@ts-ignore
+customElements.define('my-list-single-selection-load-empty-data', MyListSingleSelectionLoadEmptyData);
+
+/**
+ * Shows a weather forecast list form a back end
+ */
+class WeatherList extends CustomElement {
+    render() {
+        return (h("gcl-list", { id: "wheatherList", "load-url": "http://localhost:60314/weatherforecast", size: "medium", selection: '[2]', selectable: true, selectionChanged: this.showSelection, renderData: record => {
+                const { id, date, temperatureC, temperatureF, summary } = record;
+                return (h("gcl-list-item", { value: id },
+                    h("gcl-text", null, formatDate(date)),
+                    h("gcl-text", null,
+                        temperatureC,
+                        " C"),
+                    h("gcl-text", null,
+                        temperatureF,
+                        " F"),
+                    h("gcl-text", null, summary)));
+            } }));
+    }
+    showSelection(selection) {
+        alert('Selection: ' + JSON.stringify(selection));
+    }
+}
+//@ts-ignore
+customElements.define('weather-list', WeatherList);
 
 class MyCounter extends CustomElement {
     constructor() {
@@ -2607,4 +3686,4 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
-export { Alert, App, Button, Form, Icon, List, ListItem, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyTable, Overlay, Table, Text, TextField };
+export { Alert, App, Button, Form, Icon, List, ListItem, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, Overlay, Table, Text, TextField, WeatherList };

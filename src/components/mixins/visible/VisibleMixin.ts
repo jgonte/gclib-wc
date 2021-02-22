@@ -7,7 +7,7 @@ const VisibleMixin = Base =>
         static properties = {
 
             /** 
-             * Whether the element is shown
+             * Whether the element is visible
              */
             visible: {
                 type: Boolean,
@@ -23,7 +23,9 @@ const VisibleMixin = Base =>
                 visible
             } = this.props;
     
-            return visible === true ? this[renderWhenVisible as any]() : null;
+            return visible === true ? 
+                this[renderWhenVisible as any]() : 
+                null;
         }
     };
 

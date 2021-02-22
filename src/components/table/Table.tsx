@@ -3,8 +3,10 @@ import { h, VirtualNode } from 'gclib-vdom';
 //import SelectionContainerMixin from '../mixins/selectionContainer/SelectionContainerMixin';
 //import TableColumnDefinition from './TableColumnDefinition';
 import { config } from '../config';
+import AsyncDataLoadableMixin from '../mixins/data/AsyncDataLoadableMixin';
 
-export class Table extends CustomElement {
+//@ts-ignore
+export class Table extends AsyncDataLoadableMixin(CustomElement) {
 
     static component = {
         styleUrls: [
@@ -47,13 +49,6 @@ export class Table extends CustomElement {
          */
         columns: {
             type: Array // Array<TableColumnDefinition>
-        },
-
-        /**
-         * The data fed into the table
-         */
-        data: {
-            type: Array
         },
 
         rowClick: {

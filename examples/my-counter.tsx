@@ -1,8 +1,7 @@
-import { h } from "gclib-vdom";
+import { h } from 'gclib-vdom';
 import CustomElement from '../src/core/CustomElement';
 
 export class MyCounter extends CustomElement {
-
 
     constructor() {
 

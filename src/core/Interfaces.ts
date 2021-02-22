@@ -1,5 +1,14 @@
 export interface ComponentDescriptor {
 
+    /**
+     * Whether create a shadow DOM for the component
+     * Defaults to true
+     */
+    shadow?: boolean;
+
+    /**
+     * The style URLs to import for the component
+     */
     styleUrls?: string[];
 }
 

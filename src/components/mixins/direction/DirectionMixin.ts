@@ -3,6 +3,10 @@ const DirectionMixin = Base =>
     class Direction extends Base {
 
         static properties = {
+
+            /**
+             * The direction of the element
+             */
             flipRtl: {
                 attribute: 'flip-rtl',
                 type: Boolean,

@@ -1,9 +1,9 @@
-import { Fragment, h } from "gclib-vdom";
-import CustomElement from "../../core/CustomElement";
-import { config } from "../../components/config";
-import { appCtrl } from "gclib-utils";
-import SizableMixin from "../mixins/sizable/SizableMixin";
-import VariantMixin from "../mixins/variant/VariantMixin";
+import { Fragment, h } from 'gclib-vdom';
+import CustomElement from '../../core/CustomElement';
+import { config } from '../../components/config';
+import { appCtrl } from 'gclib-utils';
+import SizableMixin from '../mixins/sizable/SizableMixin';
+import VariantMixin from '../mixins/variant/VariantMixin';
 
 //@ts-ignore
 export class Text extends
@@ -14,6 +14,9 @@ export class Text extends
     ) {
 
     static component = {
+
+        //shadow: false,
+
         styleUrls: [
             `${config.assetsFolder}/text/Text.css`
         ]

@@ -76,7 +76,7 @@
 		<br />
 
 		<h4>Overlay</h4>
-		<gcl-overlay id="loadingOverlay">
+		<gcl-overlay id="loadingOverlay" visible="false">
 			<p style="background-color: white;">
 				Loading ...
 				<gcl-button variant="danger" click="closeLoadingOverlay()">Close Loading Overlay</gcl-button>
@@ -93,8 +93,17 @@
 		<h4>List Single Selection</h4>
 		<my-list-single-selection id="singleList"></my-list-single-selection>
 
+		<h4>List Single Selection with Data</h4>
+		<my-list-single-selection-load-data></my-list-single-selection-load-data>
+
+		<h4>List Single Selection with Empty Data</h4>
+		<my-list-single-selection-load-empty-data></my-list-single-selection-load-empty-data>
+
 		<h4>List Multiple Selection</h4>
 		<my-list-multiple-selection></my-list-multiple-selection>
+
+		<h4>Weather list (it retrieves data from a back-end)</h4>
+		<weather-list></weather-list>
 
 		<h4>My counter</h4>
 		<my-counter id="my-counter"></my-counter>
