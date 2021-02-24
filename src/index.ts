@@ -34,6 +34,8 @@ export { MyListSingleSelectionLoadData } from '../examples/my_list_single_select
 
 export { MyListSingleSelectionLoadEmptyData } from '../examples/my_list_single_selection_load_empty_data';
 
-export { WeatherList } from '../examples/weather_list';
+export { ContactsList } from '../examples/contacts_list';
+
+export { ContactForm } from '../examples/contact_form';
 
 export { MyCounter } from '../examples/my-counter';

@@ -3434,10 +3434,67 @@ class TextField extends SingleValueField {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-text-field`, TextField);
 
-class Form extends CustomElement {
+const AsyncDataSubmitableMixin = Base => { var _a; return _a = 
+//@ts-ignore
+class AsyncDataSubmitable extends ErrorableMixin(Base) {
+        constructor() {
+            super();
+            this.submit = this.submit.bind(this);
+        }
+        render() {
+            const { submitting } = this.state;
+            if (submitting === true) {
+                const { renderSubmitting } = this.props;
+                if (renderSubmitting !== undefined) {
+                    return renderSubmitting();
+                }
+                else {
+                    return (h(Fragment, null,
+                        h("gcl-overlay", null,
+                            h("gcl-alert", { closable: "false", type: "info", message: "...Submitting" })),
+                        super.render()));
+                }
+            }
+            else {
+                super.render();
+            }
+        }
+        submit() {
+            this.setSubmitting(true);
+        }
+    },
+    _a.properties = {
+        /**
+         * The URL to post the data to
+         */
+        submitUrl: {
+            attribute: 'submit-url',
+            type: String,
+            required: true
+        },
+        renderSubmitting: {
+            type: Function
+        }
+    },
+    _a.state = {
+        submitting: {
+            value: false
+        }
+    },
+    _a; };
+
+class Form extends AsyncDataSubmitableMixin(CustomElement) {
     render() {
         return (h("form", null,
-            h("slot", null)));
+            h("slot", null),
+            this.renderButtons()));
+    }
+    renderButtons() {
+        return (h("div", null,
+            h("gcl-button", { onClick: this.reset, variant: "secondary" }, "Reset"),
+            h("gcl-button", { onClick: this.submit, variant: "primary" }, "Submit")));
+    }
+    reset() {
     }
 }
 Form.component = {
@@ -3632,21 +3689,26 @@ class MyListSingleSelectionLoadEmptyData extends CustomElement {
 customElements.define('my-list-single-selection-load-empty-data', MyListSingleSelectionLoadEmptyData);
 
 /**
- * Shows a weather forecast list form a back end
+ * Shows a contacts list populated from a back end
  */
-class WeatherList extends CustomElement {
+class ContactsList extends CustomElement {
     render() {
-        return (h("gcl-list", { id: "wheatherList", "load-url": "http://localhost:60314/weatherforecast", size: "medium", selection: '[2]', selectable: true, selectionChanged: this.showSelection, renderData: record => {
-                const { id, date, temperatureC, temperatureF, summary } = record;
+        return (h("gcl-list", { id: "contactsList", "load-url": "http://localhost:60314/api/contacts", size: "medium", selection: '[2]', selectable: true, selectionChanged: this.showSelection, renderData: record => {
+                const { id, name, dateOfBirth, reputation, description, avatar } = record;
                 return (h("gcl-list-item", { value: id },
-                    h("gcl-text", null, formatDate(date)),
                     h("gcl-text", null,
-                        temperatureC,
-                        " C"),
+                        "Name: ",
+                        name),
                     h("gcl-text", null,
-                        temperatureF,
-                        " F"),
-                    h("gcl-text", null, summary)));
+                        "Date of Birth: ",
+                        formatDate(dateOfBirth)),
+                    h("gcl-text", null,
+                        "Reputation: ",
+                        reputation),
+                    h("gcl-text", null,
+                        "Description: ",
+                        description),
+                    h("img", { style: "width: 64px; height: 64px; border-radius: 50%;", src: `data:image/jpeg;base64,${avatar}` })));
             } }));
     }
     showSelection(selection) {
@@ -3654,7 +3716,18 @@ class WeatherList extends CustomElement {
     }
 }
 //@ts-ignore
-customElements.define('weather-list', WeatherList);
+customElements.define('contacts-list', ContactsList);
+
+/**
+ * Shows a contact form populated and submitable to a back end
+ */
+class ContactForm extends CustomElement {
+    render() {
+        return (h("gcl-form", { id: "contactForm", "load-url": "http://localhost:60314/api/contacts/1", size: "medium" }));
+    }
+}
+//@ts-ignore
+customElements.define('contact-form', ContactForm);
 
 class MyCounter extends CustomElement {
     constructor() {
@@ -3686,4 +3759,4 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
-export { Alert, App, Button, Form, Icon, List, ListItem, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, Overlay, Table, Text, TextField, WeatherList };
+export { Alert, App, Button, ContactForm, ContactsList, Form, Icon, List, ListItem, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, Overlay, Table, Text, TextField };

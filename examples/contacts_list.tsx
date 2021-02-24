@@ -3,16 +3,16 @@ import { h } from 'gclib-vdom';
 import CustomElement from '../src/core/CustomElement';
 
 /**
- * Shows a weather forecast list form a back end
+ * Shows a contacts list populated from a back end
  */
-export class WeatherList extends CustomElement {
+export class ContactsList extends CustomElement {
 
     render() {
 
         return (
             <gcl-list
-                id="wheatherList"
-                load-url="http://localhost:60314/weatherforecast"
+                id="contactsList"
+                load-url="http://localhost:60314/api/contacts"
                 size="medium"
                 selection='[2]'
                 selectable
@@ -20,19 +20,21 @@ export class WeatherList extends CustomElement {
                 renderData={record => {
                     const {
                         id,
-                        date,
-                        temperatureC,
-                        temperatureF,
-                        summary
+                        name,
+                        dateOfBirth,
+                        reputation,
+                        description,
+                        avatar
                     } = record;
 
                     return (
                         <gcl-list-item value={id}>
                             {/* <gcl-icon name={iconName}></gcl-icon> */}
-                            <gcl-text>{formatDate(date)}</gcl-text>
-                            <gcl-text>{temperatureC} C</gcl-text>
-                            <gcl-text>{temperatureF} F</gcl-text>
-                            <gcl-text>{summary}</gcl-text>
+                            <gcl-text>Name: {name}</gcl-text>
+                            <gcl-text>Date of Birth: {formatDate(dateOfBirth)}</gcl-text>
+                            <gcl-text>Reputation: {reputation}</gcl-text>
+                            <gcl-text>Description: {description}</gcl-text>
+                            <img style="width: 64px; height: 64px; border-radius: 50%;" src={`data:image/jpeg;base64,${avatar}`} />
                         </gcl-list-item>
                     );
                 }}>
@@ -48,4 +50,4 @@ export class WeatherList extends CustomElement {
 }
 
 //@ts-ignore
-customElements.define('weather-list', WeatherList);
+customElements.define('contacts-list', ContactsList);
