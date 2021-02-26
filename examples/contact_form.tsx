@@ -14,6 +14,12 @@ export class ContactForm extends CustomElement {
                 load-url="http://localhost:60314/api/contacts/1"
                 size="medium">
 
+                <gcl-text-field
+                    label="Name"
+                    name="name"
+                    error="Invalid value"
+                    required />
+                
             </gcl-form>
         );
     }

@@ -1,6 +1,7 @@
 import { VirtualNode, Fragment, h } from 'gclib-vdom';
 import CustomElement from '../../core/CustomElement';
 import { config } from '../config';
+import ChildMixin from '../../core/mixins/ChildMixin';
 import SizableMixin from '../mixins/sizable/SizableMixin';
 import VisibleMixin, { renderWhenVisible } from '../mixins/visible/VisibleMixin';
 
@@ -10,7 +11,9 @@ export const renderField = Symbol('renderField');
 export abstract class Field extends
     VisibleMixin(
         SizableMixin(
-            CustomElement
+            ChildMixin(
+                CustomElement
+            )
         )
     ) {
 
@@ -112,5 +115,4 @@ export abstract class Field extends
             return error;
         }
     }
-
 }

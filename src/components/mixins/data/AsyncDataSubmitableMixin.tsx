@@ -1,4 +1,5 @@
 import { Fetcher } from "gclib-utils";
+import { ErrorResponse } from "gclib-utils/dist/types/data/transfer/Interfaces";
 import { Fragment, h } from "gclib-vdom";
 import ErrorableMixin from "../errorable/ErrorableMixin";
 
@@ -114,14 +115,14 @@ const AsyncDataSubmitableMixin = Base =>
             }
         }
 
-        onData(data) {
+        onData(data: Record<string, any>) {
 
             this.setSubmitting(false);
 
             this.setData(data.payload);
         }
 
-        onError(error) {
+        onError(error: ErrorResponse) {
 
             this.setSubmitting(false);
 

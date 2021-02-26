@@ -25,7 +25,7 @@ export class TextField extends SingleValueField {
             <input
                 name={name}
                 id={name}
-                class="field-input"
+                class={this.getCSSClass()}
                 required={required}
                 // style={{ maxWidth, width }}
                 // className={inputClass}

@@ -595,7 +595,8 @@ function template(text, data) {
 }
 
 var Fetcher = (function () {
-    function Fetcher(onResponse, onError, onData) {
+    function Fetcher(callbacks) {
+        var onResponse = callbacks.onResponse, onError = callbacks.onError, onData = callbacks.onData;
         if (onResponse !== undefined) {
             this.onResponse = onResponse.bind(this);
         }
@@ -792,7 +793,7 @@ var SelectUrlBuilder = (function () {
 var SingleItemLoader = (function (_super) {
     __extends(SingleItemLoader, _super);
     function SingleItemLoader(cfg) {
-        var _this = _super.call(this, cfg.onResponse, cfg.onError, cfg.onData) || this;
+        var _this = _super.call(this, cfg) || this;
         _this.urlBuilder = new SelectUrlBuilder(cfg.urlBuilder);
         return _this;
     }
@@ -852,7 +853,7 @@ var CollectionUrlBuilder = (function (_super) {
 var CollectionLoader = (function (_super) {
     __extends(CollectionLoader, _super);
     function CollectionLoader(cfg) {
-        var _this = _super.call(this, cfg.onResponse, cfg.onError, cfg.onData) || this;
+        var _this = _super.call(this, cfg) || this;
         _this.urlBuilder = new CollectionUrlBuilder(cfg.urlBuilder);
         return _this;
     }
@@ -2563,6 +2564,38 @@ function visitChildren(children, visit) {
     });
 }
 
+const childConnected = 'childConnected';
+const childDisconnected = 'childDisconnected';
+/**
+ * Fires an event to register/unregister a child item within a parent container
+ */
+const ChildMixin = Base => class Child extends Base {
+    connectedCallback() {
+        var _a;
+        (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        // Emit an event for the container to register this child
+        this.dispatchEvent(new CustomEvent(childConnected, {
+            detail: {
+                child: this
+            },
+            bubbles: true,
+            composed: true
+        }));
+    }
+    disconnectedCallback() {
+        var _a;
+        (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        // Emit an event for the container to unregister this child
+        this.dispatchEvent(new CustomEvent(childDisconnected, {
+            detail: {
+                child: this
+            },
+            bubbles: true,
+            composed: true
+        }));
+    }
+};
+
 const ContainerMixin = Base => { var _a; return _a = class Container extends Base {
         notifyChildren() {
             const { children } = this.state;
@@ -2612,6 +2645,58 @@ const ContainerMixin = Base => { var _a; return _a = class Container extends Bas
                     ...moved
                 ]
             };
+        }
+        connectedCallback() {
+            var _a;
+            (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+            this.addEventListener(childConnected, this.onChildConnected);
+            this.addEventListener(childDisconnected, this.onChildDisconnected);
+        }
+        disconnectedCallback() {
+            var _a;
+            (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+            this.removeEventListener(childConnected, this.onChildConnected);
+            this.removeEventListener(childDisconnected, this.onChildDisconnected);
+        }
+        onChildConnected(event) {
+            const { child } = event.detail;
+            this.addChild(child);
+        }
+        onChildDisconnected(event) {
+            const { child } = event.detail;
+            this.removeChild(child);
+        }
+        addChild(child) {
+            const { children } = this.state;
+            this.setChildren([...children, child]);
+            this.notifyChild(child);
+        }
+        notifyChild(child) {
+            const componentMetadata = this.constructor.componentMetadata;
+            const properties = Object.values(componentMetadata.properties)
+                .filter(p => p.passToChildren === true);
+            if (properties.length === 0) {
+                return;
+            }
+            properties.forEach(p => {
+                var _a;
+                const propertyName = p.name;
+                const attributeName = p.attribute;
+                // Pass the property to the child
+                if ((_a = child.props) === null || _a === void 0 ? void 0 : _a.hasOwnProperty(propertyName)) {
+                    if (child.props[propertyName] === p.value) { // A value different from the default one has not been set
+                        child.setAttribute(attributeName, this.props[propertyName]);
+                    }
+                }
+            });
+        }
+        removeChild(child) {
+            let { children } = this.state;
+            const index = children.indexOf(child);
+            if (index > -1) {
+                children = children.splice(index, 1);
+                this.setChildren(children);
+            }
         }
     },
     _a.state = {
@@ -3326,7 +3411,7 @@ customElements.define(`${config.tagPrefix}-list`, List);
 
 const renderField = Symbol('renderField');
 //@ts-ignore
-class Field extends VisibleMixin(SizableMixin(CustomElement)) {
+class Field extends VisibleMixin(SizableMixin(ChildMixin(CustomElement))) {
     [renderWhenVisible]() {
         return (h(Fragment, { class: this.getCSSClass() },
             h("div", { class: "field" },
@@ -3425,7 +3510,7 @@ class TextField extends SingleValueField {
     // };
     [renderField]() {
         const { name, value, required } = this.props;
-        return (h("input", { name: name, id: name, class: "field-input", required: required, 
+        return (h("input", { name: name, id: name, class: this.getCSSClass(), required: required, 
             // style={{ maxWidth, width }}
             // className={inputClass}
             value: value, onChange: this.onChange }));
@@ -3460,7 +3545,32 @@ class AsyncDataSubmitable extends ErrorableMixin(Base) {
             }
         }
         submit() {
+            const { submitUrl } = this.props;
+            this.setError(undefined);
             this.setSubmitting(true);
+            this._fetcher.fetch({
+                url: submitUrl
+            });
+        }
+        connectedCallback() {
+            const { submitUrl } = this.props;
+            if (submitUrl !== undefined) {
+                this._fetcher = new Fetcher({
+                    onData: this.onData,
+                    onError: this.onError
+                });
+            }
+            else {
+                super.connectedCallback();
+            }
+        }
+        onData(data) {
+            this.setSubmitting(false);
+            this.setData(data.payload);
+        }
+        onError(error) {
+            this.setSubmitting(false);
+            this.setError(error);
         }
     },
     _a.properties = {
@@ -3483,7 +3593,7 @@ class AsyncDataSubmitable extends ErrorableMixin(Base) {
     },
     _a; };
 
-class Form extends AsyncDataSubmitableMixin(CustomElement) {
+class Form extends AsyncDataSubmitableMixin(ContainerMixin(CustomElement)) {
     render() {
         return (h("form", null,
             h("slot", null),
@@ -3723,7 +3833,8 @@ customElements.define('contacts-list', ContactsList);
  */
 class ContactForm extends CustomElement {
     render() {
-        return (h("gcl-form", { id: "contactForm", "load-url": "http://localhost:60314/api/contacts/1", size: "medium" }));
+        return (h("gcl-form", { id: "contactForm", "load-url": "http://localhost:60314/api/contacts/1", size: "medium" },
+            h("gcl-text-field", { label: "Name", name: "name", error: "Invalid value", required: true })));
     }
 }
 //@ts-ignore

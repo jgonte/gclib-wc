@@ -1,10 +1,15 @@
 import { h } from 'gclib-vdom';
 import CustomElement from "../../core/CustomElement";
+import ContainerMixin from '../../core/mixins/ContainerMixin';
 import { config } from '../config';
 import AsyncDataSubmitableMixin from '../mixins/data/AsyncDataSubmitableMixin';
 
 export class Form extends
-    AsyncDataSubmitableMixin(CustomElement) {
+    AsyncDataSubmitableMixin(
+        ContainerMixin(
+            CustomElement
+        )
+    ) {
 
     static component = {
 
@@ -39,6 +44,7 @@ export class Form extends
 
     reset() {
     }
+
 }
 
 //@ts-ignore

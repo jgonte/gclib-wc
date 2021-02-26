@@ -1,0 +1,23 @@
+.size-large,
+:host(.size-large) {
+    font-size: var(--gcl-font-size-large);
+    padding: var(--gcl-padding-size-large);
+    border-radius: var(--gcl-radius-size-large);
+    /* background-color: gold; */
+}
+
+.size-medium,
+:host(.size-medium) {
+    font-size: var(--gcl-font-size-medium);
+    padding: var(--gcl-padding-size-medium);
+    border-radius: var(--gcl-radius-size-medium);
+    /* background-color: hotpink; */
+}
+
+.size-small,
+:host(.size-small) {
+    font-size: var(--gcl-font-size-small);
+    padding: var(--gcl-padding-size-small);
+    border-radius: var(--gcl-radius-size-small);
+    /* background-color: lawngreen; */
+}
