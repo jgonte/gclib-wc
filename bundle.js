@@ -144,6 +144,88 @@ var AppCtrl = (function () {
 }());
 var appCtrl = new AppCtrl();
 
+function template(text, data) {
+    var result = {
+        keysNotInData: []
+    };
+    if (!data) {
+        result.text = text;
+        return result;
+    }
+    result.keysNotInData = Object.keys(data);
+    function processMatch(match, offset, str) {
+        var key = match
+            .replace('{{', '')
+            .replace('}}', '')
+            .trim();
+        if (data.hasOwnProperty(key)) {
+            var index = result.keysNotInData.indexOf(key);
+            if (index > -1) {
+                result.keysNotInData.splice(index, 1);
+            }
+            return data[key];
+        }
+        else {
+            return match;
+        }
+    }
+    result.text = text.replace(/\{{\S+?\}}/g, processMatch);
+    return result;
+}
+
+var Validator = (function () {
+    function Validator(options) {
+        this.message = options === null || options === void 0 ? void 0 : options.message;
+    }
+    Validator.prototype.emitMessage = function (context, data) {
+        var result = template(this.message, data);
+        context.errors.push(result.text);
+    };
+    return Validator;
+}());
+
+var FieldValidator = (function (_super) {
+    __extends(FieldValidator, _super);
+    function FieldValidator() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    return FieldValidator;
+}(Validator));
+
+var RequiredValidator = (function (_super) {
+    __extends(RequiredValidator, _super);
+    function RequiredValidator(options) {
+        if (options === void 0) { options = {}; }
+        var _this = this;
+        if (options.message === undefined) {
+            options.message = '{{name}} is required';
+        }
+        _this = _super.call(this, options) || this;
+        _this.allowEmpty = options.allowEmpty || false;
+        return _this;
+    }
+    RequiredValidator.prototype.validate = function (field, context) {
+        var name = field.name, value = field.value;
+        var valid = !(value === undefined || value === null);
+        if (valid === true && this.allowEmpty === false) {
+            valid = value !== '';
+        }
+        if (!valid) {
+            this.emitMessage(context, { name: name });
+        }
+        return valid;
+    };
+    return RequiredValidator;
+}(FieldValidator));
+
+function createValidator(cfg) {
+    var type = cfg.type;
+    switch (type) {
+        case 'required': return new RequiredValidator();
+        default: throw Error("Invalid validator type: " + type);
+    }
+}
+
 function toTypeOf(typeFunction) {
     switch (typeFunction) {
         case String: return 'string';
@@ -171,7 +253,7 @@ var DataField = (function () {
     });
     Object.defineProperty(DataField.prototype, "isId", {
         get: function () {
-            return this._fieldDescriptor.id;
+            return this._fieldDescriptor.isId;
         },
         enumerable: false,
         configurable: true
@@ -206,7 +288,7 @@ var DataField = (function () {
         this.value = this._initialValue;
     };
     DataField.prototype.validate = function (context) {
-        var validators = this._fieldDescriptor.validators;
+        var _a = this._fieldDescriptor, validators = _a.validators, validationFailedHandler = _a.validationFailedHandler;
         if (validators === undefined) {
             return true;
         }
@@ -214,10 +296,14 @@ var DataField = (function () {
         var length = validators.length;
         for (var i = 0; i < length; ++i) {
             var validator = validators[i];
+            if (!(validator instanceof Validator)) {
+                validator = createValidator(validator);
+            }
             var r = validator.validate(this, context);
             if (r === false) {
                 if (valid === true) {
                     valid = false;
+                    validationFailedHandler.onValidationFailed(context.errors[context.errors.length - 1]);
                 }
                 if (context.stopWhenInvalid === true) {
                     break;
@@ -227,6 +313,158 @@ var DataField = (function () {
         return valid;
     };
     return DataField;
+}());
+
+var defaultValueConverter = {
+    fromString: function (value, type) {
+        switch (type) {
+            case Boolean:
+                return value !== 'false';
+            case Number:
+                return Number(value);
+            case Date:
+                return new Date(value);
+            case Object:
+            case Array:
+                return JSON.parse(value);
+        }
+        return value;
+    },
+    toString: function (value, type) {
+        switch (type) {
+            case Boolean:
+            case Number:
+                return value.toString();
+            case Date:
+                return value.toISOString();
+            case Object:
+            case Array:
+                return value == null ? value : JSON.stringify(value);
+        }
+        return value;
+    }
+};
+
+function getType(value) {
+    var type = typeof value;
+    switch (type) {
+        case 'boolean': return Boolean;
+        case 'number': return Number;
+        case 'bigint': return BigInt;
+        case 'string': return String;
+        case 'object': {
+            if (value instanceof Date) {
+                return Date;
+            }
+            else {
+                throw Error("Not implemented for type: '" + type + "'");
+            }
+        }
+        default: throw Error("Not implemented for type: '" + type + "'");
+    }
+}
+var DataRecordDescriptor = (function () {
+    function DataRecordDescriptor() {
+        this._fieldDescriptors = [];
+    }
+    Object.defineProperty(DataRecordDescriptor.prototype, "fieldDescriptors", {
+        get: function () {
+            return this._fieldDescriptors;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(DataRecordDescriptor.prototype, "recordValidators", {
+        get: function () {
+            return this._recordValidators;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    DataRecordDescriptor.prototype.getFieldDescriptor = function (name) {
+        var descriptors = this._fieldDescriptors.filter(function (d) { return d.name === name; });
+        return descriptors.length > 0 ?
+            descriptors[0] :
+            undefined;
+    };
+    DataRecordDescriptor.prototype.fromModel = function (model) {
+        var recordValidators = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            recordValidators[_i - 1] = arguments[_i];
+        }
+        for (var key in model) {
+            if (model.hasOwnProperty(key)) {
+                var _a = model[key], isId = _a.isId, type = _a.type, value = _a.value, converter = _a.converter, validators = _a.validators, validationFailedHandler = _a.validationFailedHandler;
+                this.addFieldDescriptor({
+                    name: key,
+                    isId: isId !== null && isId !== void 0 ? isId : false,
+                    type: type !== undefined ? type : value !== undefined ?
+                        getType(value) : String,
+                    value: value,
+                    converter: converter || defaultValueConverter,
+                    validators: validators || [],
+                    validationFailedHandler: validationFailedHandler
+                });
+            }
+        }
+        this._recordValidators = recordValidators;
+    };
+    DataRecordDescriptor.prototype.addFieldDescriptor = function (fd) {
+        this._fieldDescriptors.push(fd);
+    };
+    DataRecordDescriptor.prototype.removeFieldDescriptor = function (fd) {
+        var index = this._fieldDescriptors.indexOf(fd);
+        if (index > -1) {
+            this._fieldDescriptors.splice(index, 1);
+        }
+    };
+    DataRecordDescriptor.prototype.getId = function (data, fcn) {
+        var id = {};
+        var idDescriptors = this._fieldDescriptors.filter(function (f) { return f.isId === true; });
+        var length = idDescriptors.length;
+        var hasUndefinedIdentifiers = false;
+        if (length > 0) {
+            for (var i = 0; i < length; ++i) {
+                var descriptor = idDescriptors[i];
+                var name_1 = descriptor.name;
+                if (data.hasOwnProperty(name_1)) {
+                    var value = fcn !== undefined ? fcn(data[name_1]) : data[name_1];
+                    if (value === undefined) {
+                        hasUndefinedIdentifiers = true;
+                        break;
+                    }
+                    id[name_1] = value;
+                }
+                else {
+                    id[name_1] = undefined;
+                    hasUndefinedIdentifiers = true;
+                    break;
+                }
+            }
+            if (hasUndefinedIdentifiers) {
+                for (var key in data) {
+                    if (data.hasOwnProperty(key)) {
+                        var value = fcn !== undefined ? fcn(data[key]) : data[key];
+                        id[key] = value;
+                    }
+                }
+            }
+        }
+        else {
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    var value = fcn !== undefined ? fcn(data[key]) : data[key];
+                    id[key] = value;
+                }
+            }
+        }
+        return {
+            value: id,
+            noDescriptorsId: length === 0,
+            hasUndefinedIdentifiers: length > 0 && hasUndefinedIdentifiers === true
+        };
+    };
+    return DataRecordDescriptor;
 }());
 
 function areEqual(o1, o2) {
@@ -267,17 +505,21 @@ function areEqual(o1, o2) {
 
 var DataRecord = (function () {
     function DataRecord(recordDescriptor) {
+        var _this = this;
         this._fields = {};
         this._modifiedFields = {};
         this._data = undefined;
-        if (recordDescriptor === undefined ||
-            recordDescriptor === null ||
-            recordDescriptor.fieldDescriptors.length === 0) {
-            throw Error('Undefined or invalid record descriptor for a data record');
-        }
-        this._recordDescriptor = recordDescriptor;
-        this._recordDescriptor.createFields(this._fields, this);
+        this._recordDescriptor = recordDescriptor !== null && recordDescriptor !== void 0 ? recordDescriptor : new DataRecordDescriptor();
+        this._recordDescriptor.fieldDescriptors.forEach(function (fd) { return _this._fields[fd.name] = new DataField(fd, _this); });
     }
+    DataRecord.prototype.addField = function (fd) {
+        this._recordDescriptor.addFieldDescriptor(fd);
+        this._fields[fd.name] = new DataField(fd, this);
+    };
+    DataRecord.prototype.removeField = function (fd) {
+        this._recordDescriptor.removeFieldDescriptor(fd);
+        delete this._fields[fd.name];
+    };
     DataRecord.prototype.initialize = function (data) {
         var _fields = this._fields;
         for (var key in data) {
@@ -293,6 +535,9 @@ var DataRecord = (function () {
         this._id = undefined;
         this._data = undefined;
         this._modifiedFields = {};
+    };
+    DataRecord.prototype.getField = function (name) {
+        return this._fields[name];
     };
     DataRecord.prototype.getData = function () {
         var _a = this, _data = _a._data, _fields = _a._fields;
@@ -552,6 +797,145 @@ var DataRecordSet = (function () {
     return DataRecordSet;
 }());
 
+var RegexValidator = (function (_super) {
+    __extends(RegexValidator, _super);
+    function RegexValidator(options) {
+        var _this = _super.call(this, options) || this;
+        _this._regex = options.regex;
+        return _this;
+    }
+    RegexValidator.prototype.validate = function (field, context) {
+        var name = field.name, value = field.value;
+        var valid = this._regex.test(value);
+        if (!valid) {
+            this.emitMessage(context, { name: name });
+        }
+        return valid;
+    };
+    return RegexValidator;
+}(FieldValidator));
+
+var EmailValidator = (function (_super) {
+    __extends(EmailValidator, _super);
+    function EmailValidator(options) {
+        if (options === void 0) { options = {
+            regex: /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/,
+            message: 'Email is invalid'
+        }; }
+        return _super.call(this, options) || this;
+    }
+    return EmailValidator;
+}(RegexValidator));
+
+var RangeValidator = (function (_super) {
+    __extends(RangeValidator, _super);
+    function RangeValidator(options) {
+        if (options === void 0) { options = {}; }
+        var _this = this;
+        if (options.message === undefined) {
+            options.message = '{{name}} is not in range from :{{minValue}} to {{maxValue}}';
+        }
+        _this = _super.call(this, options) || this;
+        _this.minValue = options.minValue;
+        _this.maxValue = options.maxValue;
+        return _this;
+    }
+    RangeValidator.prototype.validate = function (field, context) {
+        var name = field.name, value = field.value;
+        var _a = this, minValue = _a.minValue, maxValue = _a.maxValue;
+        var valid = value >= minValue && value <= maxValue;
+        if (!valid) {
+            this.emitMessage(context, { name: name });
+        }
+        return valid;
+    };
+    return RangeValidator;
+}(FieldValidator));
+
+var CustomFieldValidator = (function (_super) {
+    __extends(CustomFieldValidator, _super);
+    function CustomFieldValidator(options) {
+        var _this = _super.call(this, options) || this;
+        _this.validateFcn = options.validateFcn;
+        return _this;
+    }
+    CustomFieldValidator.prototype.validate = function (field, context) {
+        var name = field.name, value = field.value;
+        var valid = this.validateFcn.call(this, value);
+        if (!valid) {
+            this.emitMessage(context, { name: name });
+        }
+        return valid;
+    };
+    return CustomFieldValidator;
+}(FieldValidator));
+
+var RecordValidator = (function (_super) {
+    __extends(RecordValidator, _super);
+    function RecordValidator() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    return RecordValidator;
+}(Validator));
+
+var CompareValidator = (function (_super) {
+    __extends(CompareValidator, _super);
+    function CompareValidator(options) {
+        var _this = _super.call(this, options) || this;
+        _this._propertyToValidate = options.propertyToValidate;
+        _this._propertyToCompare = options.propertyToCompare;
+        _this._operator = options.operator;
+        return _this;
+    }
+    CompareValidator.prototype.validate = function (record, context) {
+        var _a = this, _propertyToValidate = _a._propertyToValidate, _propertyToCompare = _a._propertyToCompare, _operator = _a._operator;
+        var data = record.getData();
+        var valueToValidate = data[_propertyToValidate];
+        var valueToCompare = data[_propertyToCompare];
+        var valid = this._compare(valueToValidate, valueToCompare, _operator);
+        if (!valid) {
+            this.emitMessage(context, {
+                propertyToValidate: _propertyToValidate,
+                valueToValidate: valueToValidate,
+                propertyToCompare: _propertyToCompare,
+                valueToCompare: valueToCompare,
+                operator: _operator
+            });
+        }
+        return valid;
+    };
+    CompareValidator.prototype._compare = function (valueToValidate, valueToCompare, operator) {
+        switch (operator) {
+            case 1: return valueToValidate === valueToCompare;
+            case 2: return valueToValidate !== valueToCompare;
+            case 3: return valueToValidate > valueToCompare;
+            case 4: return valueToValidate >= valueToCompare;
+            case 5: return valueToValidate < valueToCompare;
+            case 6: return valueToValidate <= valueToCompare;
+            default: throw Error("Invalid comparison operator: " + operator);
+        }
+    };
+    return CompareValidator;
+}(RecordValidator));
+
+var CustomRecordValidator = (function (_super) {
+    __extends(CustomRecordValidator, _super);
+    function CustomRecordValidator(options) {
+        var _this = _super.call(this, options) || this;
+        _this.validateFcn = options.validateFcn;
+        return _this;
+    }
+    CustomRecordValidator.prototype.validate = function (record, context) {
+        var data = record.getData();
+        var valid = this.validateFcn.call(this, data);
+        if (!valid) {
+            this.emitMessage(context, {});
+        }
+        return valid;
+    };
+    return CustomRecordValidator;
+}(RecordValidator));
+
 function deserializeXmlDocument(document) {
     var o = {};
     var childNodes = document.documentElement.childNodes;
@@ -563,35 +947,6 @@ function deserializeXmlDocument(document) {
         }
     }
     return o;
-}
-
-function template(text, data) {
-    var result = {
-        keysNotInData: []
-    };
-    if (!data) {
-        result.text = text;
-        return result;
-    }
-    result.keysNotInData = Object.keys(data);
-    function processMatch(match, offset, str) {
-        var key = match
-            .replace('{{', '')
-            .replace('}}', '')
-            .trim();
-        if (data.hasOwnProperty(key)) {
-            var index = result.keysNotInData.indexOf(key);
-            if (index > -1) {
-                result.keysNotInData.splice(index, 1);
-            }
-            return data[key];
-        }
-        else {
-            return match;
-        }
-    }
-    result.text = text.replace(/\{{\S+?\}}/g, processMatch);
-    return result;
 }
 
 var Fetcher = (function () {
@@ -2667,8 +3022,10 @@ const ContainerMixin = Base => { var _a; return _a = class Container extends Bas
             this.removeChild(child);
         }
         addChild(child) {
+            var _a;
             const { children } = this.state;
             this.setChildren([...children, child]);
+            (_a = this.onChildAdded) === null || _a === void 0 ? void 0 : _a.call(this, child);
             this.notifyChild(child);
         }
         notifyChild(child) {
@@ -2691,17 +3048,19 @@ const ContainerMixin = Base => { var _a; return _a = class Container extends Bas
             });
         }
         removeChild(child) {
+            var _a;
             let { children } = this.state;
             const index = children.indexOf(child);
             if (index > -1) {
                 children = children.splice(index, 1);
                 this.setChildren(children);
             }
+            (_a = this.onChildRemoved) === null || _a === void 0 ? void 0 : _a.call(this, child);
         }
     },
     _a.state = {
         /**
-         * The children elements of this container
+         * The children elements that opted to register with this container
          */
         children: {
             value: []
@@ -3426,7 +3785,8 @@ class Field extends VisibleMixin(SizableMixin(ChildMixin(CustomElement))) {
         }
         const cssClass = {
             "field-label": true,
-            [`size-${size}`]: true
+            [`size-${size}`]: true,
+            "required": this.isRequired()
         };
         if (label.isVirtualText) {
             return (h("label", { class: cssClass, for: name }, label));
@@ -3440,12 +3800,53 @@ class Field extends VisibleMixin(SizableMixin(ChildMixin(CustomElement))) {
         if (error === undefined) {
             return null;
         }
-        if (error.isVirtualText) {
+        if (error.isVirtualText || typeof error === 'string') {
             return (h("gcl-alert", { type: "error", message: error, closable: false }));
         }
         else { // VirtualNode
             return error;
         }
+    }
+    isRequired() {
+        const { required } = this.props;
+        return required || this.hasRequiredValidator();
+    }
+    hasRequiredValidator() {
+        const { validators = [] } = this.props;
+        return validators.filter(v => v instanceof RequiredValidator).length > 1;
+    }
+    onValidationFailed(error) {
+        this.setError(error);
+    }
+    connectedCallback() {
+        var _a;
+        (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        let { validationFailedHandler } = this.props;
+        if (validationFailedHandler === undefined) {
+            this.setValidationFailedHandler(this);
+        }
+    }
+    attributeChangedCallback(attributeName, oldValue, newValue) {
+        if (attributeName === 'required') {
+            if (newValue === "true") { // Add a required validator
+                if (!this.hasRequiredValidator()) {
+                    const { validators = [] } = this.props;
+                    this.setValidators([...validators, new RequiredValidator()]);
+                }
+            }
+            else { // remove any existing required validator
+                if (this.hasRequiredValidator()) {
+                    const { validators } = this.props;
+                    const requiredValidator = validators.filter(v => v instanceof RequiredValidator)[0];
+                    if (requiredValidator !== undefined) {
+                        const index = validators.indexOf(requiredValidator);
+                        validators.splice(index, 1);
+                        this.setValidators([validators]);
+                    }
+                }
+            }
+        }
+        super.attributeChangedCallback(attributeName, oldValue, newValue);
     }
 }
 Field.component = {
@@ -3456,6 +3857,13 @@ Field.component = {
 Field.properties = {
     name: {
         type: String
+    },
+    isId: {
+        type: Boolean,
+        value: false
+    },
+    type: {
+        type: Function
     },
     label: {
         type: VirtualNode
@@ -3469,6 +3877,14 @@ Field.properties = {
     },
     required: {
         type: Boolean
+    },
+    validators: {
+        type: Array,
+        mutable: true
+    },
+    validationFailedHandler: {
+        type: Object,
+        mutable: true
     }
 };
 
@@ -3553,15 +3969,14 @@ class AsyncDataSubmitable extends ErrorableMixin(Base) {
             });
         }
         connectedCallback() {
+            var _a;
+            (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
             const { submitUrl } = this.props;
             if (submitUrl !== undefined) {
                 this._fetcher = new Fetcher({
                     onData: this.onData,
                     onError: this.onError
                 });
-            }
-            else {
-                super.connectedCallback();
             }
         }
         onData(data) {
@@ -3594,6 +4009,10 @@ class AsyncDataSubmitable extends ErrorableMixin(Base) {
     _a; };
 
 class Form extends AsyncDataSubmitableMixin(ContainerMixin(CustomElement)) {
+    constructor() {
+        super(...arguments);
+        this._record = new DataRecord();
+    }
     render() {
         return (h("form", null,
             h("slot", null),
@@ -3604,7 +4023,27 @@ class Form extends AsyncDataSubmitableMixin(ContainerMixin(CustomElement)) {
             h("gcl-button", { onClick: this.reset, variant: "secondary" }, "Reset"),
             h("gcl-button", { onClick: this.submit, variant: "primary" }, "Submit")));
     }
+    submit() {
+        const context = {
+            errors: [],
+            stopWhenInvalid: true
+        };
+        if (this._record.validate(context)) {
+            super.submit();
+        }
+    }
     reset() {
+    }
+    onChildAdded(child) {
+        this._record.addField(child.props);
+    }
+    onChildRemoved(child) {
+        this._record.removeField(child.props);
+    }
+    connectedCallback() {
+        var _a;
+        (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        // Pass the properties to the data record
     }
 }
 Form.component = {
@@ -3834,7 +4273,7 @@ customElements.define('contacts-list', ContactsList);
 class ContactForm extends CustomElement {
     render() {
         return (h("gcl-form", { id: "contactForm", "load-url": "http://localhost:60314/api/contacts/1", size: "medium" },
-            h("gcl-text-field", { label: "Name", name: "name", error: "Invalid value", required: true })));
+            h("gcl-text-field", { label: "Name", name: "name", required: true })));
     }
 }
 //@ts-ignore

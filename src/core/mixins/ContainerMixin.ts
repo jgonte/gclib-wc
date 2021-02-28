@@ -9,7 +9,7 @@ const ContainerMixin = Base =>
         static state = {
 
             /**
-             * The children elements of this container
+             * The children elements that opted to register with this container
              */
             children: {
                 value: []
@@ -141,6 +141,8 @@ const ContainerMixin = Base =>
 
             this.setChildren([...children, child]);
 
+            this.onChildAdded?.(child);
+
             this.notifyChild(child);
         }
 
@@ -187,6 +189,8 @@ const ContainerMixin = Base =>
 
                 this.setChildren(children);
             }
+
+            this.onChildRemoved?.(child);
         }
     }
 

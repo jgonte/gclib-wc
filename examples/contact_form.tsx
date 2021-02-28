@@ -17,9 +17,9 @@ export class ContactForm extends CustomElement {
                 <gcl-text-field
                     label="Name"
                     name="name"
-                    error="Invalid value"
-                    required />
-                
+                    required
+                />
+
             </gcl-form>
         );
     }

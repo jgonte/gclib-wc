@@ -1,7 +1,10 @@
+import { DataRecord, ValidationContext } from 'gclib-utils';
+import { DataFieldDescriptor } from 'gclib-utils/dist/types/data/record/Interfaces';
 import { h } from 'gclib-vdom';
 import CustomElement from "../../core/CustomElement";
 import ContainerMixin from '../../core/mixins/ContainerMixin';
 import { config } from '../config';
+import { Field } from '../field/Field';
 import AsyncDataSubmitableMixin from '../mixins/data/AsyncDataSubmitableMixin';
 
 export class Form extends
@@ -10,6 +13,8 @@ export class Form extends
             CustomElement
         )
     ) {
+
+    private _record: DataRecord = new DataRecord();
 
     static component = {
 
@@ -42,7 +47,38 @@ export class Form extends
         );
     }
 
+    submit() {
+
+        const context: ValidationContext = {
+            errors: [],
+            stopWhenInvalid: true
+        };
+
+        if (this._record.validate(context)) {
+
+            super.submit();
+        }
+    }
+
     reset() {
+    }
+
+    onChildAdded(child: Field) {
+
+        this._record.addField(child.props as DataFieldDescriptor);
+    }
+
+    onChildRemoved(child: Field) {
+
+        this._record.removeField(child.props as DataFieldDescriptor);
+    }
+
+    connectedCallback() {
+
+        super.connectedCallback?.();
+
+        // Pass the properties to the data record
+
     }
 
 }

@@ -97,6 +97,8 @@ const AsyncDataSubmitableMixin = Base =>
 
         connectedCallback() {
 
+            super.connectedCallback?.();
+
             const {
                 submitUrl
             } = this.props;
@@ -107,11 +109,6 @@ const AsyncDataSubmitableMixin = Base =>
                     onData: this.onData,
                     onError: this.onError
                 });
-
-            }
-            else {
-
-                super.connectedCallback();
             }
         }
 
