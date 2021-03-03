@@ -2,6 +2,7 @@ import { VirtualNode, Fragment, h } from 'gclib-vdom';
 import CustomElement from '../../core/CustomElement';
 import { config } from '../config';
 import ChildMixin from '../../core/mixins/ChildMixin';
+import ValidatableMixin from '../mixins/validatable/ValidatableMixin';
 import SizableMixin from '../mixins/sizable/SizableMixin';
 import VisibleMixin, { renderWhenVisible } from '../mixins/visible/VisibleMixin';
 import { DataFieldModel, RequiredValidator } from 'gclib-utils';
@@ -12,9 +13,11 @@ export const renderField = Symbol('renderField');
 //@ts-ignore
 export abstract class Field extends
     VisibleMixin(
-        SizableMixin(
-            ChildMixin(
-                CustomElement
+        ValidatableMixin(
+            SizableMixin(
+                ChildMixin(
+                    CustomElement
+                )
             )
         )
     ) implements DataFieldModel, ValidationFailedHandler {
@@ -45,11 +48,6 @@ export abstract class Field extends
             type: VirtualNode
         },
 
-        error: {
-            type: VirtualNode,
-            mutable: true
-        },
-
         disabled: {
             type: Boolean
         },
@@ -58,16 +56,20 @@ export abstract class Field extends
             type: Boolean
         },
 
-        validators: {
-            type: Array,
-            mutable: true
-        },
-
-        validationFailedHandler: {
-            type: Object,
-            mutable: true
-        }
+        // validationFailedHandler: {
+        //     type: Object,
+        //     mutable: true
+        // }
     };
+
+
+
+    constructor() {
+
+        super();
+
+        this.onBlur = this.onBlur.bind(this);
+    }
 
     [renderWhenVisible]() {
 
@@ -77,7 +79,8 @@ export abstract class Field extends
                     {this.renderLabel()}
                     {(this as any)[renderField]()}
                 </div>
-                {this.renderError()}
+                {this.renderWarnings()}
+                {this.renderErrors()}
             </Fragment>
         );
     }
@@ -115,29 +118,6 @@ export abstract class Field extends
         }
     }
 
-    renderError() {
-
-        const {
-            error
-        } = this.props;
-
-        if (error === undefined) {
-
-            return null;
-        }
-
-        if (error.isVirtualText || typeof error === 'string') {
-
-            return (
-                <gcl-alert type="error" message={error} closable={false} />
-            );
-        }
-        else { // VirtualNode
-
-            return error;
-        }
-    }
-
     isRequired(): boolean {
 
         const {
@@ -156,24 +136,24 @@ export abstract class Field extends
         return validators.filter(v => v instanceof RequiredValidator).length > 1;
     }
 
-    onValidationFailed(error: string): void {
+    // onValidationFailed(error: string): void {
 
-        this.setError(error);
-    }
+    //     this.setError(error);
+    // }
 
-    connectedCallback() {
+    // connectedCallback() {
 
-        super.connectedCallback?.();
+    //     super.connectedCallback?.();
 
-        let {
-            validationFailedHandler
-        } = this.props;
+    //     let {
+    //         validationFailedHandler
+    //     } = this.props;
 
-        if (validationFailedHandler === undefined) {
+    //     if (validationFailedHandler === undefined) {
 
-            this.setValidationFailedHandler(this);
-        }
-    }
+    //         this.setValidationFailedHandler(this);
+    //     }
+    // }
 
     attributeChangedCallback(attributeName: string, oldValue: string, newValue: string) {
 
@@ -213,5 +193,53 @@ export abstract class Field extends
         }
 
         super.attributeChangedCallback(attributeName, oldValue, newValue);
+    }
+
+    onBlur() {
+
+        this.validate();
+    }
+
+    validate(): boolean {
+
+        let {
+            label
+        } = this.props;
+
+        const {
+            name
+        } = this.props;
+
+        // Extract the text of the label
+        if (label === undefined) {
+
+            label = name;
+        }
+        else if (label.isVirtualText) {
+
+            label = label.text;
+        }
+
+        const context = {
+            errors: [],
+            warnings: [],
+            label
+        };
+
+        this.dataField.validate(context);
+
+        if (context.warnings.length > 0) {
+
+            this.setWarnings(context.warnings);
+        }
+
+        if (context.errors.length > 0) {
+
+            this.setErrors(context.errors);
+
+            return false;
+        }
+
+        return true;
     }
 }

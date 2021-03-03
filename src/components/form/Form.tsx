@@ -1,4 +1,4 @@
-import { DataRecord, ValidationContext } from 'gclib-utils';
+import { DataRecord } from 'gclib-utils';
 import { DataFieldDescriptor } from 'gclib-utils/dist/types/data/record/Interfaces';
 import { h } from 'gclib-vdom';
 import CustomElement from "../../core/CustomElement";
@@ -7,6 +7,7 @@ import { config } from '../config';
 import { Field } from '../field/Field';
 import AsyncDataSubmitableMixin from '../mixins/data/AsyncDataSubmitableMixin';
 
+//@ts-ignore
 export class Form extends
     AsyncDataSubmitableMixin(
         ContainerMixin(
@@ -23,10 +24,28 @@ export class Form extends
         ]
     };
 
+    static properties = {
+
+        /** The validators of the form */
+        validators: {
+            type: Array,
+            mutable: true,
+            value: []
+        }
+    };
+
+    constructor() {
+
+        super();
+
+        this.reset = this.reset.bind(this);
+    }
+
     render() {
 
         return (
             <form>
+                {/* {this.renderErrors()} */}
                 <slot />
                 {this.renderButtons()}
             </form>
@@ -49,28 +68,57 @@ export class Form extends
 
     submit() {
 
-        const context: ValidationContext = {
-            errors: [],
-            stopWhenInvalid: true
-        };
-
-        if (this._record.validate(context)) {
+        if (this.validate()) {
 
             super.submit();
         }
     }
 
+    validate(): boolean {
+
+        const {
+            children,
+            validators
+        } = this.props;
+
+        let valid = true;
+
+        const context = {
+
+            errors: [],
+            warnings: []
+        };
+
+        validators.forEach(validator => {
+
+        });
+
+        children.forEach((child: Field) => {
+
+            if (!child.validate()) {
+
+                valid = false;
+            }
+        });
+
+        return valid;
+    }
+
     reset() {
+
+        this._record.reset();
     }
 
     onChildAdded(child: Field) {
 
-        this._record.addField(child.props as DataFieldDescriptor);
+        child.dataField = this._record.addField(child.props as DataFieldDescriptor);
     }
 
     onChildRemoved(child: Field) {
 
         this._record.removeField(child.props as DataFieldDescriptor);
+
+        child.dataField = undefined;
     }
 
     connectedCallback() {

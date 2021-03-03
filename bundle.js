@@ -3768,15 +3768,49 @@ List.component = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-list`, List);
 
+const ValidatableMixin = Base => { var _a; return _a = class Validatable extends Base {
+        renderWarnings() {
+            const { warnings } = this.state;
+            if (warnings === undefined) {
+                return null;
+            }
+            return warnings.map(warning => h("gcl-alert", { type: "warning", message: warning, closable: false }));
+        }
+        renderErrors() {
+            const { errors } = this.state;
+            if (errors === undefined) {
+                return null;
+            }
+            return errors.map(error => h("gcl-alert", { type: "error", message: error, closable: false }));
+        }
+    },
+    _a.properties = {
+        validators: {
+            type: Array,
+            mutable: true,
+            value: []
+        }
+    },
+    _a.state = {
+        errors: [],
+        warnings: []
+    },
+    _a; };
+
 const renderField = Symbol('renderField');
 //@ts-ignore
-class Field extends VisibleMixin(SizableMixin(ChildMixin(CustomElement))) {
+class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(CustomElement)))) {
+    constructor() {
+        super();
+        this.onBlur = this.onBlur.bind(this);
+    }
     [renderWhenVisible]() {
         return (h(Fragment, { class: this.getCSSClass() },
             h("div", { class: "field" },
                 this.renderLabel(),
                 this[renderField]()),
-            this.renderError()));
+            this.renderWarnings(),
+            this.renderErrors()));
     }
     renderLabel() {
         const { label, name, size } = this.props;
@@ -3795,18 +3829,6 @@ class Field extends VisibleMixin(SizableMixin(ChildMixin(CustomElement))) {
             return label;
         }
     }
-    renderError() {
-        const { error } = this.props;
-        if (error === undefined) {
-            return null;
-        }
-        if (error.isVirtualText || typeof error === 'string') {
-            return (h("gcl-alert", { type: "error", message: error, closable: false }));
-        }
-        else { // VirtualNode
-            return error;
-        }
-    }
     isRequired() {
         const { required } = this.props;
         return required || this.hasRequiredValidator();
@@ -3815,17 +3837,18 @@ class Field extends VisibleMixin(SizableMixin(ChildMixin(CustomElement))) {
         const { validators = [] } = this.props;
         return validators.filter(v => v instanceof RequiredValidator).length > 1;
     }
-    onValidationFailed(error) {
-        this.setError(error);
-    }
-    connectedCallback() {
-        var _a;
-        (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
-        let { validationFailedHandler } = this.props;
-        if (validationFailedHandler === undefined) {
-            this.setValidationFailedHandler(this);
-        }
-    }
+    // onValidationFailed(error: string): void {
+    //     this.setError(error);
+    // }
+    // connectedCallback() {
+    //     super.connectedCallback?.();
+    //     let {
+    //         validationFailedHandler
+    //     } = this.props;
+    //     if (validationFailedHandler === undefined) {
+    //         this.setValidationFailedHandler(this);
+    //     }
+    // }
     attributeChangedCallback(attributeName, oldValue, newValue) {
         if (attributeName === 'required') {
             if (newValue === "true") { // Add a required validator
@@ -3848,6 +3871,34 @@ class Field extends VisibleMixin(SizableMixin(ChildMixin(CustomElement))) {
         }
         super.attributeChangedCallback(attributeName, oldValue, newValue);
     }
+    onBlur() {
+        this.validate();
+    }
+    validate() {
+        let { label } = this.props;
+        const { name } = this.props;
+        // Extract the text of the label
+        if (label === undefined) {
+            label = name;
+        }
+        else if (label.isVirtualText) {
+            label = label.text;
+        }
+        const context = {
+            errors: [],
+            warnings: [],
+            label
+        };
+        this.dataField.validate(context);
+        if (context.warnings.length > 0) {
+            this.setWarnings(context.warnings);
+        }
+        if (context.errors.length > 0) {
+            this.setErrors(context.errors);
+            return false;
+        }
+        return true;
+    }
 }
 Field.component = {
     styleUrls: [
@@ -3868,24 +3919,12 @@ Field.properties = {
     label: {
         type: VirtualNode
     },
-    error: {
-        type: VirtualNode,
-        mutable: true
-    },
     disabled: {
         type: Boolean
     },
     required: {
         type: Boolean
     },
-    validators: {
-        type: Array,
-        mutable: true
-    },
-    validationFailedHandler: {
-        type: Object,
-        mutable: true
-    }
 };
 
 //@ts-ignore
@@ -3929,7 +3968,9 @@ class TextField extends SingleValueField {
         return (h("input", { name: name, id: name, class: this.getCSSClass(), required: required, 
             // style={{ maxWidth, width }}
             // className={inputClass}
-            value: value, onChange: this.onChange }));
+            value: value, onChange: this.onChange, 
+            // onFocus={onFocus}
+            onBlur: this.onBlur }));
     }
 }
 //@ts-ignore
@@ -4008,10 +4049,12 @@ class AsyncDataSubmitable extends ErrorableMixin(Base) {
     },
     _a; };
 
+//@ts-ignore
 class Form extends AsyncDataSubmitableMixin(ContainerMixin(CustomElement)) {
     constructor() {
-        super(...arguments);
+        super();
         this._record = new DataRecord();
+        this.reset = this.reset.bind(this);
     }
     render() {
         return (h("form", null,
@@ -4024,21 +4067,29 @@ class Form extends AsyncDataSubmitableMixin(ContainerMixin(CustomElement)) {
             h("gcl-button", { onClick: this.submit, variant: "primary" }, "Submit")));
     }
     submit() {
-        const context = {
-            errors: [],
-            stopWhenInvalid: true
-        };
-        if (this._record.validate(context)) {
+        if (this.validate()) {
             super.submit();
         }
     }
+    validate() {
+        const { children } = this.props;
+        let valid = true;
+        children.forEach((child) => {
+            if (!child.validate()) {
+                valid = false;
+            }
+        });
+        return valid;
+    }
     reset() {
+        this._record.reset();
     }
     onChildAdded(child) {
-        this._record.addField(child.props);
+        child.dataField = this._record.addField(child.props);
     }
     onChildRemoved(child) {
         this._record.removeField(child.props);
+        child.dataField = undefined;
     }
     connectedCallback() {
         var _a;
@@ -4050,6 +4101,14 @@ Form.component = {
     styleUrls: [
         `${config.assetsFolder}/form/Form.css`
     ]
+};
+Form.properties = {
+    /** The validators of the form */
+    validators: {
+        type: Array,
+        mutable: true,
+        value: []
+    }
 };
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-form`, Form);

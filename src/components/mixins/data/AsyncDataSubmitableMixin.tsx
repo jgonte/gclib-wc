@@ -41,7 +41,6 @@ const AsyncDataSubmitableMixin = Base =>
             this.submit = this.submit.bind(this);
         }
 
-
         render() {
 
             const {

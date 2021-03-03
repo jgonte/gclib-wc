@@ -32,7 +32,7 @@ export class TextField extends SingleValueField {
                 value={value}
                 onChange={this.onChange}
             // onFocus={onFocus}
-            // onBlur={onBlur}
+                onBlur={this.onBlur}
             // title={error}
             // ref={i => this.inputref = i}
             // disabled={disabled}
