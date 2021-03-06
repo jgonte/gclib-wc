@@ -118,8 +118,15 @@
 			<gcl-text class="text" id="toggleSelectableText" value="Selectable On"></gcl-text>
 		</gcl-button>
 
+		<h4>Validation Summary</h4>
+		<gcl-validation-summary 
+			size="small"
+			warnings='["Warning 1", "Warning 2", "Warning 3"]' 
+			errors='["Error 1", "Error 2", "Error 3"]' 
+		/>
+
 		<h4>Field</h4>
-		<gcl-text-field label="Field 1" name="field1" value="abc" error="Invalid value" required></gcl-text-field>
+		<gcl-text-field label="Field 1" name="field1" value="abc" required />
 		<br />
 
 		<!-- <gcl-select name="select"></gcl-select>

@@ -4,34 +4,55 @@ import { renderField } from '../Field';
 import { SingleValueField } from '../SingleValueField';
 
 //@ts-ignore
-export class TextField extends SingleValueField {
+export class FileField extends SingleValueField {
 
     // static component = {
 
     //     styleUrls: [
-    //         `${config.assetsFolder}/TextField/TextField.css`
+    //         `${config.assetsFolder}/FileField/FileField.css`
     //     ]
     // };
+
+    static properties = {
+
+        accept: {
+            type: String
+        },
+
+        capture: {
+            type: Boolean
+        },
+
+        multiple: {
+            type: Boolean
+        }
+    };
 
     [renderField](): VirtualNode {
 
         const {
             name,
-            value,
+            //value,
+            accept,
+            capture,
+            multiple,
             //required,
             disabled
         } = this.props;
 
         return (
             <input
-                type="text"
+                type="file"
                 name={name}
-                id={name}
+                id={name} 
+                accept={accept}
+                capture={capture}
+                multiple={multiple}
                 class={this.getCSSClass()}
                 //required={required}
                 // style={{ maxWidth, width }}
                 // className={inputClass}
-                value={value}
+                //value={value} //TODO: Use it to populate a preview section
                 onChange={this.onChange}
                 // onFocus={onFocus}
                 onBlur={this.onBlur}
@@ -44,4 +65,4 @@ export class TextField extends SingleValueField {
 }
 
 //@ts-ignore
-customElements.define(`${config.tagPrefix}-text-field`, TextField);
+customElements.define(`${config.tagPrefix}-file-field`, FileField);

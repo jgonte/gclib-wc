@@ -1,17 +1,21 @@
-import { DataRecord } from 'gclib-utils';
+import { DataRecord, ValidationContext } from 'gclib-utils';
 import { DataFieldDescriptor } from 'gclib-utils/dist/types/data/record/Interfaces';
+import Validator from 'gclib-utils/dist/types/data/validation/validators/Validator';
 import { h } from 'gclib-vdom';
 import CustomElement from "../../core/CustomElement";
-import ContainerMixin from '../../core/mixins/ContainerMixin';
 import { config } from '../config';
 import { Field } from '../field/Field';
 import AsyncDataSubmitableMixin from '../mixins/data/AsyncDataSubmitableMixin';
+import ValidatableMixin from '../mixins/validatable/ValidatableMixin';
+import ContainerMixin from '../../core/mixins/ContainerMixin';
 
 //@ts-ignore
 export class Form extends
     AsyncDataSubmitableMixin(
-        ContainerMixin(
-            CustomElement
+        ValidatableMixin(
+            ContainerMixin(
+                CustomElement
+            )
         )
     ) {
 
@@ -43,10 +47,23 @@ export class Form extends
 
     render() {
 
+        const {
+            warnings,
+            errors
+        } = this.state;
+
+        const {
+            size
+        } = this.props;
+
         return (
             <form>
-                {/* {this.renderErrors()} */}
                 <slot />
+                <gcl-validation-summary
+                    size={size}
+                    warnings={warnings}
+                    errors={errors}
+                />
                 {this.renderButtons()}
             </form>
         );
@@ -77,20 +94,26 @@ export class Form extends
     validate(): boolean {
 
         const {
-            children,
             validators
         } = this.props;
 
+        const {
+            children
+        } = this.state;
+
         let valid = true;
 
-        const context = {
+        const context: ValidationContext = {
 
             errors: [],
             warnings: []
         };
 
-        validators.forEach(validator => {
+        validators.forEach((validator: Validator) => {
 
+            if (!validator.validate(context)) {
+
+            }
         });
 
         children.forEach((child: Field) => {

@@ -18,8 +18,18 @@ export { List } from './components/list/List';
 
 export { TextField } from './components/field/textField/TextField';
 
+export { MultilineTextField } from './components/field/multilineTextField/MultilineTextField';
+
+export { NumberField } from './components/field/numberField/NumberField';
+
+export { DateField } from './components/field/dateField/DateField';
+
+export { FileField } from './components/field/fileField/FileField';
+
 // export { Select } from './components/field/select/Select';
 // export { Option } from './components/field/select/option/Option';
+
+export { ValidationSummary} from './components/validationSummary/ValidationSummary';
 
 export { Form } from './components/form/Form';
 

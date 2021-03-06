@@ -1,15 +1,16 @@
 import { h, VirtualNode } from 'gclib-vdom';
 import { config } from '../../config';
+import MinMaxMixin from '../../mixins/minMax/MinMaxMixin';
 import { renderField } from '../Field';
 import { SingleValueField } from '../SingleValueField';
 
 //@ts-ignore
-export class TextField extends SingleValueField {
+export class NumberField extends MinMaxMixin(SingleValueField) {
 
     // static component = {
 
     //     styleUrls: [
-    //         `${config.assetsFolder}/TextField/TextField.css`
+    //         `${config.assetsFolder}/numberField/NumberField.css`
     //     ]
     // };
 
@@ -19,14 +20,18 @@ export class TextField extends SingleValueField {
             name,
             value,
             //required,
+            min,
+            max,
             disabled
         } = this.props;
 
         return (
             <input
-                type="text"
+                type="number"
                 name={name}
                 id={name}
+                min={min}
+                max={max}
                 class={this.getCSSClass()}
                 //required={required}
                 // style={{ maxWidth, width }}
@@ -44,4 +49,4 @@ export class TextField extends SingleValueField {
 }
 
 //@ts-ignore
-customElements.define(`${config.tagPrefix}-text-field`, TextField);
+customElements.define(`${config.tagPrefix}-number-field`, NumberField);

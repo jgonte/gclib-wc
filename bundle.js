@@ -144,88 +144,6 @@ var AppCtrl = (function () {
 }());
 var appCtrl = new AppCtrl();
 
-function template(text, data) {
-    var result = {
-        keysNotInData: []
-    };
-    if (!data) {
-        result.text = text;
-        return result;
-    }
-    result.keysNotInData = Object.keys(data);
-    function processMatch(match, offset, str) {
-        var key = match
-            .replace('{{', '')
-            .replace('}}', '')
-            .trim();
-        if (data.hasOwnProperty(key)) {
-            var index = result.keysNotInData.indexOf(key);
-            if (index > -1) {
-                result.keysNotInData.splice(index, 1);
-            }
-            return data[key];
-        }
-        else {
-            return match;
-        }
-    }
-    result.text = text.replace(/\{{\S+?\}}/g, processMatch);
-    return result;
-}
-
-var Validator = (function () {
-    function Validator(options) {
-        this.message = options === null || options === void 0 ? void 0 : options.message;
-    }
-    Validator.prototype.emitMessage = function (context, data) {
-        var result = template(this.message, data);
-        context.errors.push(result.text);
-    };
-    return Validator;
-}());
-
-var FieldValidator = (function (_super) {
-    __extends(FieldValidator, _super);
-    function FieldValidator() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    return FieldValidator;
-}(Validator));
-
-var RequiredValidator = (function (_super) {
-    __extends(RequiredValidator, _super);
-    function RequiredValidator(options) {
-        if (options === void 0) { options = {}; }
-        var _this = this;
-        if (options.message === undefined) {
-            options.message = '{{name}} is required';
-        }
-        _this = _super.call(this, options) || this;
-        _this.allowEmpty = options.allowEmpty || false;
-        return _this;
-    }
-    RequiredValidator.prototype.validate = function (field, context) {
-        var name = field.name, value = field.value;
-        var valid = !(value === undefined || value === null);
-        if (valid === true && this.allowEmpty === false) {
-            valid = value !== '';
-        }
-        if (!valid) {
-            this.emitMessage(context, { name: name });
-        }
-        return valid;
-    };
-    return RequiredValidator;
-}(FieldValidator));
-
-function createValidator(cfg) {
-    var type = cfg.type;
-    switch (type) {
-        case 'required': return new RequiredValidator();
-        default: throw Error("Invalid validator type: " + type);
-    }
-}
-
 function toTypeOf(typeFunction) {
     switch (typeFunction) {
         case String: return 'string';
@@ -286,31 +204,6 @@ var DataField = (function () {
     });
     DataField.prototype.reset = function () {
         this.value = this._initialValue;
-    };
-    DataField.prototype.validate = function (context) {
-        var _a = this._fieldDescriptor, validators = _a.validators, validationFailedHandler = _a.validationFailedHandler;
-        if (validators === undefined) {
-            return true;
-        }
-        var valid = true;
-        var length = validators.length;
-        for (var i = 0; i < length; ++i) {
-            var validator = validators[i];
-            if (!(validator instanceof Validator)) {
-                validator = createValidator(validator);
-            }
-            var r = validator.validate(this, context);
-            if (r === false) {
-                if (valid === true) {
-                    valid = false;
-                    validationFailedHandler.onValidationFailed(context.errors[context.errors.length - 1]);
-                }
-                if (context.stopWhenInvalid === true) {
-                    break;
-                }
-            }
-        }
-        return valid;
     };
     return DataField;
 }());
@@ -394,16 +287,14 @@ var DataRecordDescriptor = (function () {
         }
         for (var key in model) {
             if (model.hasOwnProperty(key)) {
-                var _a = model[key], isId = _a.isId, type = _a.type, value = _a.value, converter = _a.converter, validators = _a.validators, validationFailedHandler = _a.validationFailedHandler;
+                var _a = model[key], isId = _a.isId, type = _a.type, value = _a.value, converter = _a.converter;
                 this.addFieldDescriptor({
                     name: key,
                     isId: isId !== null && isId !== void 0 ? isId : false,
                     type: type !== undefined ? type : value !== undefined ?
                         getType(value) : String,
                     value: value,
-                    converter: converter || defaultValueConverter,
-                    validators: validators || [],
-                    validationFailedHandler: validationFailedHandler
+                    converter: converter || defaultValueConverter
                 });
             }
         }
@@ -515,6 +406,10 @@ var DataRecord = (function () {
     DataRecord.prototype.addField = function (fd) {
         this._recordDescriptor.addFieldDescriptor(fd);
         this._fields[fd.name] = new DataField(fd, this);
+        return this._fields[fd.name];
+    };
+    DataRecord.prototype.getField = function (name) {
+        return this._fields[name];
     };
     DataRecord.prototype.removeField = function (fd) {
         this._recordDescriptor.removeFieldDescriptor(fd);
@@ -535,9 +430,6 @@ var DataRecord = (function () {
         this._id = undefined;
         this._data = undefined;
         this._modifiedFields = {};
-    };
-    DataRecord.prototype.getField = function (name) {
-        return this._fields[name];
     };
     DataRecord.prototype.getData = function () {
         var _a = this, _data = _a._data, _fields = _a._fields;
@@ -607,32 +499,6 @@ var DataRecord = (function () {
             delete _modifiedFields[name];
         }
         this._data = undefined;
-    };
-    DataRecord.prototype.commit = function (callback) {
-        if (!this.isModified) {
-            return;
-        }
-        callback(this._data);
-        this.initialize(this._data);
-    };
-    DataRecord.prototype.validate = function (context) {
-        var _this = this;
-        var _a = this, _fields = _a._fields, _recordDescriptor = _a._recordDescriptor;
-        var valid = true;
-        Object.values(_fields).forEach(function (f) {
-            var r = f.validate(context);
-            if (r === false && valid === true) {
-                valid = false;
-            }
-        });
-        var recordValidators = _recordDescriptor.recordValidators;
-        recordValidators === null || recordValidators === void 0 ? void 0 : recordValidators.forEach(function (v) {
-            var r = v.validate(_this, context);
-            if (r === false && valid === true) {
-                valid = false;
-            }
-        });
-        return valid;
     };
     return DataRecord;
 }());
@@ -797,6 +663,84 @@ var DataRecordSet = (function () {
     return DataRecordSet;
 }());
 
+function template(text, data) {
+    var result = {
+        keysNotInData: []
+    };
+    if (!data) {
+        result.text = text;
+        return result;
+    }
+    result.keysNotInData = Object.keys(data);
+    function processMatch(match, offset, str) {
+        var key = match
+            .replace('{{', '')
+            .replace('}}', '')
+            .trim();
+        if (data.hasOwnProperty(key)) {
+            var index = result.keysNotInData.indexOf(key);
+            if (index > -1) {
+                result.keysNotInData.splice(index, 1);
+            }
+            return data[key];
+        }
+        else {
+            return match;
+        }
+    }
+    result.text = text.replace(/\{{\S+?\}}/g, processMatch);
+    return result;
+}
+
+var Validator = (function () {
+    function Validator(options) {
+        this.message = options === null || options === void 0 ? void 0 : options.message;
+    }
+    Validator.prototype.emitErrors = function (context, data) {
+        var result = template(this.message, data);
+        context.errors.push(result.text);
+    };
+    Validator.prototype.emitWarnings = function (context, data) {
+        var result = template(this.message, data);
+        context.warnings.push(result.text);
+    };
+    return Validator;
+}());
+
+var SingleValueFieldValidator = (function (_super) {
+    __extends(SingleValueFieldValidator, _super);
+    function SingleValueFieldValidator() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    return SingleValueFieldValidator;
+}(Validator));
+
+var RequiredValidator = (function (_super) {
+    __extends(RequiredValidator, _super);
+    function RequiredValidator(options) {
+        if (options === void 0) { options = {}; }
+        var _this = this;
+        if (options.message === undefined) {
+            options.message = '{{label}} is required';
+        }
+        _this = _super.call(this, options) || this;
+        _this.allowEmpty = options.allowEmpty || false;
+        return _this;
+    }
+    RequiredValidator.prototype.validate = function (context) {
+        var label = context.label, value = context.value;
+        var valid = !(value === undefined || value === null);
+        if (valid === true && this.allowEmpty === false) {
+            valid = value !== '';
+        }
+        if (!valid) {
+            this.emitErrors(context, { label: label });
+        }
+        return valid;
+    };
+    return RequiredValidator;
+}(SingleValueFieldValidator));
+
 var RegexValidator = (function (_super) {
     __extends(RegexValidator, _super);
     function RegexValidator(options) {
@@ -804,23 +748,26 @@ var RegexValidator = (function (_super) {
         _this._regex = options.regex;
         return _this;
     }
-    RegexValidator.prototype.validate = function (field, context) {
-        var name = field.name, value = field.value;
+    RegexValidator.prototype.validate = function (context) {
+        var label = context.label, value = context.value;
+        if (value === undefined) {
+            return true;
+        }
         var valid = this._regex.test(value);
         if (!valid) {
-            this.emitMessage(context, { name: name });
+            this.emitErrors(context, { label: label });
         }
         return valid;
     };
     return RegexValidator;
-}(FieldValidator));
+}(SingleValueFieldValidator));
 
 var EmailValidator = (function (_super) {
     __extends(EmailValidator, _super);
     function EmailValidator(options) {
         if (options === void 0) { options = {
             regex: /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/,
-            message: 'Email is invalid'
+            message: '{{label}} is invalid'
         }; }
         return _super.call(this, options) || this;
     }
@@ -833,48 +780,52 @@ var RangeValidator = (function (_super) {
         if (options === void 0) { options = {}; }
         var _this = this;
         if (options.message === undefined) {
-            options.message = '{{name}} is not in range from :{{minValue}} to {{maxValue}}';
+            options.message = '{{label}} is not in range from :{{minValue}} to {{maxValue}}';
         }
         _this = _super.call(this, options) || this;
         _this.minValue = options.minValue;
         _this.maxValue = options.maxValue;
         return _this;
     }
-    RangeValidator.prototype.validate = function (field, context) {
-        var name = field.name, value = field.value;
+    RangeValidator.prototype.validate = function (context) {
+        var label = context.label, value = context.value;
         var _a = this, minValue = _a.minValue, maxValue = _a.maxValue;
         var valid = value >= minValue && value <= maxValue;
         if (!valid) {
-            this.emitMessage(context, { name: name });
+            this.emitErrors(context, { label: label });
         }
         return valid;
     };
     return RangeValidator;
-}(FieldValidator));
+}(SingleValueFieldValidator));
 
-var CustomFieldValidator = (function (_super) {
-    __extends(CustomFieldValidator, _super);
-    function CustomFieldValidator(options) {
+var CustomSingleValueFieldValidator = (function (_super) {
+    __extends(CustomSingleValueFieldValidator, _super);
+    function CustomSingleValueFieldValidator(options) {
         var _this = _super.call(this, options) || this;
         _this.validateFcn = options.validateFcn;
         return _this;
     }
-    CustomFieldValidator.prototype.validate = function (field, context) {
-        var name = field.name, value = field.value;
+    CustomSingleValueFieldValidator.prototype.validate = function (context) {
+        var label = context.label, value = context.value;
         var valid = this.validateFcn.call(this, value);
         if (!valid) {
-            this.emitMessage(context, { name: name });
+            this.emitErrors(context, { label: label });
         }
         return valid;
     };
-    return CustomFieldValidator;
-}(FieldValidator));
+    return CustomSingleValueFieldValidator;
+}(SingleValueFieldValidator));
 
 var RecordValidator = (function (_super) {
     __extends(RecordValidator, _super);
     function RecordValidator() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
+    RecordValidator.prototype.getData = function (context) {
+        var dataProvider = context.dataProvider;
+        return dataProvider.getData();
+    };
     return RecordValidator;
 }(Validator));
 
@@ -887,14 +838,14 @@ var CompareValidator = (function (_super) {
         _this._operator = options.operator;
         return _this;
     }
-    CompareValidator.prototype.validate = function (record, context) {
+    CompareValidator.prototype.validate = function (context) {
         var _a = this, _propertyToValidate = _a._propertyToValidate, _propertyToCompare = _a._propertyToCompare, _operator = _a._operator;
-        var data = record.getData();
+        var data = this.getData(context);
         var valueToValidate = data[_propertyToValidate];
         var valueToCompare = data[_propertyToCompare];
         var valid = this._compare(valueToValidate, valueToCompare, _operator);
         if (!valid) {
-            this.emitMessage(context, {
+            this.emitErrors(context, {
                 propertyToValidate: _propertyToValidate,
                 valueToValidate: valueToValidate,
                 propertyToCompare: _propertyToCompare,
@@ -925,11 +876,11 @@ var CustomRecordValidator = (function (_super) {
         _this.validateFcn = options.validateFcn;
         return _this;
     }
-    CustomRecordValidator.prototype.validate = function (record, context) {
-        var data = record.getData();
+    CustomRecordValidator.prototype.validate = function (context) {
+        var data = this.getData(context);
         var valid = this.validateFcn.call(this, data);
         if (!valid) {
-            this.emitMessage(context, {});
+            this.emitErrors(context, {});
         }
         return valid;
     };
@@ -1433,8 +1384,10 @@ function h(name, attributes) {
     }
     var childrenNodes = [];
     children.forEach(function (child) {
-        if (child === null) ;
-        else if (child.isVirtualNode) {
+        if (child === null) {
+            return;
+        }
+        if (child.isVirtualNode) {
             childrenNodes.push(child);
         }
         else if (child.isVirtualText) {
@@ -1442,6 +1395,9 @@ function h(name, attributes) {
         }
         else if (child.isFragmentNode) {
             childrenNodes.push(child);
+        }
+        else if (Array.isArray(child)) {
+            child.forEach(function (ch) { return childrenNodes.push(ch); });
         }
         else if (typeof child === 'object') {
             throw new Error('Invalid object');
@@ -1698,7 +1654,13 @@ function replaceAttribute(element, name, newValue) {
             }
         }
         else {
-            element.setAttribute(name, newValue);
+            if (element.setProperty !== undefined &&
+                typeof newValue === 'object') {
+                element.setProperty(name, newValue);
+            }
+            else {
+                element.setAttribute(name, newValue);
+            }
         }
     }
 }
@@ -2764,7 +2726,8 @@ const SizableMixin = Base => { var _a; return _a = class Sizable extends Base {
             value: 'medium',
             mutable: true,
             reflect: true,
-            passToChildren: true
+            passToChildren: true,
+            options: ['large', 'medium', 'small']
         }
     },
     _a; };
@@ -2898,27 +2861,6 @@ const VisibleMixin = Base => { var _a; return _a = class Visible extends Base {
     },
     _a; };
 
-function getChildren(node) {
-    if (node instanceof HTMLElement) {
-        const slot = node.querySelector('slot');
-        if (slot !== null) {
-            return slot.assignedNodes({ flatten: true });
-        }
-        else {
-            return Array.from(node.childNodes);
-        }
-    }
-    else {
-        return [];
-    }
-}
-function visitChildren(children, visit) {
-    children.forEach(child => {
-        visit(child);
-        visitChildren(getChildren(child), visit);
-    });
-}
-
 const childConnected = 'childConnected';
 const childDisconnected = 'childDisconnected';
 /**
@@ -2952,55 +2894,62 @@ const ChildMixin = Base => class Child extends Base {
 };
 
 const ContainerMixin = Base => { var _a; return _a = class Container extends Base {
-        notifyChildren() {
-            const { children } = this.state;
-            const componentMetadata = this.constructor.componentMetadata;
-            const properties = Object.values(componentMetadata.properties)
-                .filter(p => p.passToChildren === true);
-            if (properties.length === 0) {
-                return;
-            }
-            properties.forEach(p => {
-                const propertyName = p.name;
-                const attributeName = p.attribute;
-                // Pass the property to the children
-                visitChildren(children, child => {
-                    var _a;
-                    if ((_a = child.props) === null || _a === void 0 ? void 0 : _a.hasOwnProperty(propertyName)) {
-                        if (child.props[propertyName] === p.value) { // A value different from the default one has not been set
-                            child.setAttribute(attributeName, this.props[propertyName]);
-                        }
-                    }
-                });
-            });
-        }
-        nodeDidUpdate(node, nodeChanges) {
-            if (super.nodeDidUpdate) {
-                super.nodeDidUpdate(node, nodeChanges);
-            }
-            const { hasChildren, children } = this.getChildren(nodeChanges);
-            if (hasChildren) {
-                this.setChildren(children);
-            }
-            this.notifyChildren();
-        }
-        getChildren(nodeChanges) {
-            const { inserted, moved } = nodeChanges;
-            if (inserted.length === 0 &&
-                moved.length === 0) {
-                return {
-                    hasChildren: false,
-                    children: []
-                };
-            }
-            return {
-                hasChildren: true,
-                children: [
-                    ...inserted,
-                    ...moved
-                ]
-            };
-        }
+        // notifyChildren() {
+        //     const {
+        //         children
+        //     } = this.state;
+        //     const componentMetadata: ComponentMetadata = (this.constructor as any).componentMetadata;
+        //     const properties: CustomPropertyDescriptor[] = Object.values(componentMetadata.properties)
+        //         .filter(p => p.passToChildren === true);
+        //     if (properties.length === 0) {
+        //         return;
+        //     }
+        //     properties.forEach(p => {
+        //         const propertyName = p.name;
+        //         const attributeName = p.attribute;
+        //         // Pass the property to the children
+        //         visitChildren(children, child => {
+        //             if ((child as any).props?.hasOwnProperty(propertyName)) {
+        //                 if ((child as any).props[propertyName] === p.value) { // A value different from the default one has not been set
+        //                     child.setAttribute(attributeName, this.props[propertyName]);
+        //                 }
+        //             }
+        //         });
+        //     });
+        // }
+        // nodeDidUpdate(node, nodeChanges) {
+        //     if (super.nodeDidUpdate) {
+        //         super.nodeDidUpdate(node, nodeChanges);
+        //     }
+        //     const {
+        //         hasChildren,
+        //         children
+        //     } = this.getChildren(nodeChanges);
+        //     if (hasChildren) {
+        //         this.setChildren(children);
+        //     }
+        //     this.notifyChildren();
+        // }
+        // getChildren(nodeChanges) {
+        //     const {
+        //         inserted,
+        //         moved
+        //     } = nodeChanges;
+        //     if (inserted.length === 0 &&
+        //         moved.length === 0) {
+        //         return {
+        //             hasChildren: false,
+        //             children: []
+        //         };
+        //     }
+        //     return {
+        //         hasChildren: true,
+        //         children: [
+        //             ...inserted,
+        //             ...moved
+        //         ]
+        //     };
+        // }
         connectedCallback() {
             var _a;
             (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
@@ -3064,7 +3013,7 @@ const ContainerMixin = Base => { var _a; return _a = class Container extends Bas
          */
         children: {
             value: []
-        },
+        }
     },
     _a; };
 
@@ -3621,7 +3570,7 @@ const SelectableMixin = Base => { var _a; return _a = class Selectable extends C
     },
     _a; };
 
-class ListItem extends SelectableMixin(SizableMixin(CustomElement)) {
+class ListItem extends SelectableMixin(SizableMixin(ChildMixin(CustomElement))) {
     render() {
         return (h("li", { class: this.getCSSClass() },
             h("slot", null)));
@@ -3634,6 +3583,27 @@ ListItem.component = {
 };
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-list-item`, ListItem);
+
+function getChildren(node) {
+    if (node instanceof HTMLElement) {
+        const slot = node.querySelector('slot');
+        if (slot !== null) {
+            return slot.assignedNodes({ flatten: true });
+        }
+        else {
+            return Array.from(node.childNodes);
+        }
+    }
+    else {
+        return [];
+    }
+}
+function visitChildren(children, visit) {
+    children.forEach(child => {
+        visit(child);
+        visitChildren(getChildren(child), visit);
+    });
+}
 
 const SelectionContainerMixin = Base => { var _a; return _a = 
 //@ts-ignore
@@ -3769,20 +3739,6 @@ List.component = {
 customElements.define(`${config.tagPrefix}-list`, List);
 
 const ValidatableMixin = Base => { var _a; return _a = class Validatable extends Base {
-        renderWarnings() {
-            const { warnings } = this.state;
-            if (warnings === undefined) {
-                return null;
-            }
-            return warnings.map(warning => h("gcl-alert", { type: "warning", message: warning, closable: false }));
-        }
-        renderErrors() {
-            const { errors } = this.state;
-            if (errors === undefined) {
-                return null;
-            }
-            return errors.map(error => h("gcl-alert", { type: "error", message: error, closable: false }));
-        }
     },
     _a.properties = {
         validators: {
@@ -3805,12 +3761,13 @@ class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(Custom
         this.onBlur = this.onBlur.bind(this);
     }
     [renderWhenVisible]() {
+        const { warnings, errors } = this.state;
+        const { size } = this.props;
         return (h(Fragment, { class: this.getCSSClass() },
             h("div", { class: "field" },
                 this.renderLabel(),
                 this[renderField]()),
-            this.renderWarnings(),
-            this.renderErrors()));
+            h("gcl-validation-summary", { size: size, warnings: warnings, errors: errors })));
     }
     renderLabel() {
         const { label, name, size } = this.props;
@@ -3876,7 +3833,7 @@ class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(Custom
     }
     validate() {
         let { label } = this.props;
-        const { name } = this.props;
+        const { name, value, validators } = this.props;
         // Extract the text of the label
         if (label === undefined) {
             label = name;
@@ -3884,12 +3841,18 @@ class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(Custom
         else if (label.isVirtualText) {
             label = label.text;
         }
+        // Reset warnings and errors
+        this.setWarnings([]);
+        this.setErrors([]);
         const context = {
             errors: [],
             warnings: [],
-            label
+            label,
+            value
         };
-        this.dataField.validate(context);
+        // Validate
+        validators.forEach((validator) => validator.validate(context));
+        // Show warnings and errors
         if (context.warnings.length > 0) {
             this.setWarnings(context.warnings);
         }
@@ -3924,7 +3887,7 @@ Field.properties = {
     },
     required: {
         type: Boolean
-    },
+    }
 };
 
 //@ts-ignore
@@ -3964,17 +3927,206 @@ class TextField extends SingleValueField {
     //     ]
     // };
     [renderField]() {
-        const { name, value, required } = this.props;
-        return (h("input", { name: name, id: name, class: this.getCSSClass(), required: required, 
+        const { name, value, 
+        //required,
+        disabled } = this.props;
+        return (h("input", { type: "text", name: name, id: name, class: this.getCSSClass(), 
+            //required={required}
             // style={{ maxWidth, width }}
             // className={inputClass}
             value: value, onChange: this.onChange, 
             // onFocus={onFocus}
-            onBlur: this.onBlur }));
+            onBlur: this.onBlur, 
+            // title={error}
+            // ref={i => this.inputref = i}
+            disabled: disabled }));
     }
 }
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-text-field`, TextField);
+
+//@ts-ignore
+class MultilineTextField extends SingleValueField {
+    [renderField]() {
+        const { name, value, rows, cols, 
+        //required,
+        disabled } = this.props;
+        return (h("textarea", { name: name, id: name, rows: rows, cols: cols, class: this.getCSSClass(), 
+            //required={required}
+            // style={{ maxWidth, width }}
+            // className={inputClass}
+            value: value, onChange: this.onChange, 
+            // onFocus={onFocus}
+            onBlur: this.onBlur, 
+            // title={error}
+            // ref={i => this.inputref = i}
+            disabled: disabled }));
+    }
+}
+// static component = {
+//     styleUrls: [
+//         `${config.assetsFolder}/TextField/TextField.css`
+//     ]
+// };
+MultilineTextField.properties = {
+    rows: {
+        type: Number
+    },
+    cols: {
+        type: Number
+    }
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-multiline-text-field`, MultilineTextField);
+
+const MinMaxMixin = Base => { var _a; return _a = class MinMax extends Base {
+    },
+    _a.properties = {
+        min: {
+            type: String
+        },
+        max: {
+            type: String
+        }
+    },
+    _a; };
+
+//@ts-ignore
+class NumberField extends MinMaxMixin(SingleValueField) {
+    // static component = {
+    //     styleUrls: [
+    //         `${config.assetsFolder}/numberField/NumberField.css`
+    //     ]
+    // };
+    [renderField]() {
+        const { name, value, 
+        //required,
+        min, max, disabled } = this.props;
+        return (h("input", { type: "number", name: name, id: name, min: min, max: max, class: this.getCSSClass(), 
+            //required={required}
+            // style={{ maxWidth, width }}
+            // className={inputClass}
+            value: value, onChange: this.onChange, 
+            // onFocus={onFocus}
+            onBlur: this.onBlur, 
+            // title={error}
+            // ref={i => this.inputref = i}
+            disabled: disabled }));
+    }
+}
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-number-field`, NumberField);
+
+//@ts-ignore
+class DateField extends MinMaxMixin(SingleValueField) {
+    // static component = {
+    //     styleUrls: [
+    //         `${config.assetsFolder}/DateField/DateField.css`
+    //     ]
+    // };
+    [renderField]() {
+        const { name, value, min, max, 
+        //required,
+        disabled } = this.props;
+        return (h("input", { type: "date", name: name, id: name, class: this.getCSSClass(), min: min, max: max, 
+            //required={required}
+            style: { minWidth: '150px' }, value: value, onChange: this.onChange, 
+            // onFocus={onFocus}
+            onBlur: this.onBlur, 
+            // title={error}
+            // ref={i => this.inputref = i}
+            disabled: disabled }));
+    }
+}
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-date-field`, DateField);
+
+//@ts-ignore
+class FileField extends SingleValueField {
+    [renderField]() {
+        const { name, 
+        //value,
+        accept, capture, multiple, 
+        //required,
+        disabled } = this.props;
+        return (h("input", { type: "file", name: name, id: name, accept: accept, capture: capture, multiple: multiple, class: this.getCSSClass(), 
+            //required={required}
+            // style={{ maxWidth, width }}
+            // className={inputClass}
+            //value={value} //TODO: Use it to populate a preview section
+            onChange: this.onChange, 
+            // onFocus={onFocus}
+            onBlur: this.onBlur, 
+            // title={error}
+            // ref={i => this.inputref = i}
+            disabled: disabled }));
+    }
+}
+// static component = {
+//     styleUrls: [
+//         `${config.assetsFolder}/FileField/FileField.css`
+//     ]
+// };
+FileField.properties = {
+    accept: {
+        type: String
+    },
+    capture: {
+        type: Boolean
+    },
+    multiple: {
+        type: Boolean
+    }
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-file-field`, FileField);
+
+//@ts-ignore
+class ValidationSummary extends SizableMixin(CustomElement) {
+    render() {
+        return (h(Fragment, null, [
+            ...this.renderWarnings(),
+            ...this.renderErrors()
+        ]));
+    }
+    renderWarnings() {
+        const { warnings, size } = this.props;
+        if (warnings === undefined) {
+            return null;
+        }
+        return warnings.map(warning => h("gcl-alert", { type: "warning", message: warning, size: size, closable: false }));
+    }
+    renderErrors() {
+        const { errors, size } = this.props;
+        if (errors === undefined) {
+            return null;
+        }
+        return errors.map(error => h("gcl-alert", { type: "error", message: error, size: size, closable: false }));
+    }
+}
+// static component = {
+//     styleUrls: [
+//         `${config.assetsFolder}/validationSummary/ValidationSummary.css`
+//     ]
+// };
+ValidationSummary.properties = {
+    /**
+     * The errors to display
+     */
+    errors: {
+        type: Array,
+        value: []
+    },
+    /**
+     * The warnings to display
+     */
+    warnings: {
+        type: Array,
+        value: []
+    }
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-validation-summary`, ValidationSummary);
 
 const AsyncDataSubmitableMixin = Base => { var _a; return _a = 
 //@ts-ignore
@@ -4050,15 +4202,18 @@ class AsyncDataSubmitable extends ErrorableMixin(Base) {
     _a; };
 
 //@ts-ignore
-class Form extends AsyncDataSubmitableMixin(ContainerMixin(CustomElement)) {
+class Form extends AsyncDataSubmitableMixin(ValidatableMixin(ContainerMixin(CustomElement))) {
     constructor() {
         super();
         this._record = new DataRecord();
         this.reset = this.reset.bind(this);
     }
     render() {
+        const { warnings, errors } = this.state;
+        const { size } = this.props;
         return (h("form", null,
             h("slot", null),
+            h("gcl-validation-summary", { size: size, warnings: warnings, errors: errors }),
             this.renderButtons()));
     }
     renderButtons() {
@@ -4072,8 +4227,16 @@ class Form extends AsyncDataSubmitableMixin(ContainerMixin(CustomElement)) {
         }
     }
     validate() {
-        const { children } = this.props;
+        const { validators } = this.props;
+        const { children } = this.state;
         let valid = true;
+        const context = {
+            errors: [],
+            warnings: []
+        };
+        validators.forEach((validator) => {
+            if (!validator.validate(context)) ;
+        });
         children.forEach((child) => {
             if (!child.validate()) {
                 valid = false;
@@ -4332,7 +4495,11 @@ customElements.define('contacts-list', ContactsList);
 class ContactForm extends CustomElement {
     render() {
         return (h("gcl-form", { id: "contactForm", "load-url": "http://localhost:60314/api/contacts/1", size: "medium" },
-            h("gcl-text-field", { label: "Name", name: "name", required: true })));
+            h("gcl-text-field", { label: "Name", name: "name", required: true }),
+            h("gcl-date-field", { label: "Date of Birth", name: "dateOfBirth", required: true }),
+            h("gcl-number-field", { label: "Reputation", name: "reputation", min: "1", max: "10", required: true }),
+            h("gcl-multiline-text-field", { label: "Description", name: "description", rows: "5", cols: "30", required: true }),
+            h("gcl-file-field", { label: "Avatar", name: "avatar", required: true })));
     }
 }
 //@ts-ignore
@@ -4368,4 +4535,4 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
-export { Alert, App, Button, ContactForm, ContactsList, Form, Icon, List, ListItem, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, Overlay, Table, Text, TextField };
+export { Alert, App, Button, ContactForm, ContactsList, DateField, FileField, Form, Icon, List, ListItem, MultilineTextField, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, NumberField, Overlay, Table, Text, TextField, ValidationSummary };

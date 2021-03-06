@@ -6,7 +6,7 @@ import ValidatableMixin from '../mixins/validatable/ValidatableMixin';
 import SizableMixin from '../mixins/sizable/SizableMixin';
 import VisibleMixin, { renderWhenVisible } from '../mixins/visible/VisibleMixin';
 import { DataFieldModel, RequiredValidator } from 'gclib-utils';
-import { ValidationFailedHandler } from 'gclib-utils/dist/types/data/validation/Interfaces';
+import Validator from 'gclib-utils/dist/types/data/validation/validators/Validator';
 
 export const renderField = Symbol('renderField');
 
@@ -20,7 +20,7 @@ export abstract class Field extends
                 )
             )
         )
-    ) implements DataFieldModel, ValidationFailedHandler {
+    ) implements DataFieldModel {
 
     static component = {
 
@@ -54,15 +54,8 @@ export abstract class Field extends
 
         required: {
             type: Boolean
-        },
-
-        // validationFailedHandler: {
-        //     type: Object,
-        //     mutable: true
-        // }
+        }
     };
-
-
 
     constructor() {
 
@@ -73,14 +66,26 @@ export abstract class Field extends
 
     [renderWhenVisible]() {
 
+        const {
+            warnings,
+            errors
+        } = this.state;
+
+        const {
+            size
+        } = this.props;
+
         return (
             <Fragment class={this.getCSSClass()}>
                 <div class="field">
                     {this.renderLabel()}
                     {(this as any)[renderField]()}
                 </div>
-                {this.renderWarnings()}
-                {this.renderErrors()}
+                <gcl-validation-summary
+                    size={size}
+                    warnings={warnings}
+                    errors={errors}
+                />
             </Fragment>
         );
     }
@@ -207,7 +212,9 @@ export abstract class Field extends
         } = this.props;
 
         const {
-            name
+            name,
+            value,
+            validators
         } = this.props;
 
         // Extract the text of the label
@@ -220,14 +227,22 @@ export abstract class Field extends
             label = label.text;
         }
 
+        // Reset warnings and errors
+        this.setWarnings([]);
+
+        this.setErrors([]);
+
         const context = {
             errors: [],
             warnings: [],
-            label
+            label,
+            value
         };
 
-        this.dataField.validate(context);
+        // Validate
+        validators.forEach((validator: Validator) => validator.validate(context));
 
+        // Show warnings and errors
         if (context.warnings.length > 0) {
 
             this.setWarnings(context.warnings);

@@ -3,11 +3,15 @@ import { h } from 'gclib-vdom';
 import { config } from '../../config';
 import SelectableMixin from '../../mixins/selectable/SelectableMixin';
 import SizableMixin from '../../mixins/sizable/SizableMixin';
+import ChildMixin from '../../../core/mixins/ChildMixin';
 
 export class ListItem extends
     SelectableMixin(
         SizableMixin(
-            CustomElement)
+            ChildMixin(
+                CustomElement
+            )
+        )
     ) {
 
     static component = {

@@ -1,15 +1,16 @@
 import { h, VirtualNode } from 'gclib-vdom';
 import { config } from '../../config';
+import MinMaxMixin from '../../mixins/minMax/MinMaxMixin';
 import { renderField } from '../Field';
 import { SingleValueField } from '../SingleValueField';
 
 //@ts-ignore
-export class TextField extends SingleValueField {
+export class DateField extends MinMaxMixin(SingleValueField) {
 
     // static component = {
 
     //     styleUrls: [
-    //         `${config.assetsFolder}/TextField/TextField.css`
+    //         `${config.assetsFolder}/DateField/DateField.css`
     //     ]
     // };
 
@@ -18,25 +19,28 @@ export class TextField extends SingleValueField {
         const {
             name,
             value,
+            min,
+            max,
             //required,
             disabled
         } = this.props;
 
         return (
             <input
-                type="text"
+                type="date"
                 name={name}
                 id={name}
                 class={this.getCSSClass()}
+                min={min}
+                max={max}
                 //required={required}
-                // style={{ maxWidth, width }}
-                // className={inputClass}
+                style={{ minWidth: '150px' }}
                 value={value}
                 onChange={this.onChange}
                 // onFocus={onFocus}
                 onBlur={this.onBlur}
-                // title={error}
-                // ref={i => this.inputref = i}
+            // title={error}
+            // ref={i => this.inputref = i}
                 disabled={disabled}
             />
         );
@@ -44,4 +48,4 @@ export class TextField extends SingleValueField {
 }
 
 //@ts-ignore
-customElements.define(`${config.tagPrefix}-text-field`, TextField);
+customElements.define(`${config.tagPrefix}-date-field`, DateField);

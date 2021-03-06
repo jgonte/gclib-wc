@@ -18,7 +18,8 @@ const SizableMixin = Base =>
                 value: 'medium',
                 mutable: true,
                 reflect: true,
-                passToChildren: true
+                passToChildren: true,
+                options: ['large', 'medium', 'small']
             }
         };
 

@@ -4,7 +4,7 @@ import { renderField } from '../Field';
 import { SingleValueField } from '../SingleValueField';
 
 //@ts-ignore
-export class TextField extends SingleValueField {
+export class MultilineTextField extends SingleValueField {
 
     // static component = {
 
@@ -13,20 +13,34 @@ export class TextField extends SingleValueField {
     //     ]
     // };
 
+    static properties = {
+
+        rows: {
+            type: Number
+        },
+
+        cols: {
+            type: Number
+        }
+    };
+
     [renderField](): VirtualNode {
 
         const {
             name,
             value,
+            rows,
+            cols,
             //required,
             disabled
         } = this.props;
 
         return (
-            <input
-                type="text"
+            <textarea
                 name={name}
                 id={name}
+                rows={rows}
+                cols={cols}
                 class={this.getCSSClass()}
                 //required={required}
                 // style={{ maxWidth, width }}
@@ -44,4 +58,4 @@ export class TextField extends SingleValueField {
 }
 
 //@ts-ignore
-customElements.define(`${config.tagPrefix}-text-field`, TextField);
+customElements.define(`${config.tagPrefix}-multiline-text-field`, MultilineTextField);

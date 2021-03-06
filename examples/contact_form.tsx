@@ -20,6 +20,34 @@ export class ContactForm extends CustomElement {
                     required
                 />
 
+                <gcl-date-field
+                    label="Date of Birth"
+                    name="dateOfBirth"
+                    required
+                />
+
+                <gcl-number-field
+                    label="Reputation"
+                    name="reputation"
+                    min="1"
+                    max="10"
+                    required
+                />
+
+                <gcl-multiline-text-field
+                    label="Description"
+                    name="description"
+                    rows="5"
+                    cols="30"
+                    required
+                />
+
+                <gcl-file-field
+                    label="Avatar"
+                    name="avatar"
+                    required
+                />
+
             </gcl-form>
         );
     }
