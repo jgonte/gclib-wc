@@ -50,7 +50,7 @@
 		<br />
 
 		<h4>Alerts</h4>
-		<gcl-alert message="Some info alert" size="large"></gcl-alert>
+		<gcl-alert message="Some info alert" size="large" close="onCloseAlert()"></gcl-alert>
 		<gcl-alert type="success" message="Some success alert"></gcl-alert>
 		<gcl-alert type="warning" message="Some warning alert"></gcl-alert>
 		<gcl-alert type="error" message="Some error alert" size="small"></gcl-alert>
@@ -75,7 +75,7 @@
 		</gcl-button>
 		<br />
 
-		<h4>Overlay</h4>
+		<!-- <h4>Overlay</h4>
 		<gcl-overlay id="loadingOverlay" visible="false">
 			<p style="background-color: white;">
 				Loading ...
@@ -83,7 +83,7 @@
 			</p>
 		</gcl-overlay>
 
-		<gcl-button variant="success" click="showLoadingOverlay()">Show Loading Overlay</gcl-button>
+		<gcl-button variant="success" click="showLoadingOverlay()">Show Loading Overlay</gcl-button> -->
 
 		<!-- Examples -->
 
@@ -149,6 +149,11 @@
 			alert('Button clicked!');
 		}
 
+		function onCloseAlert() {
+
+			alert('Trying to close alert!');
+		}
+
 		function showLoadingOverlay() {
 
 			const cmp = document.querySelector("#loadingOverlay");
@@ -156,12 +161,12 @@
 			cmp.setVisible(true);
 		}
 
-		function closeLoadingOverlay() {
+		// function closeLoadingOverlay() {
 
-			const cmp = document.querySelector("#loadingOverlay");
+		// 	const cmp = document.querySelector("#loadingOverlay");
 
-			cmp.setVisible(false);
-		}
+		// 	cmp.setVisible(false);
+		// }
 
 		function changeName() {
 
@@ -186,9 +191,9 @@
 
 		const app = document.querySelector('gcl-app');
 
-		app.addEventListener('valueChanged', e => {
-			alert('valueChanged: ' + JSON.stringify(e.detail));
-		});
+		// app.addEventListener('valueChanged', e => {
+		// 	alert('valueChanged: ' + JSON.stringify(e.detail));
+		// });
 
 		// app.addEventListener('selectionChanged', e => {
 

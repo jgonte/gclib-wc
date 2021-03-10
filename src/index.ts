@@ -20,6 +20,8 @@ export { TextField } from './components/field/textField/TextField';
 
 export { MultilineTextField } from './components/field/multilineTextField/MultilineTextField';
 
+export { HiddenField } from './components/field/hiddenField/HiddenField';
+
 export { NumberField } from './components/field/numberField/NumberField';
 
 export { DateField } from './components/field/dateField/DateField';

@@ -44,13 +44,13 @@ export class FileField extends SingleValueField {
             <input
                 type="file"
                 name={name}
-                id={name} 
+                id={name}
                 accept={accept}
                 capture={capture}
                 multiple={multiple}
                 class={this.getCSSClass()}
                 //required={required}
-                // style={{ maxWidth, width }}
+                style={{ minWidth: '220px' }}
                 // className={inputClass}
                 //value={value} //TODO: Use it to populate a preview section
                 onChange={this.onChange}

@@ -5,16 +5,21 @@ import { h } from 'gclib-vdom';
 import CustomElement from "../../core/CustomElement";
 import { config } from '../config';
 import { Field } from '../field/Field';
-import AsyncDataSubmitableMixin from '../mixins/data/AsyncDataSubmitableMixin';
+import AsyncDataSubmitableMixin, { renderSubmitting } from '../mixins/data/AsyncDataSubmitableMixin';
 import ValidatableMixin from '../mixins/validatable/ValidatableMixin';
 import ContainerMixin from '../../core/mixins/ContainerMixin';
+import { valueChanged } from '../field/SingleValueField';
+import { renderDerived } from '../mixins/Internals';
+import ErrorableMixin, { renderError } from '../mixins/errorable/ErrorableMixin';
 
 //@ts-ignore
 export class Form extends
     AsyncDataSubmitableMixin(
-        ValidatableMixin(
-            ContainerMixin(
-                CustomElement
+        ErrorableMixin(
+            ValidatableMixin(
+                ContainerMixin(
+                    CustomElement
+                )
             )
         )
     ) {
@@ -48,8 +53,28 @@ export class Form extends
     render() {
 
         const {
-            warnings,
-            errors
+            error,
+            submitting
+        } = this.state;
+
+        if (error !== undefined) {
+
+            return this[renderError as any]();
+        }
+
+        if (submitting === true) {
+
+            return this[renderSubmitting as any]();
+        }
+
+        return this[renderDerived]();
+    }
+
+    [renderDerived]() {
+
+        const {
+            validationWarnings,
+            validationErrors
         } = this.state;
 
         const {
@@ -61,8 +86,8 @@ export class Form extends
                 <slot />
                 <gcl-validation-summary
                     size={size}
-                    warnings={warnings}
-                    errors={errors}
+                    warnings={validationWarnings}
+                    errors={validationErrors}
                 />
                 {this.renderButtons()}
             </form>
@@ -144,12 +169,54 @@ export class Form extends
         child.dataField = undefined;
     }
 
+    /** Called to retrieve the data to send the server */
+    getSubmitData() {
+
+        const data = this._record.getData();
+
+        console.log(JSON.stringify(data));
+
+        return data;
+    }
+
     connectedCallback() {
 
         super.connectedCallback?.();
 
+        this.addEventListener(valueChanged, this.onValueChanged);
+
         // Pass the properties to the data record
 
+    }
+
+    disconnectedCallback() {
+
+        super.disconnectedCallback?.();
+
+        this.removeEventListener(valueChanged, this.onValueChanged);
+    }
+
+    onValueChanged(event: CustomEvent) {
+
+        const {
+            name,
+            value
+        } = event.detail;
+
+        console.log('valueChanged: ' + JSON.stringify(event.detail));
+
+        this._record.setData({
+            [name]: value
+        })
+
+        event.stopPropagation();
+    }
+
+    handleSubmitResponse(data: any) {
+
+        console.log(JSON.stringify(data));
+
+        this._record.setData(data);
     }
 
 }

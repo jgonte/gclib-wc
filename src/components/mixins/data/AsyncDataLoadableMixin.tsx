@@ -21,7 +21,7 @@ const AsyncDataLoadableMixin = Base =>
             loadUrl: {
                 attribute: 'load-url',
                 type: String,
-                required: true
+                //required: true Loading the form or other component might be optional
             },
 
             /**
@@ -59,9 +59,9 @@ const AsyncDataLoadableMixin = Base =>
 
             super();
 
-            this.onData = this.onData.bind(this);
+            this.onLoadData = this.onLoadData.bind(this);
 
-            this.onError = this.onError.bind(this);
+            this.onLoadError = this.onLoadError.bind(this);
         }
 
         render() {
@@ -130,12 +130,12 @@ const AsyncDataLoadableMixin = Base =>
 
                 this._loader = isCollection === true ?
                     new CollectionLoader({
-                        onData: this.onData,
-                        onError: this.onError
+                        onData: this.onLoadData,
+                        onError: this.onLoadError
                     }) :
                     new SingleItemLoader({
-                        onData: this.onData,
-                        onError: this.onError
+                        onData: this.onLoadData,
+                        onError: this.onLoadError
                     });
 
                 if (autoLoad === true) {
@@ -149,14 +149,14 @@ const AsyncDataLoadableMixin = Base =>
             }
         }
 
-        onData(data) {
+        onLoadData(data) {
 
             this.setLoading(false);
 
             this.setData(data.payload);
         }
 
-        onError(error) {
+        onLoadError(error) {
 
             this.setLoading(false);
 

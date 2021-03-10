@@ -2,19 +2,14 @@ import { Fragment, h, VirtualNode } from 'gclib-vdom';
 import { config } from '../config';
 import CustomElement from '../../core/CustomElement';
 import { Icon } from '../../components/icon/Icon';
-import VisibleMixin, { renderWhenVisible } from '../mixins/visible/VisibleMixin';
 import SizableMixin from '../mixins/sizable/SizableMixin';
 import ContainerMixin from '../../core/mixins/ContainerMixin';
 
-export const isInvisible = 'isInvisible';
-
 //@ts-ignore
 export class Alert extends
-    VisibleMixin(
-        SizableMixin(
-            ContainerMixin(
-                CustomElement
-            )
+    SizableMixin(
+        ContainerMixin(
+            CustomElement
         )
     ) {
 
@@ -31,7 +26,8 @@ export class Alert extends
          */
         type: {
             type: String,
-            value: 'info' // options: "info" | "success" | "warning" | "error"
+            value: 'info',
+            options: ['info', 'success', 'warning', 'error']
         },
 
         /**
@@ -62,10 +58,18 @@ export class Alert extends
         closable: {
             type: Boolean,
             value: true
+        },
+
+        /**
+         * What action to execute when the alert has been closed
+         */
+        close: {
+            type: Function
         }
+
     };
 
-    [renderWhenVisible]() {
+    render() {
 
         return (
             <Fragment class={this.getCSSClass()}>
@@ -116,7 +120,7 @@ export class Alert extends
         }
         else { // VirtualNode
 
-            return  message;
+            return message;
         }
     }
 
@@ -151,7 +155,8 @@ export class Alert extends
     renderCloseButton() {
 
         const {
-            closable
+            closable,
+            close
         } = this.props;
 
         if (closable !== true) {
@@ -161,19 +166,7 @@ export class Alert extends
 
         return (
             <span class="close-button"
-                onClick={() => {
-
-                    this.setVisible(false); // Hide this alert
-
-                    // Send a message up that the alert is not longer visible
-                    this.dispatchEvent(new CustomEvent(isInvisible, {
-                        detail: { 
-                            child: this
-                        },
-                        bubbles: true,
-                        composed: true
-                    }));
-                }}
+                onClick={() => close?.()}
             >
                 <gcl-text variant={this.getVariant()} >
                     &times;

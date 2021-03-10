@@ -46,7 +46,17 @@ export interface CustomPropertyDescriptor {
     /**
      * Whether the value of the parent property needs to be passed th the children nodes when they are initialized
      */
-    passToChildren;
+    passToChildren: boolean;
+
+    /**
+     * The range to restrict the values of the property
+     */
+    options: string[];
+
+    /**
+     * Whether the property must have a value by the time the connectedCallback method is called
+     */
+    required: boolean;
 }
 
 export interface ComponentMetadata {

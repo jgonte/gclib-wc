@@ -54,7 +54,8 @@ const MetadataInitializerMixin = Base =>
                 type, // The type of the property
                 value, // The default value of the property if no HTML attribute is provided
                 mutable, // Whether the value of the property can be changed
-                reflect // Whether to reflect the change of the property in its mapped HTML attribute
+                reflect, // Whether to reflect the change of the property in its mapped HTML attribute,
+                options // The range to restrict the values
             } = propertyDescriptor;
 
             if (value !== undefined) { // Initialize the property to the default value if any
@@ -64,22 +65,26 @@ const MetadataInitializerMixin = Base =>
 
             if (mutable === true) { // Generate a setter
 
-                const setter = function (val) {
+                const setter = function (newValue) {
 
                     const oldValue = this.props[name];
 
-                    if (oldValue === val) {
+                    if (oldValue === newValue) {
 
                         return;
                     }
 
+                    this.validatePropertyOptions(name, newValue, options);
+
+                    console.log(`Property: '${name}' of custom element: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
+
                     if (reflect) { // This will trigger the attributeChangedCallback
 
-                        this.setAttribute(attribute, defaultPropertyValueConverter.toAttribute(val, type));
+                        this.setAttribute(attribute, defaultPropertyValueConverter.toAttribute(newValue, type));
                     }
                     else {
 
-                        this.setProperty(name, val);
+                        this.setProperty(name, newValue);
                     }
                 };
 
@@ -168,12 +173,29 @@ const MetadataInitializerMixin = Base =>
                 return; // Nothing to update
             }
 
-            // Update the internal property
-            const propDescriptor = (this.constructor as unknown as MetadataInitializerConstructor).propertiesByAttribute[attributeName];
+            const {
+                name,
+                type,
+                options
+            } = (this.constructor as unknown as MetadataInitializerConstructor).propertiesByAttribute[attributeName];
 
-            this.props[propDescriptor.name] = defaultPropertyValueConverter.toProperty(newValue, propDescriptor.type);
+            this.validatePropertyOptions(name, newValue, options);
+
+            console.log(`attributeChangedCallback: '${attributeName}' of custom element: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
+
+            // Update the internal property 
+            this.props[name] = defaultPropertyValueConverter.toProperty(newValue, type);
 
             this.requestUpdate();
+        }
+
+        private validatePropertyOptions(name: string, newValue: string, options: string[]) {
+
+            if (options !== undefined &&
+                !options.includes(newValue)) {
+
+                throw Error(`Value: [${newValue}] is not in the options of property: '${name}'. Options: [${options.join(', ')}] `);
+            }
         }
     }
 

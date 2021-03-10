@@ -1,12 +1,8 @@
 import { Fragment, h } from 'gclib-vdom';
 import CustomElement from '../../core/CustomElement';
-import VisibleMixin, { renderWhenVisible } from '../mixins/visible/VisibleMixin';
 import { config } from '../config';
-import { isInvisible } from '../alert/Alert';
 
-export class Overlay extends VisibleMixin(
-    CustomElement
-) {
+export class Overlay extends CustomElement {
 
     static component = {
 
@@ -15,7 +11,7 @@ export class Overlay extends VisibleMixin(
         ]
     };
 
-    [renderWhenVisible]() {
+    render() {
 
         return (
             <Fragment class={this.getCSSClass()}>
@@ -29,13 +25,6 @@ export class Overlay extends VisibleMixin(
         return {
             "center": true // Center the content by default
         };
-    }
-
-    connectedCallback() {
-
-        super.connectedCallback();
-
-        this.addEventListener(isInvisible, () => this.setVisible(false));
     }
 }
 

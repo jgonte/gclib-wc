@@ -28,6 +28,32 @@ export default abstract class CustomElement extends
 
     connectedCallback() {
 
+        // Validate that all the required properties have been set
+        const {
+            componentMetadata
+        } = this.constructor as unknown as MetadataInitializerConstructor;
+
+        const {
+            properties
+        } = componentMetadata;
+
+        const requiredProperties = Object.values(properties).filter(p => p.required === true);
+
+        const invalidAttributes: string[] = [];
+
+        requiredProperties.forEach(property => {
+
+            if (this.props[property.name] === undefined) {
+
+                invalidAttributes.push(property.attribute);
+            }
+        });
+
+        if (invalidAttributes.length > 0) {
+
+            throw Error(`These attributes are required but are missing their values: [${invalidAttributes.join(', ')}]`)
+        }
+
         this.requestUpdate();
     }
 
@@ -93,4 +119,5 @@ export default abstract class CustomElement extends
 
         this.requestUpdate();
     }
+    
 }

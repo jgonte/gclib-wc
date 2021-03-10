@@ -301,6 +301,9 @@ var DataRecordDescriptor = (function () {
         this._recordValidators = recordValidators;
     };
     DataRecordDescriptor.prototype.addFieldDescriptor = function (fd) {
+        if (fd.converter === undefined) {
+            fd.converter = defaultValueConverter;
+        }
         this._fieldDescriptors.push(fd);
     };
     DataRecordDescriptor.prototype.removeFieldDescriptor = function (fd) {
@@ -439,7 +442,10 @@ var DataRecord = (function () {
         var data = {};
         for (var key in _fields) {
             if (_fields.hasOwnProperty(key)) {
-                data[key] = _fields[key].value;
+                var value = _fields[key].value;
+                if (value != undefined && value != null) {
+                    data[key] = value;
+                }
             }
         }
         this._data = data;
@@ -963,18 +969,15 @@ var Fetcher = (function () {
     };
     Fetcher.prototype.buildHeaders = function (request) {
         return __awaiter(this, void 0, void 0, function () {
-            var requestHeaders, contentTypeHeader, key, headers, key, authHeader, key;
+            var requestHeaders, key, headers, key, authHeader, key;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         requestHeaders = request.headers || {};
                         for (key in requestHeaders) {
                             if (key.toLowerCase() === 'content-type') {
-                                contentTypeHeader = requestHeaders[key];
+                                requestHeaders[key];
                             }
-                        }
-                        if (contentTypeHeader === undefined) {
-                            requestHeaders['content-type'] = 'application/json';
                         }
                         headers = new Headers();
                         for (key in requestHeaders) {
@@ -1001,7 +1004,16 @@ var Fetcher = (function () {
     };
     Fetcher.prototype.buildBody = function (request) {
         var data = request.data;
-        return data !== undefined ? JSON.stringify(data) : undefined;
+        if (data === undefined) {
+            return undefined;
+        }
+        var formData = new FormData();
+        for (var key in data) {
+            if (data.hasOwnProperty(key)) {
+                formData.append(key, data[key]);
+            }
+        }
+        return formData;
     };
     Fetcher.prototype.processResponse = function (response) {
         return __awaiter(this, void 0, void 0, function () {
@@ -2330,6 +2342,9 @@ function diff(oldNode, newNode) {
             var oldText = oldNode;
             var newText = newNode;
             if (oldText.text !== newText.text) {
+                if (newText.text === undefined) {
+                    newText.text = '';
+                }
                 return new ElementPatches([
                     new SetTextPatch(newText)
                 ], []);
@@ -2385,6 +2400,10 @@ const defaultPropertyValueConverter = {
                     // Value is a string but not a JSON one, do nothing
                 }
                 return createVirtualNode(value);
+            }
+            case Function: { // Extract the string and return the global function
+                const functionName = value.replace('()', '').trim();
+                return window[functionName];
             }
         }
         return value;
@@ -2458,22 +2477,25 @@ const MetadataInitializerMixin = Base => class MetadataInitializer extends Base 
         type, // The type of the property
         value, // The default value of the property if no HTML attribute is provided
         mutable, // Whether the value of the property can be changed
-        reflect // Whether to reflect the change of the property in its mapped HTML attribute
+        reflect, // Whether to reflect the change of the property in its mapped HTML attribute,
+        options // The range to restrict the values
          } = propertyDescriptor;
         if (value !== undefined) { // Initialize the property to the default value if any
             this.props[name] = value;
         }
         if (mutable === true) { // Generate a setter
-            const setter = function (val) {
+            const setter = function (newValue) {
                 const oldValue = this.props[name];
-                if (oldValue === val) {
+                if (oldValue === newValue) {
                     return;
                 }
+                this.validatePropertyOptions(name, newValue, options);
+                console.log(`Property: '${name}' of custom element: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
                 if (reflect) { // This will trigger the attributeChangedCallback
-                    this.setAttribute(attribute, defaultPropertyValueConverter.toAttribute(val, type));
+                    this.setAttribute(attribute, defaultPropertyValueConverter.toAttribute(newValue, type));
                 }
                 else {
-                    this.setProperty(name, val);
+                    this.setProperty(name, newValue);
                 }
             };
             var setterName = this.getSetterName(name);
@@ -2524,10 +2546,18 @@ const MetadataInitializerMixin = Base => class MetadataInitializer extends Base 
         if (newValue === oldValue) {
             return; // Nothing to update
         }
-        // Update the internal property
-        const propDescriptor = this.constructor.propertiesByAttribute[attributeName];
-        this.props[propDescriptor.name] = defaultPropertyValueConverter.toProperty(newValue, propDescriptor.type);
+        const { name, type, options } = this.constructor.propertiesByAttribute[attributeName];
+        this.validatePropertyOptions(name, newValue, options);
+        console.log(`attributeChangedCallback: '${attributeName}' of custom element: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
+        // Update the internal property 
+        this.props[name] = defaultPropertyValueConverter.toProperty(newValue, type);
         this.requestUpdate();
+    }
+    validatePropertyOptions(name, newValue, options) {
+        if (options !== undefined &&
+            !options.includes(newValue)) {
+            throw Error(`Value: [${newValue}] is not in the options of property: '${name}'. Options: [${options.join(', ')}] `);
+        }
     }
 };
 
@@ -2553,6 +2583,9 @@ const VirtualDomComponentMixin = Base => class VirtualDomComponent extends Base 
     }
     update() {
         let node = this.render();
+        if (node === undefined) {
+            console.error('Undefined virtual node. Ensure that you return the node from the render function');
+        }
         const nodeType = typeof node;
         const styleUrls = this.constructor.componentMetadata.component.styleUrls;
         const hasStyleUrls = styleUrls !== undefined;
@@ -2593,6 +2626,19 @@ class CustomElement extends VirtualDomComponentMixin(MetadataInitializerMixin(HT
         }
     }
     connectedCallback() {
+        // Validate that all the required properties have been set
+        const { componentMetadata } = this.constructor;
+        const { properties } = componentMetadata;
+        const requiredProperties = Object.values(properties).filter(p => p.required === true);
+        const invalidAttributes = [];
+        requiredProperties.forEach(property => {
+            if (this.props[property.name] === undefined) {
+                invalidAttributes.push(property.attribute);
+            }
+        });
+        if (invalidAttributes.length > 0) {
+            throw Error(`These attributes are required but are missing their values: [${invalidAttributes.join(', ')}]`);
+        }
         this.requestUpdate();
     }
     requestUpdate() {
@@ -2839,28 +2885,6 @@ Text.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-text`, Text);
 
-const renderWhenVisible = Symbol('renderWhenVisible');
-const VisibleMixin = Base => { var _a; return _a = class Visible extends Base {
-        render() {
-            const { visible } = this.props;
-            return visible === true ?
-                this[renderWhenVisible]() :
-                null;
-        }
-    },
-    _a.properties = {
-        /**
-         * Whether the element is visible
-         */
-        visible: {
-            type: Boolean,
-            value: true,
-            mutable: true,
-            reflect: true
-        }
-    },
-    _a; };
-
 const childConnected = 'childConnected';
 const childDisconnected = 'childDisconnected';
 /**
@@ -3017,10 +3041,9 @@ const ContainerMixin = Base => { var _a; return _a = class Container extends Bas
     },
     _a; };
 
-const isInvisible = 'isInvisible';
 //@ts-ignore
-class Alert extends VisibleMixin(SizableMixin(ContainerMixin(CustomElement))) {
-    [renderWhenVisible]() {
+class Alert extends SizableMixin(ContainerMixin(CustomElement)) {
+    render() {
         return (h(Fragment, { class: this.getCSSClass() },
             this.renderIcon(),
             this.renderMessage(),
@@ -3066,21 +3089,11 @@ class Alert extends VisibleMixin(SizableMixin(ContainerMixin(CustomElement))) {
         }
     }
     renderCloseButton() {
-        const { closable } = this.props;
+        const { closable, close } = this.props;
         if (closable !== true) {
             return null;
         }
-        return (h("span", { class: "close-button", onClick: () => {
-                this.setVisible(false); // Hide this alert
-                // Send a message up that the alert is not longer visible
-                this.dispatchEvent(new CustomEvent(isInvisible, {
-                    detail: {
-                        child: this
-                    },
-                    bubbles: true,
-                    composed: true
-                }));
-            } },
+        return (h("span", { class: "close-button", onClick: () => close === null || close === void 0 ? void 0 : close() },
             h("gcl-text", { variant: this.getVariant() }, "\u00D7")));
     }
     getCSSClass() {
@@ -3103,7 +3116,8 @@ Alert.properties = {
      */
     type: {
         type: String,
-        value: 'info' // options: "info" | "success" | "warning" | "error"
+        value: 'info',
+        options: ['info', 'success', 'warning', 'error']
     },
     /**
      * The icon of the alert
@@ -3130,6 +3144,12 @@ Alert.properties = {
     closable: {
         type: Boolean,
         value: true
+    },
+    /**
+     * What action to execute when the alert has been closed
+     */
+    close: {
+        type: Function
     }
 };
 //@ts-ignore
@@ -3166,8 +3186,8 @@ Button.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-button`, Button);
 
-class Overlay extends VisibleMixin(CustomElement) {
-    [renderWhenVisible]() {
+class Overlay extends CustomElement {
+    render() {
         return (h(Fragment, { class: this.getCSSClass() },
             h("slot", null)));
     }
@@ -3175,10 +3195,6 @@ class Overlay extends VisibleMixin(CustomElement) {
         return {
             "center": true // Center the content by default
         };
-    }
-    connectedCallback() {
-        super.connectedCallback();
-        this.addEventListener(isInvisible, () => this.setVisible(false));
     }
 }
 Overlay.component = {
@@ -3190,42 +3206,44 @@ Overlay.component = {
 customElements.define(`${config.tagPrefix}-overlay`, Overlay);
 
 /**
- * Render when there has been an error
+ * The following symbols allow for mixins to call the render method of the derived class that extends those mixins
+ * For that, the derived class must import the symbol and implement that method using the symbol as the name of the method
  */
+const renderDerived = Symbol('renderDerived');
+
 const renderError = Symbol('renderError');
+/**
+ * Mixin that handles errors
+ * @param Base
+ */
 const ErrorableMixin = Base => { var _a; return _a = class Errorable extends Base {
-        render() {
-            const { error } = this.state;
-            return error !== undefined ?
-                this[renderError]() :
-                super.render();
-        }
         [renderError]() {
-            const { error } = this.state;
-            if (this.props.renderError !== undefined) {
-                return (h(Fragment, null,
-                    this.props.renderError(error),
-                    super.render()));
-            }
-            else { // Show the user the error
-                return (h(Fragment, null,
-                    h("gcl-overlay", null,
-                        h("gcl-alert", { type: "error", message: this.getErrorMessage(error) })),
-                    super.render()));
-            }
+            return (h(Fragment, null,
+                h("gcl-overlay", null,
+                    h("gcl-alert", { type: "error", message: this.getErrorMessage(), closable: true, close: () => {
+                            this.setError(undefined);
+                        } })),
+                this[renderDerived]()));
         }
-        getErrorMessage(error) {
+        getErrorMessage() {
+            const { error } = this.state;
             if (error instanceof Error) {
                 return error.message;
             }
-            else {
-                return JSON.stringify(error);
+            else { // Try to find the message of error returned by the server
+                if (error.payload !== undefined) {
+                    const payload = JSON.parse(error.payload);
+                    if (payload.errors !== undefined) {
+                        return Object.values(payload.errors).join('\n');
+                    }
+                    else if (payload.title !== undefined) {
+                        return payload.title;
+                    }
+                }
+                else {
+                    return error.statusText;
+                }
             }
-        }
-    },
-    _a.properties = {
-        renderError: {
-            type: Function
         }
     },
     _a.state = {
@@ -3293,8 +3311,8 @@ const AsyncDataLoadableMixin = Base => { var _a; return _a =
 class AsyncDataLoadable extends ErrorableMixin(DataLoadableMixin(Base)) {
         constructor() {
             super();
-            this.onData = this.onData.bind(this);
-            this.onError = this.onError.bind(this);
+            this.onLoadData = this.onLoadData.bind(this);
+            this.onLoadError = this.onLoadError.bind(this);
         }
         render() {
             const { loading } = this.state;
@@ -3327,12 +3345,12 @@ class AsyncDataLoadable extends ErrorableMixin(DataLoadableMixin(Base)) {
             if (loadUrl !== undefined) {
                 this._loader = isCollection === true ?
                     new CollectionLoader({
-                        onData: this.onData,
-                        onError: this.onError
+                        onData: this.onLoadData,
+                        onError: this.onLoadError
                     }) :
                     new SingleItemLoader({
-                        onData: this.onData,
-                        onError: this.onError
+                        onData: this.onLoadData,
+                        onError: this.onLoadError
                     });
                 if (autoLoad === true) {
                     this.load();
@@ -3342,11 +3360,11 @@ class AsyncDataLoadable extends ErrorableMixin(DataLoadableMixin(Base)) {
                 super.connectedCallback();
             }
         }
-        onData(data) {
+        onLoadData(data) {
             this.setLoading(false);
             this.setData(data.payload);
         }
-        onError(error) {
+        onLoadError(error) {
             this.setLoading(false);
             this.setError(error);
         }
@@ -3358,7 +3376,6 @@ class AsyncDataLoadable extends ErrorableMixin(DataLoadableMixin(Base)) {
         loadUrl: {
             attribute: 'load-url',
             type: String,
-            required: true
         },
         /**
          * Whether to load the data for the component when the component is connected
@@ -3748,8 +3765,30 @@ const ValidatableMixin = Base => { var _a; return _a = class Validatable extends
         }
     },
     _a.state = {
-        errors: [],
-        warnings: []
+        validationErrors: [],
+        validationWarnings: []
+    },
+    _a; };
+
+const renderWhenVisible = Symbol('renderWhenVisible');
+const VisibleMixin = Base => { var _a; return _a = class Visible extends Base {
+        render() {
+            const { visible } = this.props;
+            return visible === true ?
+                this[renderWhenVisible]() :
+                null;
+        }
+    },
+    _a.properties = {
+        /**
+         * Whether the element is visible
+         */
+        visible: {
+            type: Boolean,
+            value: true,
+            mutable: true,
+            reflect: true
+        }
     },
     _a; };
 
@@ -3761,13 +3800,13 @@ class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(Custom
         this.onBlur = this.onBlur.bind(this);
     }
     [renderWhenVisible]() {
-        const { warnings, errors } = this.state;
+        const { validationWarnings, validationErrors } = this.state;
         const { size } = this.props;
         return (h(Fragment, { class: this.getCSSClass() },
             h("div", { class: "field" },
                 this.renderLabel(),
                 this[renderField]()),
-            h("gcl-validation-summary", { size: size, warnings: warnings, errors: errors })));
+            h("gcl-validation-summary", { size: size, warnings: validationWarnings, errors: validationErrors })));
     }
     renderLabel() {
         const { label, name, size } = this.props;
@@ -3842,8 +3881,8 @@ class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(Custom
             label = label.text;
         }
         // Reset warnings and errors
-        this.setWarnings([]);
-        this.setErrors([]);
+        this.setValidationWarnings([]);
+        this.setValidationErrors([]);
         const context = {
             errors: [],
             warnings: [],
@@ -3854,10 +3893,10 @@ class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(Custom
         validators.forEach((validator) => validator.validate(context));
         // Show warnings and errors
         if (context.warnings.length > 0) {
-            this.setWarnings(context.warnings);
+            this.setValidationWarnings(context.warnings);
         }
         if (context.errors.length > 0) {
-            this.setErrors(context.errors);
+            this.setValidationErrors(context.errors);
             return false;
         }
         return true;
@@ -3890,6 +3929,7 @@ Field.properties = {
     }
 };
 
+const valueChanged = 'valueChanged';
 //@ts-ignore
 class SingleValueField extends Field {
     constructor() {
@@ -3899,9 +3939,27 @@ class SingleValueField extends Field {
     onChange(event) {
         const { name } = this.props;
         // Retrieve the new value
-        const value = event.target.value;
+        const input = event.target;
+        let value;
+        switch (input.type) {
+            case 'file':
+                {
+                    if (input.multiple === true) {
+                        value = input.files;
+                    }
+                    else {
+                        value = input.files[0];
+                    }
+                }
+                break;
+            default:
+                {
+                    value = input.value;
+                }
+                break;
+        }
         this.setValue(value); // Update the current value
-        this.dispatchEvent(new CustomEvent('valueChanged', {
+        this.dispatchEvent(new CustomEvent(valueChanged, {
             detail: {
                 name,
                 value
@@ -3979,6 +4037,16 @@ MultilineTextField.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-multiline-text-field`, MultilineTextField);
 
+//@ts-ignore
+class HiddenField extends SingleValueField {
+    [renderField]() {
+        const { name, value, } = this.props;
+        return (h("input", { type: "hidden", name: name, value: value }));
+    }
+}
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-hidden-field`, HiddenField);
+
 const MinMaxMixin = Base => { var _a; return _a = class MinMax extends Base {
     },
     _a.properties = {
@@ -4051,7 +4119,7 @@ class FileField extends SingleValueField {
         disabled } = this.props;
         return (h("input", { type: "file", name: name, id: name, accept: accept, capture: capture, multiple: multiple, class: this.getCSSClass(), 
             //required={required}
-            // style={{ maxWidth, width }}
+            style: { minWidth: '220px' }, 
             // className={inputClass}
             //value={value} //TODO: Use it to populate a preview section
             onChange: this.onChange, 
@@ -4128,55 +4196,74 @@ ValidationSummary.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-validation-summary`, ValidationSummary);
 
-const AsyncDataSubmitableMixin = Base => { var _a; return _a = 
-//@ts-ignore
-class AsyncDataSubmitable extends ErrorableMixin(Base) {
+const renderSubmitting = Symbol('renderSubmitting');
+/**
+ * Mixin to implement a component that can post data to a server
+ * The derived/subclass must also implement ErrorableMixin
+ * @param Base
+ */
+const AsyncDataSubmitableMixin = Base => { var _a; return _a = class AsyncDataSubmitable extends Base {
         constructor() {
             super();
             this.submit = this.submit.bind(this);
+            this.onSubmitData = this.onSubmitData.bind(this);
+            this.onSubmitError = this.onSubmitError.bind(this);
         }
-        render() {
+        [renderSubmitting]() {
             const { submitting } = this.state;
             if (submitting === true) {
-                const { renderSubmitting } = this.props;
-                if (renderSubmitting !== undefined) {
-                    return renderSubmitting();
-                }
-                else {
-                    return (h(Fragment, null,
-                        h("gcl-overlay", null,
-                            h("gcl-alert", { closable: "false", type: "info", message: "...Submitting" })),
-                        super.render()));
-                }
+                return (h(Fragment, null,
+                    h("gcl-overlay", null,
+                        h("gcl-alert", { closable: "false", type: "info", message: "...Submitting" })),
+                    this[renderDerived]()));
             }
             else {
-                super.render();
+                return this[renderDerived]();
             }
         }
         submit() {
             const { submitUrl } = this.props;
+            if (submitUrl === undefined) {
+                console.error('A submit URL is required to submit the form');
+                return;
+            }
+            const { _fetcher } = this;
             this.setError(undefined);
             this.setSubmitting(true);
-            this._fetcher.fetch({
-                url: submitUrl
+            const data = this.getSubmitData(); // Overriden by the derived classes
+            _fetcher.fetch({
+                url: submitUrl,
+                method: this.getMethod(data),
+                data
             });
+        }
+        getMethod(data) {
+            const { method, methodSelector } = this.props;
+            if (method !== undefined) {
+                return method; // The user set an specific method
+            }
+            if (methodSelector != undefined) {
+                return methodSelector(data);
+            }
+            // Use conventions
+            return data.id !== undefined ? 'put' : 'post';
         }
         connectedCallback() {
             var _a;
             (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
-            const { submitUrl } = this.props;
+            const { submitUrl, } = this.props;
             if (submitUrl !== undefined) {
                 this._fetcher = new Fetcher({
-                    onData: this.onData,
-                    onError: this.onError
+                    onData: this.onSubmitData,
+                    onError: this.onSubmitError
                 });
             }
         }
-        onData(data) {
+        onSubmitData(data) {
             this.setSubmitting(false);
-            this.setData(data.payload);
+            this.handleSubmitResponse(data.payload);
         }
-        onError(error) {
+        onSubmitError(error) {
             this.setSubmitting(false);
             this.setError(error);
         }
@@ -4190,7 +4277,11 @@ class AsyncDataSubmitable extends ErrorableMixin(Base) {
             type: String,
             required: true
         },
-        renderSubmitting: {
+        method: {
+            type: String,
+            options: ['post', 'put']
+        },
+        methodSelector: {
             type: Function
         }
     },
@@ -4202,18 +4293,28 @@ class AsyncDataSubmitable extends ErrorableMixin(Base) {
     _a; };
 
 //@ts-ignore
-class Form extends AsyncDataSubmitableMixin(ValidatableMixin(ContainerMixin(CustomElement))) {
+class Form extends AsyncDataSubmitableMixin(ErrorableMixin(ValidatableMixin(ContainerMixin(CustomElement)))) {
     constructor() {
         super();
         this._record = new DataRecord();
         this.reset = this.reset.bind(this);
     }
     render() {
-        const { warnings, errors } = this.state;
+        const { error, submitting } = this.state;
+        if (error !== undefined) {
+            return this[renderError]();
+        }
+        if (submitting === true) {
+            return this[renderSubmitting]();
+        }
+        return this[renderDerived]();
+    }
+    [renderDerived]() {
+        const { validationWarnings, validationErrors } = this.state;
         const { size } = this.props;
         return (h("form", null,
             h("slot", null),
-            h("gcl-validation-summary", { size: size, warnings: warnings, errors: errors }),
+            h("gcl-validation-summary", { size: size, warnings: validationWarnings, errors: validationErrors }),
             this.renderButtons()));
     }
     renderButtons() {
@@ -4254,10 +4355,34 @@ class Form extends AsyncDataSubmitableMixin(ValidatableMixin(ContainerMixin(Cust
         this._record.removeField(child.props);
         child.dataField = undefined;
     }
+    /** Called to retrieve the data to send the server */
+    getSubmitData() {
+        const data = this._record.getData();
+        console.log(JSON.stringify(data));
+        return data;
+    }
     connectedCallback() {
         var _a;
         (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        this.addEventListener(valueChanged, this.onValueChanged);
         // Pass the properties to the data record
+    }
+    disconnectedCallback() {
+        var _a;
+        (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        this.removeEventListener(valueChanged, this.onValueChanged);
+    }
+    onValueChanged(event) {
+        const { name, value } = event.detail;
+        console.log('valueChanged: ' + JSON.stringify(event.detail));
+        this._record.setData({
+            [name]: value
+        });
+        event.stopPropagation();
+    }
+    handleSubmitResponse(data) {
+        console.log(JSON.stringify(data));
+        this._record.setData(data);
     }
 }
 Form.component = {
@@ -4494,12 +4619,13 @@ customElements.define('contacts-list', ContactsList);
  */
 class ContactForm extends CustomElement {
     render() {
-        return (h("gcl-form", { id: "contactForm", "load-url": "http://localhost:60314/api/contacts/1", size: "medium" },
+        return (h("gcl-form", { id: "contactForm", "load-url": "http://localhost:60314/api/contacts/1", "submit-url": "http://localhost:60314/api/contacts/", size: "medium" },
+            h("gcl-hidden-field", { name: "id" }),
             h("gcl-text-field", { label: "Name", name: "name", required: true }),
-            h("gcl-date-field", { label: "Date of Birth", name: "dateOfBirth", required: true }),
-            h("gcl-number-field", { label: "Reputation", name: "reputation", min: "1", max: "10", required: true }),
-            h("gcl-multiline-text-field", { label: "Description", name: "description", rows: "5", cols: "30", required: true }),
-            h("gcl-file-field", { label: "Avatar", name: "avatar", required: true })));
+            h("gcl-date-field", { label: "Date of Birth", name: "dateOfBirth" }),
+            h("gcl-number-field", { label: "Reputation", name: "reputation", min: "1", max: "10" }),
+            h("gcl-multiline-text-field", { label: "Description", name: "description", rows: "5", cols: "30" }),
+            h("gcl-file-field", { label: "Avatar", name: "avatar" })));
     }
 }
 //@ts-ignore
@@ -4535,4 +4661,4 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
-export { Alert, App, Button, ContactForm, ContactsList, DateField, FileField, Form, Icon, List, ListItem, MultilineTextField, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, NumberField, Overlay, Table, Text, TextField, ValidationSummary };
+export { Alert, App, Button, ContactForm, ContactsList, DateField, FileField, Form, HiddenField, Icon, List, ListItem, MultilineTextField, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, NumberField, Overlay, Table, Text, TextField, ValidationSummary };

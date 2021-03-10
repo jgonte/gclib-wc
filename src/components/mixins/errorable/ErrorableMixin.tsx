@@ -1,20 +1,15 @@
 import { Fragment, h } from "gclib-vdom";
+import { renderDerived } from "../Internals";
 
-/**
- * Render when there has been an error
- */
 export const renderError = Symbol('renderError');
 
+/**
+ * Mixin that handles errors
+ * @param Base 
+ */
 const ErrorableMixin = Base =>
 
     class Errorable extends Base {
-
-        static properties = {
-
-            renderError: {
-                type: Function
-            }
-        };
 
         static state = {
 
@@ -23,57 +18,54 @@ const ErrorableMixin = Base =>
             }
         };
 
-        render() {
-
-            const {
-                error
-            } = this.state;
-
-            return error !== undefined ?
-                this[renderError as any]() :
-                super.render();
-        }
-
         [renderError]() {
 
+            return (
+                <Fragment>
+                    <gcl-overlay>
+                        <gcl-alert
+                            type="error"
+                            message={this.getErrorMessage()}
+                            closable={true}
+                            close={() => { 
+                                this.setError(undefined);
+                            }}
+                        />
+                    </gcl-overlay>
+                    {this[renderDerived as any]()}
+                </Fragment>
+            );
+        }
+
+        getErrorMessage() {
+
             const {
                 error
             } = this.state;
-
-            if (this.props.renderError !== undefined) {
-
-                return (
-                    <Fragment>
-                        {this.props.renderError(error)}
-                        {super.render()}
-                    </Fragment>
-                );
-            }
-            else { // Show the user the error
-
-                return (
-                    <Fragment>
-                        <gcl-overlay>
-                            <gcl-alert
-                                type="error"
-                                message={this.getErrorMessage(error)}
-                            />
-                        </gcl-overlay>
-                        {super.render()}
-                    </Fragment>
-                );
-            }
-        }
-
-        getErrorMessage(error: any) {
 
             if (error instanceof Error) {
 
                 return error.message;
             }
-            else {
+            else { // Try to find the message of error returned by the server
 
-                return JSON.stringify(error);
+                if (error.payload !== undefined) {
+
+                    const payload = JSON.parse(error.payload);
+
+                    if (payload.errors !== undefined) {
+
+                        return Object.values(payload.errors).join('\n');
+                    }
+                    else if (payload.title !== undefined) {
+
+                        return payload.title;
+                    }   
+                }
+                else {
+
+                    return error.statusText;
+                }
             }
         }
 

@@ -67,8 +67,8 @@ export abstract class Field extends
     [renderWhenVisible]() {
 
         const {
-            warnings,
-            errors
+            validationWarnings,
+            validationErrors
         } = this.state;
 
         const {
@@ -83,8 +83,8 @@ export abstract class Field extends
                 </div>
                 <gcl-validation-summary
                     size={size}
-                    warnings={warnings}
-                    errors={errors}
+                    warnings={validationWarnings}
+                    errors={validationErrors}
                 />
             </Fragment>
         );
@@ -228,9 +228,9 @@ export abstract class Field extends
         }
 
         // Reset warnings and errors
-        this.setWarnings([]);
+        this.setValidationWarnings([]);
 
-        this.setErrors([]);
+        this.setValidationErrors([]);
 
         const context = {
             errors: [],
@@ -245,12 +245,12 @@ export abstract class Field extends
         // Show warnings and errors
         if (context.warnings.length > 0) {
 
-            this.setWarnings(context.warnings);
+            this.setValidationWarnings(context.warnings);
         }
 
         if (context.errors.length > 0) {
 
-            this.setErrors(context.errors);
+            this.setValidationErrors(context.errors);
 
             return false;
         }

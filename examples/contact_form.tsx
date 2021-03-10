@@ -12,7 +12,12 @@ export class ContactForm extends CustomElement {
             <gcl-form
                 id="contactForm"
                 load-url="http://localhost:60314/api/contacts/1"
+                submit-url="http://localhost:60314/api/contacts/"
                 size="medium">
+
+                <gcl-hidden-field
+                    name="id"
+                />
 
                 <gcl-text-field
                     label="Name"
@@ -23,7 +28,7 @@ export class ContactForm extends CustomElement {
                 <gcl-date-field
                     label="Date of Birth"
                     name="dateOfBirth"
-                    required
+                // required
                 />
 
                 <gcl-number-field
@@ -31,7 +36,7 @@ export class ContactForm extends CustomElement {
                     name="reputation"
                     min="1"
                     max="10"
-                    required
+                // required
                 />
 
                 <gcl-multiline-text-field
@@ -39,13 +44,13 @@ export class ContactForm extends CustomElement {
                     name="description"
                     rows="5"
                     cols="30"
-                    required
+                // required
                 />
 
                 <gcl-file-field
                     label="Avatar"
                     name="avatar"
-                    required
+                // required
                 />
 
             </gcl-form>

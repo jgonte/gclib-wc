@@ -1,15 +1,18 @@
 import { Fetcher } from "gclib-utils";
 import { ErrorResponse } from "gclib-utils/dist/types/data/transfer/Interfaces";
 import { Fragment, h } from "gclib-vdom";
-import ErrorableMixin from "../errorable/ErrorableMixin";
+import { renderDerived as renderDerived } from "../Internals";
 
+export const renderSubmitting = Symbol('renderSubmitting');
+
+/**
+ * Mixin to implement a component that can post data to a server
+ * The derived/subclass must also implement ErrorableMixin
+ * @param Base
+ */
 const AsyncDataSubmitableMixin = Base =>
 
-    //@ts-ignore
-    class AsyncDataSubmitable extends
-        ErrorableMixin(
-            Base
-        ) {
+    class AsyncDataSubmitable extends Base {
 
         static properties = {
 
@@ -22,7 +25,12 @@ const AsyncDataSubmitableMixin = Base =>
                 required: true
             },
 
-            renderSubmitting: {
+            method: {
+                type: String,    
+                options: ['post', 'put']
+            },
+
+            methodSelector: {
                 type: Function
             }
         };
@@ -39,9 +47,13 @@ const AsyncDataSubmitableMixin = Base =>
             super();
 
             this.submit = this.submit.bind(this);
+
+            this.onSubmitData = this.onSubmitData.bind(this);
+
+            this.onSubmitError = this.onSubmitError.bind(this);
         }
 
-        render() {
+        [renderSubmitting]() {
 
             const {
                 submitting
@@ -49,33 +61,22 @@ const AsyncDataSubmitableMixin = Base =>
 
             if (submitting === true) {
 
-                const {
-                    renderSubmitting
-                } = this.props;
-
-                if (renderSubmitting !== undefined) {
-
-                    return renderSubmitting();
-                }
-                else {
-
-                    return (
-                        <Fragment>
-                            <gcl-overlay >
-                                <gcl-alert
-                                    closable="false"
-                                    type="info"
-                                    message="...Submitting"
-                                />
-                            </gcl-overlay>
-                            { super.render()}
-                        </Fragment>
-                    );
-                }
+                return (
+                    <Fragment>
+                        <gcl-overlay >
+                            <gcl-alert
+                                closable="false"
+                                type="info"
+                                message="...Submitting"
+                            />
+                        </gcl-overlay>
+                        { this[renderDerived as any]()}
+                    </Fragment>
+                );
             }
             else {
 
-                super.render();
+                return this[renderDerived as any]();
             }
         }
 
@@ -85,13 +86,49 @@ const AsyncDataSubmitableMixin = Base =>
                 submitUrl
             } = this.props;
 
+            if (submitUrl === undefined) {
+
+                console.error('A submit URL is required to submit the form');
+
+                return;
+            }
+
+            const {
+                _fetcher
+            } = this;
+
             this.setError(undefined);
 
             this.setSubmitting(true);
 
-            this._fetcher.fetch({
-                url: submitUrl
+            const data = this.getSubmitData(); // Overriden by the derived classes
+
+            _fetcher.fetch({
+                url: submitUrl,
+                method: this.getMethod(data),
+                data
             });
+        }
+
+        getMethod(data: any) {
+
+            const {
+                method,
+                methodSelector
+            } = this.props;
+
+            if (method !== undefined) {
+
+                return method; // The user set an specific method
+            }
+
+            if (methodSelector != undefined) {
+
+                return methodSelector(data);
+            }
+
+            // Use conventions
+            return data.id !== undefined ? 'put' : 'post';
         }
 
         connectedCallback() {
@@ -99,26 +136,26 @@ const AsyncDataSubmitableMixin = Base =>
             super.connectedCallback?.();
 
             const {
-                submitUrl
+                submitUrl,
             } = this.props;
 
             if (submitUrl !== undefined) {
 
                 this._fetcher = new Fetcher({
-                    onData: this.onData,
-                    onError: this.onError
+                    onData: this.onSubmitData,
+                    onError: this.onSubmitError
                 });
             }
         }
 
-        onData(data: Record<string, any>) {
+        onSubmitData(data: Record<string, any>) {
 
             this.setSubmitting(false);
 
-            this.setData(data.payload);
+            this.handleSubmitResponse(data.payload);
         }
 
-        onError(error: ErrorResponse) {
+        onSubmitError(error: ErrorResponse) {
 
             this.setSubmitting(false);
 

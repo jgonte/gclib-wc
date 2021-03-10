@@ -39,6 +39,11 @@ const VirtualDomComponentMixin = Base =>
 
             let node = this.render();
 
+            if (node === undefined) {
+
+                console.error('Undefined virtual node. Ensure that you return the node from the render function');
+            }
+
             const nodeType = typeof node;
 
             const styleUrls = (this.constructor as any).componentMetadata.component.styleUrls;

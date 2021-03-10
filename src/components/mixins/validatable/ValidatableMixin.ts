@@ -13,9 +13,9 @@ const ValidatableMixin = Base =>
 
         static state = {
 
-            errors: [],
+            validationErrors: [],
     
-            warnings: []
+            validationWarnings: []
         }
     };
 

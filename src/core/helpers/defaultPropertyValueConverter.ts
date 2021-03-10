@@ -43,6 +43,13 @@ const defaultPropertyValueConverter = {
                 
                 return createVirtualNode(value);
             }
+
+            case Function: { // Extract the string and return the global function
+
+                const functionName = value.replace('()', '').trim();
+
+                return window[functionName as any];
+            }
         }
     
         return value;

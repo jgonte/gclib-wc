@@ -1,5 +1,7 @@
 import { Field } from "./Field";
 
+export const valueChanged = 'valueChanged';
+
 //@ts-ignore
 export abstract class SingleValueField extends Field {
 
@@ -26,11 +28,33 @@ export abstract class SingleValueField extends Field {
         } = this.props;
 
         // Retrieve the new value
-        const value = event.target.value;
+        const input = event.target as HTMLInputElement;
+
+        let value: any;
+
+        switch (input.type) {
+            case 'file': {
+
+                if (input.multiple === true) {
+
+                    value = input.files;
+                }
+                else {
+
+                    value= input.files[0];
+                }              
+            }
+            break;
+            default: {
+                
+                value = input.value;
+            }
+            break;
+        }
 
         this.setValue(value); // Update the current value
 
-        this.dispatchEvent(new CustomEvent('valueChanged', {
+        this.dispatchEvent(new CustomEvent(valueChanged, {
             detail: {
                 name,
                 value
