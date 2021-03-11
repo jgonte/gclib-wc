@@ -8,7 +8,6 @@ export default function getComponentMetadata(ctor) {
         state: {}
     };
 
-    
     // Set the shadow prpoerty
     metadata.component.shadow = (ctor.component || {}).shadow === undefined ? true : ctor.component.shadow;
 

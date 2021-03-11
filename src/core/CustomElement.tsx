@@ -1,4 +1,3 @@
-import { FragmentNode, h } from 'gclib-vdom';
 import { MetadataInitializerConstructor } from './Interfaces';
 import MetadataInitializerMixin from './mixins/MetadataInitializerMixin';
 import VirtualDomComponentMixin from './mixins/VirtualDomComponentMixin';
@@ -10,7 +9,7 @@ export default abstract class CustomElement extends
         )
     ) {
 
-    private _isUpdating: boolean;
+    private _isUpdating: boolean = false;
 
     constructor() {
 
@@ -59,6 +58,16 @@ export default abstract class CustomElement extends
 
     requestUpdate() {
 
+        const {
+            style,
+            styleLoadedObserver
+        } = this.constructor as unknown as MetadataInitializerConstructor;
+
+        if (styleLoadedObserver !== undefined && style === undefined) {
+
+            return; // Requires a style but the style hasn't been loaded or merged yet
+        }
+
         if (this._isUpdating) {
 
             return;
@@ -74,6 +83,11 @@ export default abstract class CustomElement extends
         });    
     }
 
+    onStyleLoaded() {
+
+        this.requestUpdate();
+    }
+
     /** 
      * The DOM document in which this component is updated 
      */
@@ -82,16 +96,6 @@ export default abstract class CustomElement extends
         return this.shadowRoot !== null ?
             this.shadowRoot :
             this;
-    }
-
-    applyStyles(vnode: FragmentNode, styleUrls: string[]) {
-
-        for (let i = 0; i < styleUrls.length; ++i) {
-
-            vnode.appendChildNode(
-                <style>{`@import '${styleUrls[i]}'`}</style>
-            );
-        }
     }
 
     /**

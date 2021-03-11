@@ -1,3 +1,5 @@
+import { Observer } from "gclib-utils";
+
 export interface ComponentDescriptor {
 
     /**
@@ -74,6 +76,12 @@ export interface ComponentMetadataHolder {
 }
 
 export interface MetadataInitializerConstructor extends ComponentMetadataHolder {
+
+    /** The merged style content */
+    style?: string;
+
+    /** The observer of the constructor of the component to notify its instances when the styles have been merged */
+    styleLoadedObserver: Observer;
 
     propertiesByAttribute: any;
 }

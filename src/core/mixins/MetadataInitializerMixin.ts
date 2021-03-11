@@ -1,10 +1,27 @@
+import { Observer } from "gclib-utils";
 import defaultPropertyValueConverter from "../helpers/defaultPropertyValueConverter";
 import getComponentMetadata from "../helpers/getComponentMetadata";
+import loadStyles from "../helpers/loadStyles";
 import { CustomPropertyDescriptor, MetadataInitializerConstructor } from "../Interfaces";
+
+/**
+ * Tracks the loaded styles so when all the required styles have been loaded.
+ * The final merge stail can be set and the instances of the type can be notified so tehy can be rendered
+ */
+interface LoadedStylesTracker {
+
+    /** The loaded styles to be merged once the pending URL are empty */
+    loadedStyles: string[],
+
+    /** The pending URLs that get removed every time its corresponding style gets added tothe loaded styles */
+    pendingUrls: Set<string>
+}
 
 const MetadataInitializerMixin = Base =>
 
     class MetadataInitializer extends Base {
+
+        static loadedStylesTracker?: LoadedStylesTracker;
 
         constructor() {
 
@@ -16,7 +33,9 @@ const MetadataInitializerMixin = Base =>
         initialize() {
 
             const {
-                componentMetadata
+                componentMetadata,
+                style,
+                styleLoadedObserver
             } = this.constructor as unknown as MetadataInitializerConstructor;
 
             const {
@@ -45,9 +64,15 @@ const MetadataInitializerMixin = Base =>
                     this.initializeState(name, state[name]);
                 }
             }
+
+            // Style
+            if (styleLoadedObserver !== undefined && style === undefined) { // Requires style but it hasn't been loaded yet
+
+                styleLoadedObserver.subscribe(this);
+            }
         }
 
-        initializeProperty(name, propertyDescriptor: CustomPropertyDescriptor) {
+        initializeProperty(name: string, propertyDescriptor: CustomPropertyDescriptor) {
 
             const {
                 attribute, // The name of the HTML attribute mapped to the property
@@ -65,7 +90,7 @@ const MetadataInitializerMixin = Base =>
 
             if (mutable === true) { // Generate a setter
 
-                const setter = function (newValue) {
+                const setter = function (newValue: any) {
 
                     const oldValue = this.props[name];
 
@@ -94,7 +119,7 @@ const MetadataInitializerMixin = Base =>
             }
         }
 
-        initializeState(name, stateDescriptor) {
+        initializeState(name: string, stateDescriptor) {
 
             const {
                 value // The default value of the state if no HTML attribute is provided
@@ -135,6 +160,36 @@ const MetadataInitializerMixin = Base =>
 
             this.componentMetadata = getComponentMetadata(this);
 
+            const {
+                styleUrls
+            } = this.componentMetadata.component;
+
+            if (styleUrls.length > 0) {
+
+                console.log(`Loading styles for type: ${this.name}`);
+
+                this.loadedStylesTracker = {
+
+                    loadedStyles: [],
+
+                    pendingUrls: new Set<string>()
+                };
+
+                // Populate the pending URLs to load
+                styleUrls.forEach(styleUrl => {
+
+                    this.loadedStylesTracker.pendingUrls.add(styleUrl);
+                });
+
+                // Set up the observer
+                this.styleLoadedObserver = new Observer('onStyleLoaded');
+
+                this.mergeStyle = this.mergeStyle.bind(this);
+
+                loadStyles(this);
+            }
+
+            // Collect the observed attributes
             const attributes = [];
 
             // To index the property descriptor by attribute name
@@ -187,6 +242,32 @@ const MetadataInitializerMixin = Base =>
             this.props[name] = defaultPropertyValueConverter.toProperty(newValue, type);
 
             this.requestUpdate();
+        }
+
+        /**
+         * Called when there is a style available to merge
+         * @param url
+         * @param style 
+         */
+        static mergeStyle(url: string, style: string): void {
+
+            const {
+                loadedStyles,
+                pendingUrls
+            } = this.loadedStylesTracker;
+
+            loadedStyles.push(style);
+
+            pendingUrls.delete(url);
+
+            if (pendingUrls.size === 0) {
+
+                this.style = loadedStyles.join('\n');
+
+                this.styleLoadedObserver.notify();
+
+                delete this.loadedStylesTracker;
+            }
         }
 
         private validatePropertyOptions(name: string, newValue: string, options: string[]) {

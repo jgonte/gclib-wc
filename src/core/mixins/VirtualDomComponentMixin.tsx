@@ -1,4 +1,4 @@
-import { VirtualText, VirtualNode, FragmentNode, mount } from 'gclib-vdom';
+import { VirtualText, VirtualNode, FragmentNode, mount, h } from 'gclib-vdom';
 
 const VirtualDomComponentMixin = Base =>
 
@@ -48,7 +48,7 @@ const VirtualDomComponentMixin = Base =>
 
             const styleUrls = (this.constructor as any).componentMetadata.component.styleUrls;
 
-            const hasStyleUrls = styleUrls !== undefined;
+            const hasStyleUrls = styleUrls.length > 0;
 
             // If the node is a virtual one or a virtual text and there are styles,
             // then create a fragment node to hold the virtual node/text plus the style one(s)
@@ -81,7 +81,9 @@ const VirtualDomComponentMixin = Base =>
             if (node !== null &&
                 hasStyleUrls) {
 
-                this.applyStyles(node, styleUrls);
+                node.appendChildNode(
+                    <style>{(this.constructor as any).style}</style>
+                )
             }
 
             mount(

@@ -2449,13 +2449,61 @@ function getComponentMetadata(ctor) {
     return metadata;
 }
 
+const registry = {
+    /** The URL of the styles requested to be loaded to avoid requesting the same style */
+    requested: new Set(),
+    /** The loaded styles */
+    loaded: new Map(),
+    /** The callbacks mapped to the specific URL */
+    callbacksMap: new Map(),
+    /** Request to load a style from a given URL */
+    async load(url, callback) {
+        const { requested, loaded, callbacksMap } = this;
+        if (loaded.has(url)) { // The style has been already loaded for other type
+            console.log(`Retrieving loaded style for URL: ${url}`);
+            const style = loaded.get(url);
+            callback(url, style);
+            return;
+        }
+        // Add an entry to the map
+        if (!callbacksMap.has(url)) {
+            callbacksMap.set(url, []);
+        }
+        // Get the collection of callbacks
+        const callbacks = callbacksMap.get(url);
+        callbacks.push(callback);
+        if (requested.has(url)) { // Requested by other type but not loaded yet
+            console.log(`This URL: ${url} has been already requested to load the style`);
+            return; // Already requested
+        }
+        requested.add(url); // Flag it as already requested
+        // Load the style
+        const response = await fetch(url);
+        const content = await response.body.getReader().read();
+        const style = new TextDecoder("utf-8").decode(content.value);
+        console.log(`Setting loaded style from URL: ${url} in the registry
+    ${style}
+                `);
+        loaded.set(url, style);
+        callbacks.forEach(cb => {
+            cb(url, style);
+        });
+    }
+};
+function loadStyles(ctor) {
+    const { styleUrls } = ctor.componentMetadata.component;
+    styleUrls.forEach(url => {
+        registry.load(url, ctor.mergeStyle);
+    });
+}
+
 const MetadataInitializerMixin = Base => class MetadataInitializer extends Base {
     constructor() {
         super();
         this.initialize();
     }
     initialize() {
-        const { componentMetadata } = this.constructor;
+        const { componentMetadata, style, styleLoadedObserver } = this.constructor;
         const { properties, state } = componentMetadata;
         // Properties
         this.props = {};
@@ -2470,6 +2518,10 @@ const MetadataInitializerMixin = Base => class MetadataInitializer extends Base 
             if (state.hasOwnProperty(name)) {
                 this.initializeState(name, state[name]);
             }
+        }
+        // Style
+        if (styleLoadedObserver !== undefined && style === undefined) { // Requires style but it hasn't been loaded yet
+            styleLoadedObserver.subscribe(this);
         }
     }
     initializeProperty(name, propertyDescriptor) {
@@ -2525,6 +2577,23 @@ const MetadataInitializerMixin = Base => class MetadataInitializer extends Base 
     }
     static get observedAttributes() {
         this.componentMetadata = getComponentMetadata(this);
+        const { styleUrls } = this.componentMetadata.component;
+        if (styleUrls.length > 0) {
+            console.log(`Loading styles for type: ${this.name}`);
+            this.loadedStylesTracker = {
+                loadedStyles: [],
+                pendingUrls: new Set()
+            };
+            // Populate the pending URLs to load
+            styleUrls.forEach(styleUrl => {
+                this.loadedStylesTracker.pendingUrls.add(styleUrl);
+            });
+            // Set up the observer
+            this.styleLoadedObserver = new Observer('onStyleLoaded');
+            this.mergeStyle = this.mergeStyle.bind(this);
+            loadStyles(this);
+        }
+        // Collect the observed attributes
         const attributes = [];
         // To index the property descriptor by attribute name
         this.propertiesByAttribute = {};
@@ -2552,6 +2621,21 @@ const MetadataInitializerMixin = Base => class MetadataInitializer extends Base 
         // Update the internal property 
         this.props[name] = defaultPropertyValueConverter.toProperty(newValue, type);
         this.requestUpdate();
+    }
+    /**
+     * Called when there is a style available to merge
+     * @param url
+     * @param style
+     */
+    static mergeStyle(url, style) {
+        const { loadedStyles, pendingUrls } = this.loadedStylesTracker;
+        loadedStyles.push(style);
+        pendingUrls.delete(url);
+        if (pendingUrls.size === 0) {
+            this.style = loadedStyles.join('\n');
+            this.styleLoadedObserver.notify();
+            delete this.loadedStylesTracker;
+        }
     }
     validatePropertyOptions(name, newValue, options) {
         if (options !== undefined &&
@@ -2588,7 +2672,7 @@ const VirtualDomComponentMixin = Base => class VirtualDomComponent extends Base 
         }
         const nodeType = typeof node;
         const styleUrls = this.constructor.componentMetadata.component.styleUrls;
-        const hasStyleUrls = styleUrls !== undefined;
+        const hasStyleUrls = styleUrls.length > 0;
         // If the node is a virtual one or a virtual text and there are styles,
         // then create a fragment node to hold the virtual node/text plus the style one(s)
         let requiresFragment = false;
@@ -2610,7 +2694,7 @@ const VirtualDomComponentMixin = Base => class VirtualDomComponent extends Base 
         }
         if (node !== null &&
             hasStyleUrls) {
-            this.applyStyles(node, styleUrls);
+            node.appendChildNode(h("style", null, this.constructor.style));
         }
         mount(this.document, node, this._mountedNode, this.rootElement, this);
         this._mountedNode = node;
@@ -2620,6 +2704,7 @@ const VirtualDomComponentMixin = Base => class VirtualDomComponent extends Base 
 class CustomElement extends VirtualDomComponentMixin(MetadataInitializerMixin(HTMLElement)) {
     constructor() {
         super();
+        this._isUpdating = false;
         const { componentMetadata } = this.constructor;
         if (componentMetadata.component.shadow === true) {
             this.attachShadow({ mode: 'open' });
@@ -2642,6 +2727,10 @@ class CustomElement extends VirtualDomComponentMixin(MetadataInitializerMixin(HT
         this.requestUpdate();
     }
     requestUpdate() {
+        const { style, styleLoadedObserver } = this.constructor;
+        if (styleLoadedObserver !== undefined && style === undefined) {
+            return; // Requires a style but the style hasn't been loaded or merged yet
+        }
         if (this._isUpdating) {
             return;
         }
@@ -2651,6 +2740,9 @@ class CustomElement extends VirtualDomComponentMixin(MetadataInitializerMixin(HT
             this._isUpdating = false;
         });
     }
+    onStyleLoaded() {
+        this.requestUpdate();
+    }
     /**
      * The DOM document in which this component is updated
      */
@@ -2658,11 +2750,6 @@ class CustomElement extends VirtualDomComponentMixin(MetadataInitializerMixin(HT
         return this.shadowRoot !== null ?
             this.shadowRoot :
             this;
-    }
-    applyStyles(vnode, styleUrls) {
-        for (let i = 0; i < styleUrls.length; ++i) {
-            vnode.appendChildNode(h("style", null, `@import '${styleUrls[i]}'`));
-        }
     }
     /**
      * Sets the property bypassing any serialization
