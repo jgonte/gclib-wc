@@ -85,6 +85,8 @@ export default abstract class CustomElement extends
 
     onStyleLoaded() {
 
+        // console.log(`Style loaded for component ${this.constructor.name} ... requesting update`);
+
         this.requestUpdate();
     }
 

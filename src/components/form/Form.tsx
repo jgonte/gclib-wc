@@ -11,6 +11,7 @@ import ContainerMixin from '../../core/mixins/ContainerMixin';
 import { valueChanged } from '../field/SingleValueField';
 import { renderDerived } from '../mixins/Internals';
 import ErrorableMixin, { renderError } from '../mixins/errorable/ErrorableMixin';
+import SizableMixin from '../mixins/sizable/SizableMixin';
 
 //@ts-ignore
 export class Form extends
@@ -18,7 +19,9 @@ export class Form extends
         ErrorableMixin(
             ValidatableMixin(
                 ContainerMixin(
-                    CustomElement
+                    SizableMixin(
+                        CustomElement
+                    )                    
                 )
             )
         )
@@ -82,7 +85,7 @@ export class Form extends
         } = this.props;
 
         return (
-            <form>
+            <form size={size}>
                 <slot />
                 <gcl-validation-summary
                     size={size}

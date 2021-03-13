@@ -13,7 +13,24 @@ input {
     flex: 1 0 0px;
 }
 
-.field-label :required:before {
+input:focus {
+    border-style: solid;
+    border-color: var(--gcl-color-primary);
+}
+
+input.size-large:focus {
+    border-width: var(--gcl-width-size-large);
+}
+
+input.size-medium:focus {
+    border-width: var(--gcl-width-size-medium);
+}
+
+input.size-small:focus {
+    border-width: var(--gcl-width-size-small);
+}
+
+.field-label:required:before {
     display: inline-block;
     content:" *";
     color: red;

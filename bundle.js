@@ -2473,7 +2473,7 @@ const registry = {
         const callbacks = callbacksMap.get(url);
         callbacks.push(callback);
         if (requested.has(url)) { // Requested by other type but not loaded yet
-            console.log(`This URL: ${url} has been already requested to load the style`);
+            // console.log(`This URL: ${url} has been already requested to load the style`);
             return; // Already requested
         }
         requested.add(url); // Flag it as already requested
@@ -2481,9 +2481,9 @@ const registry = {
         const response = await fetch(url);
         const content = await response.body.getReader().read();
         const style = new TextDecoder("utf-8").decode(content.value);
-        console.log(`Setting loaded style from URL: ${url} in the registry
-    ${style}
-                `);
+        //     console.log(`Setting loaded style from URL: ${url} in the registry
+        // ${style}
+        //             `);
         loaded.set(url, style);
         callbacks.forEach(cb => {
             cb(url, style);
@@ -2579,7 +2579,7 @@ const MetadataInitializerMixin = Base => class MetadataInitializer extends Base 
         this.componentMetadata = getComponentMetadata(this);
         const { styleUrls } = this.componentMetadata.component;
         if (styleUrls.length > 0) {
-            console.log(`Loading styles for type: ${this.name}`);
+            // console.log(`Loading styles for type: ${this.name}`);
             this.loadedStylesTracker = {
                 loadedStyles: [],
                 pendingUrls: new Set()
@@ -2741,6 +2741,7 @@ class CustomElement extends VirtualDomComponentMixin(MetadataInitializerMixin(HT
         });
     }
     onStyleLoaded() {
+        // console.log(`Style loaded for component ${this.constructor.name} ... requesting update`);
         this.requestUpdate();
     }
     /**
@@ -2972,6 +2973,27 @@ Text.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-text`, Text);
 
+function getChildren(node) {
+    if (node instanceof HTMLElement) {
+        const slot = node.querySelector('slot');
+        if (slot !== null) {
+            return slot.assignedNodes({ flatten: true });
+        }
+        else {
+            return Array.from(node.childNodes);
+        }
+    }
+    else {
+        return [];
+    }
+}
+function visitChildren(children, visit) {
+    children.forEach(child => {
+        visit(child);
+        visitChildren(getChildren(child), visit);
+    });
+}
+
 const childConnected = 'childConnected';
 const childDisconnected = 'childDisconnected';
 /**
@@ -3005,29 +3027,6 @@ const ChildMixin = Base => class Child extends Base {
 };
 
 const ContainerMixin = Base => { var _a; return _a = class Container extends Base {
-        // notifyChildren() {
-        //     const {
-        //         children
-        //     } = this.state;
-        //     const componentMetadata: ComponentMetadata = (this.constructor as any).componentMetadata;
-        //     const properties: CustomPropertyDescriptor[] = Object.values(componentMetadata.properties)
-        //         .filter(p => p.passToChildren === true);
-        //     if (properties.length === 0) {
-        //         return;
-        //     }
-        //     properties.forEach(p => {
-        //         const propertyName = p.name;
-        //         const attributeName = p.attribute;
-        //         // Pass the property to the children
-        //         visitChildren(children, child => {
-        //             if ((child as any).props?.hasOwnProperty(propertyName)) {
-        //                 if ((child as any).props[propertyName] === p.value) { // A value different from the default one has not been set
-        //                     child.setAttribute(attributeName, this.props[propertyName]);
-        //                 }
-        //             }
-        //         });
-        //     });
-        // }
         // nodeDidUpdate(node, nodeChanges) {
         //     if (super.nodeDidUpdate) {
         //         super.nodeDidUpdate(node, nodeChanges);
@@ -3082,13 +3081,17 @@ const ContainerMixin = Base => { var _a; return _a = class Container extends Bas
             this.removeChild(child);
         }
         addChild(child) {
-            var _a;
             const { children } = this.state;
             this.setChildren([...children, child]);
-            (_a = this.onChildAdded) === null || _a === void 0 ? void 0 : _a.call(this, child);
-            this.notifyChild(child);
+            this.onChildAdded(child);
         }
-        notifyChild(child) {
+        onChildAdded(child) {
+            this.passPropsToChild(child);
+        }
+        /**
+         * Passes the passToChildren properties to the children
+         */
+        passPropsToChild(child) {
             const componentMetadata = this.constructor.componentMetadata;
             const properties = Object.values(componentMetadata.properties)
                 .filter(p => p.passToChildren === true);
@@ -3116,6 +3119,28 @@ const ContainerMixin = Base => { var _a; return _a = class Container extends Bas
                 this.setChildren(children);
             }
             (_a = this.onChildRemoved) === null || _a === void 0 ? void 0 : _a.call(this, child);
+        }
+        attributeChangedCallback(attributeName, oldValue, newValue) {
+            var _a;
+            (_a = super.attributeChangedCallback) === null || _a === void 0 ? void 0 : _a.call(this, attributeName, oldValue, newValue);
+            // If any passtoChildren property has changed in the parent, then pass the new value to its children
+            const { children } = this.state;
+            const componentMetadata = this.constructor.componentMetadata;
+            const property = Object.values(componentMetadata.properties)
+                .filter(p => p.attribute === attributeName)[0];
+            if (!property.passToChildren) {
+                return;
+            }
+            const { name } = property;
+            // Pass the property to the children
+            visitChildren(children, child => {
+                var _a;
+                if ((_a = child.props) === null || _a === void 0 ? void 0 : _a.hasOwnProperty(name)) {
+                    if (child.props[name] === newValue) { // A value different from the default one has not been set
+                        child.setAttribute(attributeName, this.props[name]);
+                    }
+                }
+            });
         }
     },
     _a.state = {
@@ -3688,27 +3713,6 @@ ListItem.component = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-list-item`, ListItem);
 
-function getChildren(node) {
-    if (node instanceof HTMLElement) {
-        const slot = node.querySelector('slot');
-        if (slot !== null) {
-            return slot.assignedNodes({ flatten: true });
-        }
-        else {
-            return Array.from(node.childNodes);
-        }
-    }
-    else {
-        return [];
-    }
-}
-function visitChildren(children, visit) {
-    children.forEach(child => {
-        visit(child);
-        visitChildren(getChildren(child), visit);
-    });
-}
-
 const SelectionContainerMixin = Base => { var _a; return _a = 
 //@ts-ignore
 class SelectionContainer extends ContainerMixin(Base) {
@@ -3717,9 +3721,8 @@ class SelectionContainer extends ContainerMixin(Base) {
             this.updateSelection = this.updateSelection.bind(this);
         }
         attributeChangedCallback(attributeName, oldValue, newValue) {
-            if (super.attributeChangedCallback) {
-                super.attributeChangedCallback(attributeName, oldValue, newValue);
-            }
+            var _a;
+            (_a = super.attributeChangedCallback) === null || _a === void 0 ? void 0 : _a.call(this, attributeName, oldValue, newValue);
             if (attributeName === "selectable") {
                 if (newValue === "true" || newValue === "") {
                     this.addEventListener('selectionChanged', this.updateSelection);
@@ -3761,25 +3764,18 @@ class SelectionContainer extends ContainerMixin(Base) {
                 selectionChanged(this.props.selection); // Re-read from the updated selection props
             }
         }
-        notifyChildren() {
-            if (super.notifyChildren) {
-                super.notifyChildren();
-            }
-            const { children } = this.state;
+        onChildAdded(child) {
+            var _a, _b;
+            (_a = super.onChildAdded) === null || _a === void 0 ? void 0 : _a.call(this, child);
+            // If any of the values of the selection match the value of the child, then set the child as selected
             const { multiple, selection } = this.props;
-            visitChildren(children, child => {
-                var _a;
-                if (!(child instanceof HTMLElement)) {
-                    return;
+            if (selection.indexOf((_b = child.props) === null || _b === void 0 ? void 0 : _b.value) > -1 &&
+                child.setSelected !== undefined) {
+                child.setSelected(true);
+                if (multiple === undefined) { // Set the selected child for single selection model
+                    this.setSelectedChild(child);
                 }
-                if (selection.indexOf((_a = child.props) === null || _a === void 0 ? void 0 : _a.value) > -1 &&
-                    child.setSelected !== undefined) {
-                    child.setSelected(true);
-                    if (multiple === undefined) { // Set the selected child for single selection model
-                        this.setSelectedChild(child);
-                    }
-                }
-            });
+            }
         }
     },
     _a.properties = {
@@ -4380,7 +4376,7 @@ const AsyncDataSubmitableMixin = Base => { var _a; return _a = class AsyncDataSu
     _a; };
 
 //@ts-ignore
-class Form extends AsyncDataSubmitableMixin(ErrorableMixin(ValidatableMixin(ContainerMixin(CustomElement)))) {
+class Form extends AsyncDataSubmitableMixin(ErrorableMixin(ValidatableMixin(ContainerMixin(SizableMixin(CustomElement))))) {
     constructor() {
         super();
         this._record = new DataRecord();
@@ -4399,7 +4395,7 @@ class Form extends AsyncDataSubmitableMixin(ErrorableMixin(ValidatableMixin(Cont
     [renderDerived]() {
         const { validationWarnings, validationErrors } = this.state;
         const { size } = this.props;
-        return (h("form", null,
+        return (h("form", { size: size },
             h("slot", null),
             h("gcl-validation-summary", { size: size, warnings: validationWarnings, errors: validationErrors }),
             this.renderButtons()));

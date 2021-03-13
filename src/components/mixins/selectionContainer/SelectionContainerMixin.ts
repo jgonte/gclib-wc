@@ -1,4 +1,3 @@
-import visitChildren from "../../../core/helpers/visitChildren";
 import ContainerMixin from "../../../core/mixins/ContainerMixin";
 
 const SelectionContainerMixin = Base =>
@@ -63,10 +62,7 @@ const SelectionContainerMixin = Base =>
 
         attributeChangedCallback(attributeName: string, oldValue: string, newValue: string) {
 
-            if (super.attributeChangedCallback) {
-
-                super.attributeChangedCallback(attributeName, oldValue, newValue);
-            }
+            super.attributeChangedCallback?.(attributeName, oldValue, newValue);
 
             if (attributeName === "selectable") {
 
@@ -122,7 +118,7 @@ const SelectionContainerMixin = Base =>
 
                     selectedChild.setAttribute("selected", "false");
                 }
-                
+
                 if (added != undefined) {
 
                     this.setSelection([added]);
@@ -143,40 +139,62 @@ const SelectionContainerMixin = Base =>
             }
         }
 
-        notifyChildren() {
+        onChildAdded(child: HTMLElement) {
 
-            if (super.notifyChildren) {
+            super.onChildAdded?.(child);
 
-                super.notifyChildren();
-            }
-
-            const {
-                children
-            } = this.state;
-
+            // If any of the values of the selection match the value of the child, then set the child as selected
             const {
                 multiple,
                 selection
             } = this.props;
 
-            visitChildren(children, child => {
-                if (!(child instanceof HTMLElement)) {
+            if (selection.indexOf((child as any).props?.value) > -1 &&
+                (child as any).setSelected !== undefined) {
 
-                    return;
+                (child as any).setSelected(true);
+
+                if (multiple === undefined) { // Set the selected child for single selection model
+
+                    this.setSelectedChild(child);
                 }
-
-                if (selection.indexOf((child as any).props?.value) > -1 &&
-                    (child as any).setSelected !== undefined) {
-
-                    (child as any).setSelected(true);
-
-                    if (multiple === undefined) { // Set the selected child for single selection model
-
-                        this.setSelectedChild(child);
-                    }
-                }
-            });
+            }
         }
+
+        // notifyChildren() {
+
+        //     if (super.notifyChildren) {
+
+        //         super.notifyChildren();
+        //     }
+
+        //     const {
+        //         children
+        //     } = this.state;
+
+        //     const {
+        //         multiple,
+        //         selection
+        //     } = this.props;
+
+        //     visitChildren(children, child => {
+        //         if (!(child instanceof HTMLElement)) {
+
+        //             return;
+        //         }
+
+        //         if (selection.indexOf((child as any).props?.value) > -1 &&
+        //             (child as any).setSelected !== undefined) {
+
+        //             (child as any).setSelected(true);
+
+        //             if (multiple === undefined) { // Set the selected child for single selection model
+
+        //                 this.setSelectedChild(child);
+        //             }
+        //         }
+        //     });
+        // }
 
     };
 

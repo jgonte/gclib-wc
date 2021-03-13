@@ -1,4 +1,4 @@
-//import visitChildren from "../helpers/visitChildren";
+import visitChildren from "../helpers/visitChildren";
 import { ComponentMetadata, CustomPropertyDescriptor } from "../Interfaces";
 import { childConnected, childDisconnected } from './ChildMixin';
 
@@ -15,42 +15,6 @@ const ContainerMixin = Base =>
                 value: []
             }
         };
-
-        // notifyChildren() {
-
-        //     const {
-        //         children
-        //     } = this.state;
-
-        //     const componentMetadata: ComponentMetadata = (this.constructor as any).componentMetadata;
-
-        //     const properties: CustomPropertyDescriptor[] = Object.values(componentMetadata.properties)
-        //         .filter(p => p.passToChildren === true);
-
-        //     if (properties.length === 0) {
-
-        //         return;
-        //     }
-
-        //     properties.forEach(p => {
-
-        //         const propertyName = p.name;
-
-        //         const attributeName = p.attribute;
-
-        //         // Pass the property to the children
-        //         visitChildren(children, child => {
-
-        //             if ((child as any).props?.hasOwnProperty(propertyName)) {
-
-        //                 if ((child as any).props[propertyName] === p.value) { // A value different from the default one has not been set
-    
-        //                     child.setAttribute(attributeName, this.props[propertyName]);
-        //                 }
-        //             }
-        //         });
-        //     });
-        // }
 
         // nodeDidUpdate(node, nodeChanges) {
 
@@ -100,14 +64,14 @@ const ContainerMixin = Base =>
         connectedCallback() {
 
             super.connectedCallback?.();
-    
+
             this.addEventListener(childConnected, this.onChildConnected);
 
             this.addEventListener(childDisconnected, this.onChildDisconnected);
         }
 
         disconnectedCallback() {
-    
+
             super.disconnectedCallback?.();
 
             this.removeEventListener(childConnected, this.onChildConnected);
@@ -141,12 +105,18 @@ const ContainerMixin = Base =>
 
             this.setChildren([...children, child]);
 
-            this.onChildAdded?.(child);
-
-            this.notifyChild(child);
+            this.onChildAdded(child);
         }
 
-        notifyChild(child: HTMLElement) {
+        onChildAdded(child: HTMLElement) {
+
+            this.passPropsToChild(child);
+        }
+
+        /** 
+         * Passes the passToChildren properties to the children
+         */
+        passPropsToChild(child: HTMLElement) {
 
             const componentMetadata: ComponentMetadata = (this.constructor as any).componentMetadata;
 
@@ -191,6 +161,42 @@ const ContainerMixin = Base =>
             }
 
             this.onChildRemoved?.(child);
+        }
+
+        attributeChangedCallback(attributeName: string, oldValue: string, newValue: string) {
+
+            super.attributeChangedCallback?.(attributeName, oldValue, newValue);
+
+            // If any passtoChildren property has changed in the parent, then pass the new value to its children
+            const {
+                children
+            } = this.state;
+
+            const componentMetadata: ComponentMetadata = (this.constructor as any).componentMetadata;
+
+            const property: CustomPropertyDescriptor = Object.values(componentMetadata.properties)
+                .filter(p => p.attribute === attributeName)[0];
+
+            if (!property.passToChildren) {
+
+                return;
+            }
+
+            const {
+                name
+            } = property;  
+
+            // Pass the property to the children
+            visitChildren(children, child => {
+
+                if ((child as any).props?.hasOwnProperty(name)) {
+
+                    if ((child as any).props[name] === newValue) { // A value different from the default one has not been set
+
+                        child.setAttribute(attributeName, this.props[name]);
+                    }
+                }
+            });
         }
     }
 

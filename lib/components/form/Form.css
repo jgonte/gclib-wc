@@ -1,0 +1,11 @@
+form[size="large"] {
+    padding: var(--gcl-font-size-large);
+}
+
+form[size="medium"] {
+    padding: var(--gcl-font-size-medium);
+}
+
+form[size="small"] {
+    padding: var(--gcl-font-size-small);
+}

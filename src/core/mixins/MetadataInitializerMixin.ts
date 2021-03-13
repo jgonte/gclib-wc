@@ -166,7 +166,7 @@ const MetadataInitializerMixin = Base =>
 
             if (styleUrls.length > 0) {
 
-                console.log(`Loading styles for type: ${this.name}`);
+                // console.log(`Loading styles for type: ${this.name}`);
 
                 this.loadedStylesTracker = {
 

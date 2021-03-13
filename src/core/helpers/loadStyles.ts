@@ -42,7 +42,7 @@ const registry = {
 
         if (requested.has(url)) { // Requested by other type but not loaded yet
 
-            console.log(`This URL: ${url} has been already requested to load the style`);
+            // console.log(`This URL: ${url} has been already requested to load the style`);
 
             return; // Already requested
         }
@@ -56,9 +56,9 @@ const registry = {
 
         const style = new TextDecoder("utf-8").decode(content.value);
 
-        console.log(`Setting loaded style from URL: ${url} in the registry
-    ${style}
-                `);
+    //     console.log(`Setting loaded style from URL: ${url} in the registry
+    // ${style}
+    //             `);
 
         loaded.set(url, style);
 
