@@ -19,23 +19,6 @@ const VariantMixin = Base =>
                 passToChildren: true
             }
         };
-
-        getCSSClass() {
-
-            let cssClass;
-
-            if (super.getCSSClass) {
-
-                cssClass = super.getCSSClass();
-            }
-
-            const { variant } = this.props;
-
-            return {
-                ...cssClass,
-                [variant]: true
-            };
-        }
     };
 
 export default VariantMixin;

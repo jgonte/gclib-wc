@@ -44,10 +44,14 @@ export class Text extends
 
     render() {
 
-        const { value } = this.props;
+        const { 
+            value,
+            size,
+            variant
+        } = this.props;
 
         return (
-            <Fragment class={this.getCSSClass()}>
+            <Fragment size={size} variant={variant}>
                 {value !== undefined ? value : (<slot />)}
             </Fragment>
         );

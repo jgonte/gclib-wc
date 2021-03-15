@@ -18,6 +18,7 @@ export class TextField extends SingleValueField {
         const {
             name,
             value,
+            size,
             //required,
             disabled
         } = this.props;
@@ -27,11 +28,12 @@ export class TextField extends SingleValueField {
                 type="text"
                 name={name}
                 id={name}
-                class={this.getCSSClass()}
+                size={size}
+                //class={this.getCSSClass()}
                 //required={required}
                 // style={{ maxWidth, width }}
-                // className={inputClass}
                 value={value}
+                onInput={this.onInput}
                 onChange={this.onChange}
                 // onFocus={onFocus}
                 onBlur={this.onBlur}

@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "gclib-utils": "^0.6.6",
-    "gclib-vdom": "^1.7.20"
+    "gclib-vdom": "^1.7.22"
   },
   "directories": {
     "lib": "lib",

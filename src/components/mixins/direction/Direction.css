@@ -1,3 +1,4 @@
-:host(.rtl) {
+/*Icon*/
+svg[dir='rtl'] {
     transform: scaleX(-1);
 }

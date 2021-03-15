@@ -1,49 +1,50 @@
-.primary,
-:host(.primary) {
+/* host applies to the text component*/
+:host([variant='primary']),
+*[variant='primary'] {
     color: var(--gcl-color-primary);
 }
 
-.secondary,
-:host(.secondary) {
+:host([variant='secondary']),
+*[variant='secondary'] {
     color: var(--gcl-color-secondary);
 }
 
-.tertiary,
-:host(.tertiary) {
+:host([variant='tertiary']),
+*[variant='tertiary'] {
     color: var(--gcl-color-tertiary);
 }
 
-.info,
-:host(.info) {
+:host([variant='info']),
+*[variant='info'] {
     color: var(--gcl-color-info);
 }
 
-.success,
-:host(.success) {
+:host([variant='success']),
+*[variant='success'] {
     color: var(--gcl-color-success);
 }
 
-.warning,
-:host(.warning) {
+:host([variant='warning']),
+*[variant='warning'] {
     color: var(--gcl-color-warning);
 }
 
-.danger,
-:host(.danger) {
+:host([variant='danger']),
+*[variant='danger'] {
     color: var(--gcl-color-danger);
 }
 
-.light,
-:host(.light) {
+:host([variant='light']),
+*[variant='light'] {
     color: var(--gcl-color-light);
 }
 
-.medium,
-:host(.medium) {
+:host([variant='medium']),
+*[variant='medium'] {
     color: var(--gcl-color-medium);
 }
 
-.dark,
-:host(.dark) {
+:host([variant='dark']),
+*[variant='dark'] {
     color: var(--gcl-color-dark);
 }

@@ -1,9 +1,7 @@
-:host > *.selectable {
-    
+:host([selectable='true']) {  
     cursor: pointer;
 }
 
-:host > *.selected {
-    
+:host([selected='true']) > * { 
     background-color: var(--gcl-color-tertiary);
 }

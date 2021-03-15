@@ -1,6 +1,15 @@
+import { config } from "../../config";
+
 const DirectionMixin = Base =>
 
     class Direction extends Base {
+
+        static component = {
+    
+            styleUrls: [
+                `${config.assetsFolder}/mixins/direction/Direction.css`
+            ]
+        };
 
         static properties = {
 
@@ -17,21 +26,9 @@ const DirectionMixin = Base =>
             }
         };
 
-        getCSSClass() {
-
-            let cssClass;
-
-            if (super.getCSSClass) {
-
-                cssClass = super.getCSSClass();
-            }
-
-            const isRtl = this.dir === 'rtl' || document.dir === 'rtl';
-
-            return {
-                ...cssClass,
-                'rtl': this.props.flipRtl && isRtl
-            };
+        getDir() {
+            
+            return this.dir || document.dir;
         }
     };
 

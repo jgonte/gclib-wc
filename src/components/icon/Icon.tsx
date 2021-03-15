@@ -1,4 +1,4 @@
-import { Fragment, h } from 'gclib-vdom';
+import { h } from 'gclib-vdom';
 import { config } from '../../components/config';
 import CustomElement from '../../core/CustomElement';
 import VariantMixin from '../mixins/variant/VariantMixin';
@@ -24,11 +24,8 @@ export class Icon extends
 
     static component = {
 
-        //shadow:  false,
-
         styleUrls: [
-            `${assetsFolder}/icon/Icon.css`,
-            `${assetsFolder}/mixins/direction/Direction-Icon.css`
+            `${assetsFolder}/icon/Icon.css`
         ]
     };
 
@@ -39,22 +36,23 @@ export class Icon extends
          */
         name: {
             type: String,
-            value: ''
+            value: '',
+            required: true
         }
     };
 
     render() {
 
         const {
-            name
+            name,
+            size,
+            variant
         } = this.props;
 
         return (
-            <Fragment class={this.getCSSClass()}>
-                <svg role="img">
-                    <use href={`${_iconsPath}#${name}`} />
-                </svg>
-            </Fragment>
+            <svg role="img" size={size} variant={variant} dir={this.getDir()} >
+                <use href={`${_iconsPath}#${name}`} />
+            </svg>
         );
     }
 }

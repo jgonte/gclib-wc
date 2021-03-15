@@ -17,22 +17,22 @@
     color: darkblue;
 }
 
-:host(.info) {
+:host([type='info']) {
     background-color: var(--gcl-background-color-info);
     border: var(--gcl-border-width) solid var(--gcl-color-info);
 }
 
-:host(.success) {
+:host([type='success']) {
     background-color: var(--gcl-background-color-success);
     border: var(--gcl-border-width) solid var(--gcl-color-success);
 }
 
-:host(.warning) {
+:host([type='warning']) {
     background-color: var(--gcl-background-color-warning);
     border: var(--gcl-border-width) solid var(--gcl-color-warning);
 }
 
-:host(.error) {
+:host([type='error']) {
     background-color: var(--gcl-background-color-danger);
     border: var(--gcl-border-width) solid var(--gcl-color-danger);
 }

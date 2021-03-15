@@ -14,17 +14,10 @@ export class Overlay extends CustomElement {
     render() {
 
         return (
-            <Fragment class={this.getCSSClass()}>
+            <Fragment class="center">
                 <slot />
             </Fragment>
         );
-    }
-
-    getCSSClass() {
-
-        return {
-            "center": true // Center the content by default
-        };
     }
 }
 

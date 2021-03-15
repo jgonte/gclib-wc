@@ -22,6 +22,7 @@ export class NumberField extends MinMaxMixin(SingleValueField) {
             //required,
             min,
             max,
+            size,
             disabled
         } = this.props;
 
@@ -32,7 +33,8 @@ export class NumberField extends MinMaxMixin(SingleValueField) {
                 id={name}
                 min={min}
                 max={max}
-                class={this.getCSSClass()}
+                size={size}
+                // class={this.getCSSClass()}
                 //required={required}
                 // style={{ maxWidth, width }}
                 // className={inputClass}

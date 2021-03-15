@@ -101,7 +101,7 @@ const MetadataInitializerMixin = Base =>
 
                     this.validatePropertyOptions(name, newValue, options);
 
-                    console.log(`Property: '${name}' of custom element: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
+                    // console.log(`Property: '${name}' of custom element: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
 
                     if (reflect) { // This will trigger the attributeChangedCallback
 
@@ -139,7 +139,7 @@ const MetadataInitializerMixin = Base =>
                     return;
                 }
 
-                console.log(`State: '${name}' of custom element: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
+                // console.log(`State: '${name}' of custom element: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
 
                 this.state[name] = newValue;
 
@@ -236,7 +236,7 @@ const MetadataInitializerMixin = Base =>
 
             this.validatePropertyOptions(name, newValue, options);
 
-            console.log(`attributeChangedCallback: '${attributeName}' of custom element: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
+            // console.log(`attributeChangedCallback: '${attributeName}' of custom element: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
 
             // Update the internal property 
             this.props[name] = defaultPropertyValueConverter.toProperty(newValue, type);

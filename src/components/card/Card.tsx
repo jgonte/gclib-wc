@@ -1,12 +1,11 @@
 import { Fragment, h, VirtualNode } from 'gclib-vdom';
 import { config } from '../config';
 import CustomElement from '../../core/CustomElement';
-import { Icon } from '../../components/icon/Icon';
 import SizableMixin from '../mixins/sizable/SizableMixin';
 import ContainerMixin from '../../core/mixins/ContainerMixin';
 
 //@ts-ignore
-export class Alert extends
+export class Card extends
     SizableMixin(
         ContainerMixin(
             CustomElement
@@ -15,94 +14,54 @@ export class Alert extends
 
     static component = {
         styleUrls: [
-            `${config.assetsFolder}/alert/Alert.css`
+            `${config.assetsFolder}/card/Card.css`
         ]
     };
 
     static properties = {
 
-        /**
-         * The type of the alert
-         */
-        type: {
-            type: String,
-            value: 'info',
-            options: ['info', 'success', 'warning', 'error']
-        },
-
-        /**
-         * The icon of the alert
-         */
-        icon: {
-            type: Icon
-        },
-
-        /**
-         * Whether to show the icon
-         */
-        showIcon: {
-            type: Boolean,
-            value: true
-        },
-
         /** 
-         * The message of the alert
+         * The header of the card
          */
-        message: {
+        header: {
             type: VirtualNode
         },
 
-        /**
-         * Whether the alert has a close button
+        /** 
+         * The body of the card
          */
-        closable: {
-            type: Boolean,
-            value: true
+         body: {
+            type: VirtualNode
         },
 
-        /**
-         * What action to execute when the alert has been closed
+        /** 
+         * The footer of the card
          */
-        close: {
-            type: Function
-        }
-
+         footer: {
+            type: VirtualNode
+        },
     };
 
     render() {
 
-        const {
-            type,
-            size
-        } =this.props;
-
         return (
-            <Fragment class="alert" type={type} size={size}>
-                {this.renderIcon()}
+            <Fragment>
+                {this.renderHeader()}
                 {this.renderMessage()}
                 {this.renderCloseButton()}
             </Fragment>
         );
     }
 
-    renderIcon(): Icon {
+    renderHeader(): VirtualNode | null {
 
         const {
-            showIcon,
-            icon,
-            size
+            header
         } = this.props;
 
-        if (showIcon !== true) {
-
-            return null;
-        }
-
-        return icon !== undefined ?
-            { icon } :
-            (
-                <gcl-icon name={this.getDefaultIcon()} variant={this.getVariant()} size={size}></gcl-icon>
-            );
+        return header !== undefined ?
+            header :
+            null;
     }
 
     renderMessage() {
@@ -183,7 +142,25 @@ export class Alert extends
             </span>
         );
     }
+
+    getCSSClass() {
+
+        let cssClass;
+
+        if (super.getCSSClass) {
+
+            cssClass = super.getCSSClass();
+        }
+
+        const { type } = this.props;
+
+        return {
+            ...cssClass,
+            'Card': true,
+            [type]: true
+        };
+    }
 }
 
 //@ts-ignore
-customElements.define(`${config.tagPrefix}-alert`, Alert);
+customElements.define(`${config.tagPrefix}-Card`, Card);

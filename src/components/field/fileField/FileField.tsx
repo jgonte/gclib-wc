@@ -36,6 +36,7 @@ export class FileField extends SingleValueField {
             accept,
             capture,
             multiple,
+            size,
             //required,
             disabled
         } = this.props;
@@ -48,7 +49,8 @@ export class FileField extends SingleValueField {
                 accept={accept}
                 capture={capture}
                 multiple={multiple}
-                class={this.getCSSClass()}
+                size={size}
+                //class={this.getCSSClass()}
                 //required={required}
                 style={{ minWidth: '220px' }}
                 // className={inputClass}

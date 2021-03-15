@@ -23,8 +23,12 @@ export class ListItem extends
 
     render() {
 
+        const {
+            size
+        } = this.props;
+
         return (
-            <li class={this.getCSSClass()}>
+            <li size={size}>
                 <slot />
             </li>
         );

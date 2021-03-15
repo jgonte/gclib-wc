@@ -18,7 +18,21 @@ export abstract class SingleValueField extends Field {
 
         super();
 
+        this.onInput = this.onInput.bind(this);
+
         this.onChange = this.onChange.bind(this);
+    }
+  
+    onInput(event) {
+
+        // Retrieve the new value
+        const input = event.target as HTMLInputElement;
+
+        const value = this.getNewValue(input);
+
+        this.setValue(value); // Update the current value
+
+        this.validate(); // Validate the field on change
     }
 
     onChange(event) {
@@ -29,6 +43,24 @@ export abstract class SingleValueField extends Field {
 
         // Retrieve the new value
         const input = event.target as HTMLInputElement;
+
+        const value = this.getNewValue(input);
+
+        this.setValue(value); // Update the current value
+
+        this.validate(); // Validate the field on change
+
+        this.dispatchEvent(new CustomEvent(valueChanged, {
+            detail: {
+                name,
+                value
+            },
+            bubbles: true,
+            composed: true
+        }));   
+    }
+
+    getNewValue(input: HTMLInputElement) : any {
 
         let value: any;
 
@@ -52,15 +84,6 @@ export abstract class SingleValueField extends Field {
             break;
         }
 
-        this.setValue(value); // Update the current value
-
-        this.dispatchEvent(new CustomEvent(valueChanged, {
-            detail: {
-                name,
-                value
-            },
-            bubbles: true,
-            composed: true
-        }));
+        return value;
     }
 }

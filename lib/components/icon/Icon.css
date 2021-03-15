@@ -14,3 +14,15 @@ svg {
     height: 1em;
     color: inherit;
 }
+
+svg[size='large'] {
+    font-size: var(--gcl-icon-size-large);
+}
+
+svg[size='medium'] {
+    font-size: var(--gcl-icon-size-medium);
+}
+
+svg[size='small'] {
+    font-size: var(--gcl-icon-size-small);
+}

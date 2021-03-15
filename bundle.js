@@ -1216,6 +1216,7 @@ function isStandardEvent(name) {
         'onmouseup',
         'onwheel',
         'onchange',
+        'oninput',
         'onfocus',
         'onblur',
     ].indexOf(name) > -1;
@@ -2039,7 +2040,12 @@ function diffAttributes(oldAttributes, newAttributes) {
             if (i > -1) {
                 var oldValue = oldAttributes[k];
                 if (v !== oldValue) {
-                    patches.push(new SetAttributePatch(k, oldValue, v));
+                    if (v === 'false') {
+                        patches.push(new RemoveAttributePatch(k, oldValue));
+                    }
+                    else {
+                        patches.push(new SetAttributePatch(k, oldValue, v));
+                    }
                 }
                 oldAttributeNames.splice(i, 1);
             }
@@ -2542,7 +2548,7 @@ const MetadataInitializerMixin = Base => class MetadataInitializer extends Base 
                     return;
                 }
                 this.validatePropertyOptions(name, newValue, options);
-                console.log(`Property: '${name}' of custom element: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
+                // console.log(`Property: '${name}' of custom element: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
                 if (reflect) { // This will trigger the attributeChangedCallback
                     this.setAttribute(attribute, defaultPropertyValueConverter.toAttribute(newValue, type));
                 }
@@ -2565,7 +2571,7 @@ const MetadataInitializerMixin = Base => class MetadataInitializer extends Base 
             if (oldValue === newValue) {
                 return;
             }
-            console.log(`State: '${name}' of custom element: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
+            // console.log(`State: '${name}' of custom element: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
             this.state[name] = newValue;
             this.requestUpdate();
         };
@@ -2617,7 +2623,7 @@ const MetadataInitializerMixin = Base => class MetadataInitializer extends Base 
         }
         const { name, type, options } = this.constructor.propertiesByAttribute[attributeName];
         this.validatePropertyOptions(name, newValue, options);
-        console.log(`attributeChangedCallback: '${attributeName}' of custom element: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
+        // console.log(`attributeChangedCallback: '${attributeName}' of custom element: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
         // Update the internal property 
         this.props[name] = defaultPropertyValueConverter.toProperty(newValue, type);
         this.requestUpdate();
@@ -2814,14 +2820,6 @@ class App extends CustomElement {
 customElements.define(`${config.tagPrefix}-app`, App);
 
 const VariantMixin = Base => { var _a; return _a = class Variant extends Base {
-        getCSSClass() {
-            let cssClass;
-            if (super.getCSSClass) {
-                cssClass = super.getCSSClass();
-            }
-            const { variant } = this.props;
-            return Object.assign(Object.assign({}, cssClass), { [variant]: true });
-        }
     },
     _a.component = {
         styleUrls: [
@@ -2840,14 +2838,6 @@ const VariantMixin = Base => { var _a; return _a = class Variant extends Base {
     _a; };
 
 const SizableMixin = Base => { var _a; return _a = class Sizable extends Base {
-        getCSSClass() {
-            let cssClass;
-            if (super.getCSSClass) {
-                cssClass = super.getCSSClass();
-            }
-            const { size } = this.props;
-            return Object.assign(Object.assign({}, cssClass), { [`size-${size}`]: true });
-        }
     },
     _a.component = {
         styleUrls: [
@@ -2867,14 +2857,14 @@ const SizableMixin = Base => { var _a; return _a = class Sizable extends Base {
     _a; };
 
 const DirectionMixin = Base => { var _a; return _a = class Direction extends Base {
-        getCSSClass() {
-            let cssClass;
-            if (super.getCSSClass) {
-                cssClass = super.getCSSClass();
-            }
-            const isRtl = this.dir === 'rtl' || document.dir === 'rtl';
-            return Object.assign(Object.assign({}, cssClass), { 'rtl': this.props.flipRtl && isRtl });
+        getDir() {
+            return this.dir || document.dir;
         }
+    },
+    _a.component = {
+        styleUrls: [
+            `${config.assetsFolder}/mixins/direction/Direction.css`
+        ]
     },
     _a.properties = {
         /**
@@ -2897,17 +2887,14 @@ const _iconsPath = `${assetsFolder}/icon/assets/bootstrap-icons.svg`;
 //@ts-ignore
 class Icon extends SizableMixin(VariantMixin(DirectionMixin(CustomElement))) {
     render() {
-        const { name } = this.props;
-        return (h(Fragment, { class: this.getCSSClass() },
-            h("svg", { role: "img" },
-                h("use", { href: `${_iconsPath}#${name}` }))));
+        const { name, size, variant } = this.props;
+        return (h("svg", { role: "img", size: size, variant: variant, dir: this.getDir() },
+            h("use", { href: `${_iconsPath}#${name}` })));
     }
 }
 Icon.component = {
-    //shadow:  false,
     styleUrls: [
-        `${assetsFolder}/icon/Icon.css`,
-        `${assetsFolder}/mixins/direction/Direction-Icon.css`
+        `${assetsFolder}/icon/Icon.css`
     ]
 };
 Icon.properties = {
@@ -2916,7 +2903,8 @@ Icon.properties = {
      */
     name: {
         type: String,
-        value: ''
+        value: '',
+        required: true
     }
 };
 //@ts-ignore
@@ -2925,8 +2913,8 @@ customElements.define(`${config.tagPrefix}-icon`, Icon);
 //@ts-ignore
 class Text extends SizableMixin(VariantMixin(CustomElement)) {
     render() {
-        const { value } = this.props;
-        return (h(Fragment, { class: this.getCSSClass() }, value !== undefined ? value : (h("slot", null))));
+        const { value, size, variant } = this.props;
+        return (h(Fragment, { size: size, variant: variant }, value !== undefined ? value : (h("slot", null))));
     }
     connectedCallback() {
         const { intlKey } = this.props;
@@ -3156,27 +3144,28 @@ const ContainerMixin = Base => { var _a; return _a = class Container extends Bas
 //@ts-ignore
 class Alert extends SizableMixin(ContainerMixin(CustomElement)) {
     render() {
-        return (h(Fragment, { class: this.getCSSClass() },
+        const { type, size } = this.props;
+        return (h(Fragment, { class: "alert", type: type, size: size },
             this.renderIcon(),
             this.renderMessage(),
             this.renderCloseButton()));
     }
     renderIcon() {
-        const { showIcon, icon } = this.props;
+        const { showIcon, icon, size } = this.props;
         if (showIcon !== true) {
             return null;
         }
         return icon !== undefined ?
             { icon } :
-            (h("gcl-icon", { name: this.getDefaultIcon(), variant: this.getVariant() }));
+            (h("gcl-icon", { name: this.getDefaultIcon(), variant: this.getVariant(), size: size }));
     }
     renderMessage() {
-        const { message } = this.props;
+        const { message, size } = this.props;
         if (message === undefined) {
             return null;
         }
         if (message.isVirtualText) {
-            return (h("gcl-text", { variant: this.getVariant() }, message));
+            return (h("gcl-text", { variant: this.getVariant(), size: size }, message));
         }
         else { // VirtualNode
             return message;
@@ -3201,20 +3190,12 @@ class Alert extends SizableMixin(ContainerMixin(CustomElement)) {
         }
     }
     renderCloseButton() {
-        const { closable, close } = this.props;
+        const { closable, close, size } = this.props;
         if (closable !== true) {
             return null;
         }
         return (h("span", { class: "close-button", onClick: () => close === null || close === void 0 ? void 0 : close() },
-            h("gcl-text", { variant: this.getVariant() }, "\u00D7")));
-    }
-    getCSSClass() {
-        let cssClass;
-        if (super.getCSSClass) {
-            cssClass = super.getCSSClass();
-        }
-        const { type } = this.props;
-        return Object.assign(Object.assign({}, cssClass), { 'alert': true, [type]: true });
+            h("gcl-text", { variant: this.getVariant(), size: size }, "\u00D7")));
     }
 }
 Alert.component = {
@@ -3270,8 +3251,10 @@ customElements.define(`${config.tagPrefix}-alert`, Alert);
 //@ts-ignore
 class Button extends SizableMixin(VariantMixin(DirectionMixin(ContainerMixin(CustomElement)))) {
     render() {
-        const { type, click } = this.props;
-        return (h("button", { type: type, class: this.getCSSClass(), onClick: click },
+        const { type, click, size, variant } = this.props;
+        return (h("button", { type: type, size: size, variant: variant, dir: this.getDir(), 
+            // class={this.getCSSClass()}
+            onClick: click },
             h("slot", null)));
     }
 }
@@ -3300,13 +3283,8 @@ customElements.define(`${config.tagPrefix}-button`, Button);
 
 class Overlay extends CustomElement {
     render() {
-        return (h(Fragment, { class: this.getCSSClass() },
+        return (h(Fragment, { class: "center" },
             h("slot", null)));
-    }
-    getCSSClass() {
-        return {
-            "center": true // Center the content by default
-        };
     }
 }
 Overlay.component = {
@@ -3654,17 +3632,6 @@ const SelectableMixin = Base => { var _a; return _a = class Selectable extends C
                 composed: true
             }));
         }
-        getCSSClass() {
-            let cssClass;
-            const { selectable, selected } = this.props;
-            if (super.getCSSClass) {
-                cssClass = super.getCSSClass();
-            }
-            if (!selectable) {
-                return cssClass;
-            }
-            return Object.assign(Object.assign({}, cssClass), { 'selectable': selectable, 'selected': selected });
-        }
     },
     _a.component = {
         styleUrls: [
@@ -3686,8 +3653,8 @@ const SelectableMixin = Base => { var _a; return _a = class Selectable extends C
          */
         selected: {
             type: Boolean,
-            reflect: true,
             mutable: true,
+            reflect: true,
             passToChildren: true // Maybe the children want to show some UI that they were selected
         },
         /**
@@ -3701,7 +3668,8 @@ const SelectableMixin = Base => { var _a; return _a = class Selectable extends C
 
 class ListItem extends SelectableMixin(SizableMixin(ChildMixin(CustomElement))) {
     render() {
-        return (h("li", { class: this.getCSSClass() },
+        const { size } = this.props;
+        return (h("li", { size: size },
             h("slot", null)));
     }
 }
@@ -3885,32 +3853,23 @@ class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(Custom
     [renderWhenVisible]() {
         const { validationWarnings, validationErrors } = this.state;
         const { size } = this.props;
-        return (h(Fragment, { class: this.getCSSClass() },
+        return (h(Fragment, null,
             h("div", { class: "field" },
                 this.renderLabel(),
                 this[renderField]()),
             h("gcl-validation-summary", { size: size, warnings: validationWarnings, errors: validationErrors })));
     }
     renderLabel() {
-        const { label, name, size } = this.props;
+        const { label, name, size, required } = this.props;
         if (label === undefined) {
             return null;
         }
-        const cssClass = {
-            "field-label": true,
-            [`size-${size}`]: true,
-            "required": this.isRequired()
-        };
         if (label.isVirtualText) {
-            return (h("label", { class: cssClass, for: name }, label));
+            return (h("label", { for: name, size: size, required: required }, label));
         }
         else { // VirtualNode
             return label;
         }
-    }
-    isRequired() {
-        const { required } = this.props;
-        return required || this.hasRequiredValidator();
     }
     hasRequiredValidator() {
         const { validators = [] } = this.props;
@@ -4005,10 +3964,14 @@ Field.properties = {
         type: VirtualNode
     },
     disabled: {
-        type: Boolean
+        type: Boolean,
+        mutable: true,
+        reflect: true
     },
     required: {
-        type: Boolean
+        type: Boolean,
+        mutable: true,
+        reflect: true
     }
 };
 
@@ -4017,12 +3980,33 @@ const valueChanged = 'valueChanged';
 class SingleValueField extends Field {
     constructor() {
         super();
+        this.onInput = this.onInput.bind(this);
         this.onChange = this.onChange.bind(this);
+    }
+    onInput(event) {
+        // Retrieve the new value
+        const input = event.target;
+        const value = this.getNewValue(input);
+        this.setValue(value); // Update the current value
+        this.validate(); // Validate the field on change
     }
     onChange(event) {
         const { name } = this.props;
         // Retrieve the new value
         const input = event.target;
+        const value = this.getNewValue(input);
+        this.setValue(value); // Update the current value
+        this.validate(); // Validate the field on change
+        this.dispatchEvent(new CustomEvent(valueChanged, {
+            detail: {
+                name,
+                value
+            },
+            bubbles: true,
+            composed: true
+        }));
+    }
+    getNewValue(input) {
         let value;
         switch (input.type) {
             case 'file':
@@ -4041,15 +4025,7 @@ class SingleValueField extends Field {
                 }
                 break;
         }
-        this.setValue(value); // Update the current value
-        this.dispatchEvent(new CustomEvent(valueChanged, {
-            detail: {
-                name,
-                value
-            },
-            bubbles: true,
-            composed: true
-        }));
+        return value;
     }
 }
 SingleValueField.properties = {
@@ -4068,14 +4044,14 @@ class TextField extends SingleValueField {
     //     ]
     // };
     [renderField]() {
-        const { name, value, 
+        const { name, value, size, 
         //required,
         disabled } = this.props;
-        return (h("input", { type: "text", name: name, id: name, class: this.getCSSClass(), 
+        return (h("input", { type: "text", name: name, id: name, size: size, 
+            //class={this.getCSSClass()}
             //required={required}
             // style={{ maxWidth, width }}
-            // className={inputClass}
-            value: value, onChange: this.onChange, 
+            value: value, onInput: this.onInput, onChange: this.onChange, 
             // onFocus={onFocus}
             onBlur: this.onBlur, 
             // title={error}
@@ -4089,10 +4065,12 @@ customElements.define(`${config.tagPrefix}-text-field`, TextField);
 //@ts-ignore
 class MultilineTextField extends SingleValueField {
     [renderField]() {
-        const { name, value, rows, cols, 
+        const { name, value, rows, cols, size, 
         //required,
         disabled } = this.props;
-        return (h("textarea", { name: name, id: name, rows: rows, cols: cols, class: this.getCSSClass(), 
+        return (h("textarea", { name: name, id: name, rows: rows, cols: cols, 
+            //class={this.getCSSClass()}
+            size: size, 
             //required={required}
             // style={{ maxWidth, width }}
             // className={inputClass}
@@ -4152,8 +4130,9 @@ class NumberField extends MinMaxMixin(SingleValueField) {
     [renderField]() {
         const { name, value, 
         //required,
-        min, max, disabled } = this.props;
-        return (h("input", { type: "number", name: name, id: name, min: min, max: max, class: this.getCSSClass(), 
+        min, max, size, disabled } = this.props;
+        return (h("input", { type: "number", name: name, id: name, min: min, max: max, size: size, 
+            // class={this.getCSSClass()}
             //required={required}
             // style={{ maxWidth, width }}
             // className={inputClass}
@@ -4176,10 +4155,12 @@ class DateField extends MinMaxMixin(SingleValueField) {
     //     ]
     // };
     [renderField]() {
-        const { name, value, min, max, 
+        const { name, value, min, max, size, 
         //required,
         disabled } = this.props;
-        return (h("input", { type: "date", name: name, id: name, class: this.getCSSClass(), min: min, max: max, 
+        return (h("input", { type: "date", name: name, id: name, 
+            //class={this.getCSSClass()}
+            min: min, max: max, size: size, 
             //required={required}
             style: { minWidth: '150px' }, value: value, onChange: this.onChange, 
             // onFocus={onFocus}
@@ -4197,10 +4178,11 @@ class FileField extends SingleValueField {
     [renderField]() {
         const { name, 
         //value,
-        accept, capture, multiple, 
+        accept, capture, multiple, size, 
         //required,
         disabled } = this.props;
-        return (h("input", { type: "file", name: name, id: name, accept: accept, capture: capture, multiple: multiple, class: this.getCSSClass(), 
+        return (h("input", { type: "file", name: name, id: name, accept: accept, capture: capture, multiple: multiple, size: size, 
+            //class={this.getCSSClass()}
             //required={required}
             style: { minWidth: '220px' }, 
             // className={inputClass}

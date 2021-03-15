@@ -31,6 +31,7 @@ export class MultilineTextField extends SingleValueField {
             value,
             rows,
             cols,
+            size,
             //required,
             disabled
         } = this.props;
@@ -41,7 +42,8 @@ export class MultilineTextField extends SingleValueField {
                 id={name}
                 rows={rows}
                 cols={cols}
-                class={this.getCSSClass()}
+                //class={this.getCSSClass()}
+                size={size}
                 //required={required}
                 // style={{ maxWidth, width }}
                 // className={inputClass}

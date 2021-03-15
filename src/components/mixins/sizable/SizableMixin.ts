@@ -22,23 +22,6 @@ const SizableMixin = Base =>
                 options: ['large', 'medium', 'small']
             }
         };
-
-        getCSSClass() {
-
-            let cssClass;
-
-            if (super.getCSSClass) {
-
-                cssClass = super.getCSSClass();
-            }
-
-            const { size } = this.props;
-
-            return {
-                ...cssClass,
-                [`size-${size}`]: true
-            };
-        }
     };
 
 export default SizableMixin;

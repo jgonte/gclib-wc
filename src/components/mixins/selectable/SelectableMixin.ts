@@ -33,9 +33,9 @@ const SelectableMixin = Base =>
              * Whether the item is selected
              */
             selected: {
-                type: Boolean,
-                reflect: true,
+                type: Boolean,       
                 mutable: true,
+                reflect: true,
                 passToChildren: true // Maybe the children want to show some UI that they were selected
             },
 
@@ -116,32 +116,6 @@ const SelectableMixin = Base =>
                 bubbles: true,
                 composed: true
             }));
-        }
-
-        getCSSClass() {
-
-            let cssClass;
-
-            const {
-                selectable,
-                selected
-            } = this.props;
-
-            if (super.getCSSClass) {
-
-                cssClass = super.getCSSClass();
-            }
-
-            if (!selectable) {
-
-                return cssClass;
-            }
-
-            return {
-                ...cssClass,
-                'selectable': selectable,
-                'selected': selected
-            };
         }
     };
 

@@ -21,6 +21,7 @@ export class DateField extends MinMaxMixin(SingleValueField) {
             value,
             min,
             max,
+            size,
             //required,
             disabled
         } = this.props;
@@ -30,9 +31,10 @@ export class DateField extends MinMaxMixin(SingleValueField) {
                 type="date"
                 name={name}
                 id={name}
-                class={this.getCSSClass()}
+                //class={this.getCSSClass()}
                 min={min}
                 max={max}
+                size={size}
                 //required={required}
                 style={{ minWidth: '150px' }}
                 value={value}

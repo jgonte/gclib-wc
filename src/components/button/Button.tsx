@@ -48,13 +48,14 @@ export class Button extends
 
         const {
             type,
-            click
+            click,
+            size,
+            variant
         } = this.props;
 
         return (
-            <button
-                type={type}
-                class={this.getCSSClass()}
+            <button type={type} size={size} variant={variant} dir={this.getDir()}
+                // class={this.getCSSClass()}
                 onClick={click}
             >
                 <slot />

@@ -49,17 +49,22 @@ export abstract class Field extends
         },
 
         disabled: {
-            type: Boolean
+            type: Boolean,
+            mutable: true,
+            reflect: true
         },
 
         required: {
-            type: Boolean
+            type: Boolean,
+            mutable: true,
+            reflect: true
         }
     };
 
     constructor() {
 
         super();
+
 
         this.onBlur = this.onBlur.bind(this);
     }
@@ -76,7 +81,7 @@ export abstract class Field extends
         } = this.props;
 
         return (
-            <Fragment class={this.getCSSClass()}>
+            <Fragment>
                 <div class="field">
                     {this.renderLabel()}
                     {(this as any)[renderField]()}
@@ -95,7 +100,8 @@ export abstract class Field extends
         const {
             label,
             name,
-            size
+            size,
+            required
         } = this.props;
 
         if (label === undefined) {
@@ -103,16 +109,10 @@ export abstract class Field extends
             return null;
         }
 
-        const cssClass = {
-            "field-label": true,
-            [`size-${size}`]: true,
-            "required": this.isRequired()
-        };
-
         if (label.isVirtualText) {
 
             return (
-                <label class={cssClass} for={name}>
+                <label for={name} size={size} required={required}>
                     {label}
                 </label>
             );
@@ -121,15 +121,6 @@ export abstract class Field extends
 
             return label;
         }
-    }
-
-    isRequired(): boolean {
-
-        const {
-            required
-        } = this.props;
-
-        return required || this.hasRequiredValidator();
     }
 
     hasRequiredValidator(): boolean {
