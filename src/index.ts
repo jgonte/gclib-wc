@@ -8,6 +8,10 @@ export { Alert } from './components/alert/Alert';
 
 export { Button } from './components/button/Button';
 
+export { Header } from './components/header/Header';
+
+export { Panel } from './components/panel/Panel';
+
 export { Overlay } from './components/overlay/Overlay';
 
 export { Table } from './components/table/Table';

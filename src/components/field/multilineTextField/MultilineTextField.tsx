@@ -47,14 +47,16 @@ export class MultilineTextField extends SingleValueField {
                 //required={required}
                 // style={{ maxWidth, width }}
                 // className={inputClass}
-                value={value}
+
                 onChange={this.onChange}
                 // onFocus={onFocus}
                 onBlur={this.onBlur}
                 // title={error}
                 // ref={i => this.inputref = i}
                 disabled={disabled}
-            />
+            >
+                {value !== undefined ? value : null}
+            </textarea>
         );
     }
 }

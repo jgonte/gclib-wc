@@ -3,6 +3,14 @@ import { config } from '../../config';
 import MinMaxMixin from '../../mixins/minMax/MinMaxMixin';
 import { renderField } from '../Field';
 import { SingleValueField } from '../SingleValueField';
+//import { formatDate} from 'gclib-utils';
+
+function formatDate(value: string) {
+
+    const i = value.indexOf('T');
+
+    return value.substr(0, i);
+}
 
 //@ts-ignore
 export class DateField extends MinMaxMixin(SingleValueField) {
@@ -37,7 +45,7 @@ export class DateField extends MinMaxMixin(SingleValueField) {
                 size={size}
                 //required={required}
                 style={{ minWidth: '150px' }}
-                value={value}
+                value={value !== undefined ? formatDate(value) : undefined}
                 onChange={this.onChange}
                 // onFocus={onFocus}
                 onBlur={this.onBlur}

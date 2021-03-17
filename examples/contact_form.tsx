@@ -17,6 +17,7 @@ export class ContactForm extends CustomElement {
 
                 <gcl-hidden-field
                     name="id"
+                    is-id="true"
                 />
 
                 <gcl-text-field

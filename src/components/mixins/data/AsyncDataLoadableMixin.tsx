@@ -13,6 +13,8 @@ const AsyncDataLoadableMixin = Base =>
             )
         ) {
 
+        loadsCollection = true; // Internal configuration
+
         static properties = {
 
             /**
@@ -28,14 +30,6 @@ const AsyncDataLoadableMixin = Base =>
              * Whether to load the data for the component when the component is connected
              */
             autoLoad: {
-                type: Boolean,
-                value: true
-            },
-
-            /**
-             * Whether the loader loads a collection of items vs a single one
-             */
-            isCollection: {
                 type: Boolean,
                 value: true
             },
@@ -120,15 +114,16 @@ const AsyncDataLoadableMixin = Base =>
 
         connectedCallback() {
 
+            super.connectedCallback?.();
+
             const {
                 loadUrl,
-                autoLoad,
-                isCollection
+                autoLoad
             } = this.props;
 
             if (loadUrl !== undefined) {
 
-                this._loader = isCollection === true ?
+                this._loader = this.loadsCollection === true ?
                     new CollectionLoader({
                         onData: this.onLoadData,
                         onError: this.onLoadError
@@ -142,10 +137,6 @@ const AsyncDataLoadableMixin = Base =>
 
                     this.load();
                 }
-            }
-            else {
-
-                super.connectedCallback();
             }
         }
 

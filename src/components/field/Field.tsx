@@ -36,6 +36,7 @@ export abstract class Field extends
         },
 
         isId: {
+            attribute: 'is-id',
             type: Boolean,
             value: false
         },
@@ -64,7 +65,6 @@ export abstract class Field extends
     constructor() {
 
         super();
-
 
         this.onBlur = this.onBlur.bind(this);
     }
@@ -193,10 +193,15 @@ export abstract class Field extends
 
     onBlur() {
 
-        this.validate();
+        //this.validate();
     }
 
-    validate(): boolean {
+    /**
+     * Validates a field against a given value
+     * @param value The value to validate
+     * @returns true is the value is valid, false otherwise
+     */
+    validate(value: string): boolean {
 
         let {
             label
@@ -204,7 +209,6 @@ export abstract class Field extends
 
         const {
             name,
-            value,
             validators
         } = this.props;
 

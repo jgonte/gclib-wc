@@ -22,7 +22,7 @@ export abstract class SingleValueField extends Field {
 
         this.onChange = this.onChange.bind(this);
     }
-  
+
     onInput(event) {
 
         // Retrieve the new value
@@ -30,9 +30,9 @@ export abstract class SingleValueField extends Field {
 
         const value = this.getNewValue(input);
 
-        this.setValue(value); // Update the current value
+        //this.setValue(value); // Update the current value
 
-        this.validate(); // Validate the field on change
+        this.validate(value); // Validate the field on input
     }
 
     onChange(event) {
@@ -48,7 +48,7 @@ export abstract class SingleValueField extends Field {
 
         this.setValue(value); // Update the current value
 
-        this.validate(); // Validate the field on change
+        //this.validate(value); // Validate the field on change
 
         this.dispatchEvent(new CustomEvent(valueChanged, {
             detail: {

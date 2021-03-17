@@ -1672,7 +1672,12 @@ function replaceAttribute(element, name, newValue) {
                 element.setProperty(name, newValue);
             }
             else {
-                element.setAttribute(name, newValue);
+                if (name === 'value' && element instanceof HTMLInputElement) {
+                    element.value = newValue;
+                }
+                else {
+                    element.setAttribute(name, newValue);
+                }
             }
         }
     }
@@ -1712,10 +1717,15 @@ var SetTextPatch = (function () {
         this.value = value;
     }
     SetTextPatch.prototype.applyPatch = function (options) {
-        var node = options.node, context = options.context;
+        var parentNode = options.parentNode, node = options.node, context = options.context;
         var oldValue = node.textContent || undefined;
         var newValue = this.value.text.toString();
-        node.textContent = newValue;
+        if (parentNode instanceof HTMLTextAreaElement) {
+            parentNode.value = newValue;
+        }
+        else {
+            node.textContent = newValue;
+        }
         context.setNodeChanges(node, new NodeChanges({
             text: {
                 oldValue: oldValue,
@@ -3281,6 +3291,108 @@ Button.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-button`, Button);
 
+//@ts-ignore
+class Header extends SizableMixin(CustomElement) {
+    render() {
+        return (h(Fragment, null,
+            this.renderTitle(),
+            this.renderTools()));
+    }
+    renderTitle() {
+        const { title, size } = this.props;
+        return title !== undefined ?
+            title :
+            (h("div", { part: "title", class: "title", size: size },
+                h("slot", { name: "title" })));
+    }
+    renderTools() {
+        const { tool, size } = this.props;
+        return tool !== undefined ?
+            tool :
+            (h("div", { part: "tool", class: "tool", size: size },
+                h("slot", { name: "tool" })));
+    }
+}
+Header.component = {
+    styleUrls: [
+        `${config.assetsFolder}/header/Header.css`
+    ]
+};
+Header.properties = {
+    /**
+     * The title of the header
+     */
+    title: {
+        type: VirtualNode
+    },
+    /**
+     * The tools of the header
+     */
+    tools: {
+        type: VirtualNode
+    }
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-header`, Header);
+
+//@ts-ignore
+class Panel extends SizableMixin(DirectionMixin(CustomElement)) {
+    render() {
+        return (h(Fragment, { class: "panel" },
+            this.renderHeader(),
+            this.renderBody(),
+            this.renderFooter()));
+    }
+    renderHeader() {
+        const { header, size, direction } = this.props;
+        return header !== undefined ?
+            header :
+            (h("div", { part: "header", class: "header", size: size, direction: direction },
+                h("slot", { name: "header" })));
+    }
+    renderBody() {
+        const { body, size, direction } = this.props;
+        return body !== undefined ?
+            body :
+            (h("div", { part: "body", class: "body", size: size, direction: direction },
+                h("slot", { name: "body" })));
+    }
+    renderFooter() {
+        const { footer, size, direction } = this.props;
+        return footer !== undefined ?
+            footer :
+            (h("div", { part: "footer", class: "footer", size: size, direction: direction },
+                h("slot", { name: "footer" })));
+    }
+}
+Panel.component = {
+    styleUrls: [
+        `${config.assetsFolder}/Panel/Panel.css`
+    ]
+};
+Panel.properties = {
+    /**
+     * The header of the panel
+     */
+    header: {
+        type: VirtualNode
+    },
+    /**
+     * The body of the panel
+     */
+    body: {
+        type: VirtualNode
+    },
+    /**
+     * The footer of the panel
+     */
+    footer: {
+        type: VirtualNode
+    },
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-panel`, Panel);
+
 class Overlay extends CustomElement {
     render() {
         return (h(Fragment, { class: "center" },
@@ -3401,6 +3513,7 @@ const AsyncDataLoadableMixin = Base => { var _a; return _a =
 class AsyncDataLoadable extends ErrorableMixin(DataLoadableMixin(Base)) {
         constructor() {
             super();
+            this.loadsCollection = true; // Internal configuration
             this.onLoadData = this.onLoadData.bind(this);
             this.onLoadError = this.onLoadError.bind(this);
         }
@@ -3431,9 +3544,11 @@ class AsyncDataLoadable extends ErrorableMixin(DataLoadableMixin(Base)) {
             });
         }
         connectedCallback() {
-            const { loadUrl, autoLoad, isCollection } = this.props;
+            var _a;
+            (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+            const { loadUrl, autoLoad } = this.props;
             if (loadUrl !== undefined) {
-                this._loader = isCollection === true ?
+                this._loader = this.loadsCollection === true ?
                     new CollectionLoader({
                         onData: this.onLoadData,
                         onError: this.onLoadError
@@ -3445,9 +3560,6 @@ class AsyncDataLoadable extends ErrorableMixin(DataLoadableMixin(Base)) {
                 if (autoLoad === true) {
                     this.load();
                 }
-            }
-            else {
-                super.connectedCallback();
             }
         }
         onLoadData(data) {
@@ -3471,13 +3583,6 @@ class AsyncDataLoadable extends ErrorableMixin(DataLoadableMixin(Base)) {
          * Whether to load the data for the component when the component is connected
          */
         autoLoad: {
-            type: Boolean,
-            value: true
-        },
-        /**
-         * Whether the loader loads a collection of items vs a single one
-         */
-        isCollection: {
             type: Boolean,
             value: true
         },
@@ -3910,11 +4015,16 @@ class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(Custom
         super.attributeChangedCallback(attributeName, oldValue, newValue);
     }
     onBlur() {
-        this.validate();
+        //this.validate();
     }
-    validate() {
+    /**
+     * Validates a field against a given value
+     * @param value The value to validate
+     * @returns true is the value is valid, false otherwise
+     */
+    validate(value) {
         let { label } = this.props;
-        const { name, value, validators } = this.props;
+        const { name, validators } = this.props;
         // Extract the text of the label
         if (label === undefined) {
             label = name;
@@ -3954,6 +4064,7 @@ Field.properties = {
         type: String
     },
     isId: {
+        attribute: 'is-id',
         type: Boolean,
         value: false
     },
@@ -3987,8 +4098,8 @@ class SingleValueField extends Field {
         // Retrieve the new value
         const input = event.target;
         const value = this.getNewValue(input);
-        this.setValue(value); // Update the current value
-        this.validate(); // Validate the field on change
+        //this.setValue(value); // Update the current value
+        this.validate(value); // Validate the field on input
     }
     onChange(event) {
         const { name } = this.props;
@@ -3996,7 +4107,7 @@ class SingleValueField extends Field {
         const input = event.target;
         const value = this.getNewValue(input);
         this.setValue(value); // Update the current value
-        this.validate(); // Validate the field on change
+        //this.validate(value); // Validate the field on change
         this.dispatchEvent(new CustomEvent(valueChanged, {
             detail: {
                 name,
@@ -4074,12 +4185,12 @@ class MultilineTextField extends SingleValueField {
             //required={required}
             // style={{ maxWidth, width }}
             // className={inputClass}
-            value: value, onChange: this.onChange, 
+            onChange: this.onChange, 
             // onFocus={onFocus}
             onBlur: this.onBlur, 
             // title={error}
             // ref={i => this.inputref = i}
-            disabled: disabled }));
+            disabled: disabled }, value !== undefined ? value : null));
     }
 }
 // static component = {
@@ -4147,6 +4258,11 @@ class NumberField extends MinMaxMixin(SingleValueField) {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-number-field`, NumberField);
 
+//import { formatDate} from 'gclib-utils';
+function formatDate$1(value) {
+    const i = value.indexOf('T');
+    return value.substr(0, i);
+}
 //@ts-ignore
 class DateField extends MinMaxMixin(SingleValueField) {
     // static component = {
@@ -4162,7 +4278,7 @@ class DateField extends MinMaxMixin(SingleValueField) {
             //class={this.getCSSClass()}
             min: min, max: max, size: size, 
             //required={required}
-            style: { minWidth: '150px' }, value: value, onChange: this.onChange, 
+            style: { minWidth: '150px' }, value: value !== undefined ? formatDate$1(value) : undefined, onChange: this.onChange, 
             // onFocus={onFocus}
             onBlur: this.onBlur, 
             // title={error}
@@ -4358,7 +4474,7 @@ const AsyncDataSubmitableMixin = Base => { var _a; return _a = class AsyncDataSu
     _a; };
 
 //@ts-ignore
-class Form extends AsyncDataSubmitableMixin(ErrorableMixin(ValidatableMixin(ContainerMixin(SizableMixin(CustomElement))))) {
+class Form extends AsyncDataSubmitableMixin(AsyncDataLoadableMixin(ErrorableMixin(ValidatableMixin(ContainerMixin(SizableMixin(CustomElement)))))) {
     constructor() {
         super();
         this._record = new DataRecord();
@@ -4404,7 +4520,8 @@ class Form extends AsyncDataSubmitableMixin(ErrorableMixin(ValidatableMixin(Cont
             if (!validator.validate(context)) ;
         });
         children.forEach((child) => {
-            if (!child.validate()) {
+            const { value } = child.props;
+            if (!child.validate(value)) {
                 valid = false;
             }
         });
@@ -4412,6 +4529,8 @@ class Form extends AsyncDataSubmitableMixin(ErrorableMixin(ValidatableMixin(Cont
     }
     reset() {
         this._record.reset();
+        const data = this._record.getData();
+        this.populateFields(data);
     }
     onChildAdded(child) {
         child.dataField = this._record.addField(child.props);
@@ -4428,6 +4547,7 @@ class Form extends AsyncDataSubmitableMixin(ErrorableMixin(ValidatableMixin(Cont
     }
     connectedCallback() {
         var _a;
+        this.loadsCollection = false;
         (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
         this.addEventListener(valueChanged, this.onValueChanged);
         // Pass the properties to the data record
@@ -4448,6 +4568,22 @@ class Form extends AsyncDataSubmitableMixin(ErrorableMixin(ValidatableMixin(Cont
     handleSubmitResponse(data) {
         console.log(JSON.stringify(data));
         this._record.setData(data);
+    }
+    onLoadData(data) {
+        super.onLoadData(data);
+        const { payload } = data;
+        this._record.initialize(payload);
+        this.populateFields(payload);
+    }
+    populateFields(data) {
+        const { children } = this.state;
+        const fieldsMap = new Map(children.map(child => [child.props.name, child]));
+        for (const key in data) {
+            if (data.hasOwnProperty(key)) {
+                const field = fieldsMap.get(key);
+                field.setValue(data[key]);
+            }
+        }
     }
 }
 Form.component = {
@@ -4685,7 +4821,7 @@ customElements.define('contacts-list', ContactsList);
 class ContactForm extends CustomElement {
     render() {
         return (h("gcl-form", { id: "contactForm", "load-url": "http://localhost:60314/api/contacts/1", "submit-url": "http://localhost:60314/api/contacts/", size: "medium" },
-            h("gcl-hidden-field", { name: "id" }),
+            h("gcl-hidden-field", { name: "id", "is-id": "true" }),
             h("gcl-text-field", { label: "Name", name: "name", required: true }),
             h("gcl-date-field", { label: "Date of Birth", name: "dateOfBirth" }),
             h("gcl-number-field", { label: "Reputation", name: "reputation", min: "1", max: "10" }),
@@ -4726,4 +4862,4 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
-export { Alert, App, Button, ContactForm, ContactsList, DateField, FileField, Form, HiddenField, Icon, List, ListItem, MultilineTextField, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, NumberField, Overlay, Table, Text, TextField, ValidationSummary };
+export { Alert, App, Button, ContactForm, ContactsList, DateField, FileField, Form, Header, HiddenField, Icon, List, ListItem, MultilineTextField, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, NumberField, Overlay, Panel, Table, Text, TextField, ValidationSummary };

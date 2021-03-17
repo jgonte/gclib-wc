@@ -18,6 +18,12 @@
 
 	<gcl-app>
 
+		<h4>Contacts list (it retrieves data from a back-end)</h4>
+		<contacts-list></contacts-list>
+
+		<h4>Contact form (it retrieves data from and posts to a back-end)</h4>
+		<contact-form></contact-form>
+
 		<h4>Icons</h4>
 		<gcl-icon id="alarm-icon" name="alarm" variant="primary" size="large"></gcl-icon>
 		<gcl-icon name="alarm-fill" variant="secondary" size="medium"></gcl-icon>
@@ -48,6 +54,19 @@
 		<br />
 		<gcl-text intl-key="goodMorning" lang="de" variant="danger"></gcl-text>
 		<br />
+
+		<h4>Panels</h4>
+		<gcl-panel>
+			<gcl-header slot="header">
+				<span slot="title">
+					<gcl-icon name="archive" variant="tertiary"></gcl-icon>
+					<gcl-text intl-key="goodMorning" lang="de" variant="secondary"></gcl-text>
+				</span>
+				
+			</gcl-header>
+			<contacts-list slot="body"></contacts-list>
+			<div slot="footer">This is the footer!</div>
+		</gcl-panel>
 
 		<h4>Alerts</h4>
 		<gcl-alert message="Some info alert" size="large" close="onCloseAlert()"></gcl-alert>
@@ -102,12 +121,6 @@
 		<h4>List Multiple Selection</h4>
 		<my-list-multiple-selection></my-list-multiple-selection>
 
-		<h4>Contacts list (it retrieves data from a back-end)</h4>
-		<contacts-list></contacts-list>
-
-		<h4>Contact form (it retrieves data from and posts to a back-end)</h4>
-		<contact-form></contact-form>
-
 		<h4>My counter</h4>
 		<my-counter id="my-counter"></my-counter>
 		<input id="counterSetter" type='number' onchange="setCounter()" />
@@ -119,11 +132,8 @@
 		</gcl-button>
 
 		<h4>Validation Summary</h4>
-		<gcl-validation-summary 
-			size="small"
-			warnings='["Warning 1", "Warning 2", "Warning 3"]' 
-			errors='["Error 1", "Error 2", "Error 3"]' 
-		/>
+		<gcl-validation-summary size="small" warnings='["Warning 1", "Warning 2", "Warning 3"]'
+			errors='["Error 1", "Error 2", "Error 3"]' />
 
 		<h4>Field</h4>
 		<gcl-text-field label="Field 1" name="field1" value="abc" required />
