@@ -35,9 +35,9 @@
     --gcl-radius-size-small: .2rem;
 
     /* Width (of borders) sizes */
-    --gcl-width-size-large: .24rem;
-    --gcl-width-size-medium: .16rem;
-    --gcl-width-size-small: .08rem;
+    --gcl-width-size-large: .15rem;
+    --gcl-width-size-medium: .1rem;
+    --gcl-width-size-small: .05rem;
 
     --gcl-icon-size-large: 1.25rem;
     --gcl-icon-size-medium: 1rem;

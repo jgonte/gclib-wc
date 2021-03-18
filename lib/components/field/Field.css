@@ -6,7 +6,7 @@
 
 label {
     flex: 1 0 0px;
-    min-width: 200px;
+    min-width: 300px;
 }
 
 input, 
@@ -32,18 +32,18 @@ textarea:focus {
     border-color: var(--gcl-color-primary);
 }
 
-input[size='large']:focus,
-textarea[size='large']:focus {
+input[size='large'],
+textarea[size='large'] {
     border-width: var(--gcl-width-size-large);
 }
 
-input[size='medium']:focus,
-textarea[size='medium']:focus {
+input[size='medium'],
+textarea[size='medium'] {
     border-width: var(--gcl-width-size-medium);
 }
 
-input[size='small']:focus,
-textarea[size='small']:focus {
+input[size='small'],
+textarea[size='small'] {
     border-width: var(--gcl-width-size-small);
 }
 
