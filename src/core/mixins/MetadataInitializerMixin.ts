@@ -90,7 +90,7 @@ const MetadataInitializerMixin = Base =>
 
             if (mutable === true) { // Generate a setter
 
-                const setter = function (newValue: any) {
+                const setter = function (newValue: any, callback: Function) {
 
                     const oldValue = this.props[name];
 
@@ -111,6 +111,8 @@ const MetadataInitializerMixin = Base =>
 
                         this.setProperty(name, newValue);
                     }
+
+                    callback?.();
                 };
 
                 var setterName = this.getSetterName(name);

@@ -85,6 +85,12 @@ const ContainerMixin = Base =>
                 child
             } = event.detail;
 
+            if (this.acceptChild !== undefined &&
+                !this.acceptChild(child)) {
+
+                return;
+            }
+
             this.addChild(child);
         }
 
@@ -184,7 +190,7 @@ const ContainerMixin = Base =>
 
             const {
                 name
-            } = property;  
+            } = property;
 
             // Pass the property to the children
             visitChildren(children, child => {

@@ -171,6 +171,11 @@ export class Form extends
         this.populateFields(data);
     }
 
+    acceptChild(child: Field) {
+
+        return child instanceof Field; // Only accept fields
+    }
+
     onChildAdded(child: Field) {
 
         child.dataField = this._record.addField(child.props as DataFieldDescriptor);
@@ -261,7 +266,7 @@ export class Form extends
 
                 const field = fieldsMap.get(key);
 
-                field.setValue(data[key]);
+                field.setValue(data[key], field.onValueSet);
             }
         }
     }

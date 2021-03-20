@@ -34,7 +34,7 @@ export class ContactsList extends CustomElement {
                             <gcl-text>Date of Birth: {formatDate(dateOfBirth)}</gcl-text>
                             <gcl-text>Reputation: {reputation}</gcl-text>
                             <gcl-text>Description: {description}</gcl-text>
-                            <img style="width: 64px; height: 64px; border-radius: 50%;" src={`data:image/jpeg;base64,${avatar}`} />
+                            <img style="width: 64px; height: 64px; border-radius: 50%;" src={`data:image/jpeg;base64,${avatar.content}`} />
                         </gcl-list-item>
                     );
                 }}>

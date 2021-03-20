@@ -15,17 +15,6 @@ const defaultPropertyValueConverter = {
 
                 return value === null ? null : Number(value);
 
-            case Object: // It can also be a string
-
-                try {
-
-                    value = JSON.parse(value);
-                }
-                catch(error) {
-
-                    return value;
-                }
-
             case Array:
 
                 return JSON.parse(value);
@@ -36,11 +25,11 @@ const defaultPropertyValueConverter = {
 
                     value = JSON.parse(value);
                 }
-                catch(error) {
+                catch (error) {
 
                     // Value is a string but not a JSON one, do nothing
                 }
-                
+
                 return createVirtualNode(value);
             }
 
@@ -50,13 +39,24 @@ const defaultPropertyValueConverter = {
 
                 return window[functionName as any];
             }
+
+            case Object: // It can also be a string
+
+                try {
+
+                    value = JSON.parse(value);
+                }
+                catch (error) {
+
+                    return value;
+                }
         }
-    
+
         return value;
     },
-    
+
     toAttribute: (value: any, type: Function) => {
-    
+
         switch (type) {
 
             case Boolean:
@@ -65,10 +65,10 @@ const defaultPropertyValueConverter = {
 
             case Object:
             case Array:
-                
+
                 return value == null ? value : JSON.stringify(value);
         }
-    
+
         return value;
     }
 }

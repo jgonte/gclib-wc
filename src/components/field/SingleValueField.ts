@@ -8,7 +8,7 @@ export abstract class SingleValueField extends Field {
     static properties = {
 
         value: {
-            type: String,
+            type: Object, // Ideally is a string but could be a more complex object
             mutable: true,
             reflect: true
         }
@@ -30,7 +30,7 @@ export abstract class SingleValueField extends Field {
 
         const value = this.getNewValue(input);
 
-        //this.setValue(value); // Update the current value
+        //this.setValue(value); // Do not update the current value, since it can keep changing
 
         this.validate(value); // Validate the field on input
     }
@@ -46,9 +46,9 @@ export abstract class SingleValueField extends Field {
 
         const value = this.getNewValue(input);
 
-        this.setValue(value); // Update the current value
+        this.setValue(value, this.onValueSet); // Update the current value
 
-        //this.validate(value); // Validate the field on change
+        //this.validate(value); // No need to validate again since this happens on input
 
         this.dispatchEvent(new CustomEvent(valueChanged, {
             detail: {

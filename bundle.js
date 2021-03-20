@@ -106,6 +106,14 @@ function __generator(thisArg, body) {
     }
 }
 
+function __spreadArrays() {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+}
+
 var IntlProvider = (function (_super) {
     __extends(IntlProvider, _super);
     function IntlProvider(lang, data) {
@@ -1010,7 +1018,22 @@ var Fetcher = (function () {
         var formData = new FormData();
         for (var key in data) {
             if (data.hasOwnProperty(key)) {
-                formData.append(key, data[key]);
+                var value = data[key];
+                if (typeof value === 'object') {
+                    if (value.hasOwnProperty('fileName')) {
+                        var fileName = value.fileName, contentType = value.contentType, content = value.content;
+                        var file = new File(__spreadArrays(content), fileName, {
+                            type: contentType
+                        });
+                        formData.append(key, file);
+                    }
+                    else {
+                        throw Error("Invalid form value: " + JSON.stringify(value));
+                    }
+                }
+                else {
+                    formData.append(key, value);
+                }
             }
         }
         return formData;
@@ -1447,7 +1470,7 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ***************************************************************************** */
 
-function __spreadArrays() {
+function __spreadArrays$1() {
     for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
     for (var r = Array(s), k = 0, i = 0; i < il; i++)
         for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
@@ -1519,7 +1542,7 @@ var PatchingContext = (function () {
     PatchingContext.prototype.callDidUpdateForNodes = function (nodeDidUpdate) {
         var _this = this;
         this._changedNodes.forEach(function (nodeChanges, node) {
-            var nodes = __spreadArrays(nodeChanges.inserted, nodeChanges.moved);
+            var nodes = __spreadArrays$1(nodeChanges.inserted, nodeChanges.moved);
             for (var i = 0; i < nodes.length; ++i) {
                 _this.callDidUpdateForNode(nodes[i], nodeDidUpdate);
             }
@@ -1530,7 +1553,7 @@ var PatchingContext = (function () {
     PatchingContext.prototype.callDidUpdateForNode = function (node, nodeDidUpdate) {
         if (this._changedNodes.has(node)) {
             var nodeChanges = this._changedNodes.get(node);
-            var nodes = __spreadArrays(nodeChanges.inserted, nodeChanges.moved);
+            var nodes = __spreadArrays$1(nodeChanges.inserted, nodeChanges.moved);
             for (var i = 0; i < nodes.length; ++i) {
                 this.callDidUpdateForNode(nodes[i], nodeDidUpdate);
             }
@@ -2235,17 +2258,17 @@ function diff(oldNode, newNode) {
                 var newChildren = newNode.children;
                 if (newChildren.length === 0) {
                     if (oldChildren.length === 0) {
-                        return new ElementPatches(__spreadArrays(diffAttributes(oldNode.props, newNode.props)), []);
+                        return new ElementPatches(__spreadArrays$1(diffAttributes(oldNode.props, newNode.props)), []);
                     }
                     else {
-                        return new ElementPatches(__spreadArrays(diffAttributes(oldNode.props, newNode.props), [
+                        return new ElementPatches(__spreadArrays$1(diffAttributes(oldNode.props, newNode.props), [
                             new RemoveChildrenPatch()
                         ]), []);
                     }
                 }
                 else {
                     if (oldChildren.length === 0) {
-                        return new ElementPatches(__spreadArrays(diffAttributes(oldNode.props, newNode.props), [
+                        return new ElementPatches(__spreadArrays$1(diffAttributes(oldNode.props, newNode.props), [
                             new AddChildrenPatch(newChildren)
                         ]), []);
                     }
@@ -2263,7 +2286,7 @@ function diff(oldNode, newNode) {
                         if (childrenToRemoveCount > 0) {
                             removeChildrenPatches.push(new RemoveChildrenRangePatch(newChildren.length, childrenToRemoveCount));
                         }
-                        return new ElementPatches(__spreadArrays(diffAttributes(oldNode.props, newNode.props), patches, removeChildrenPatches), __spreadArrays(childrenPatches));
+                        return new ElementPatches(__spreadArrays$1(diffAttributes(oldNode.props, newNode.props), patches, removeChildrenPatches), __spreadArrays$1(childrenPatches));
                     }
                 }
             }
@@ -2328,7 +2351,7 @@ function diff(oldNode, newNode) {
                     if (childrenToRemoveCount > 0) {
                         removeChildrenPatches.push(new RemoveChildrenRangePatch(newChildren.length, childrenToRemoveCount));
                     }
-                    return new ElementPatches(__spreadArrays(diffAttributes(oldNode.props, newNode.props), patches, removeChildrenPatches), __spreadArrays(childrenPatches));
+                    return new ElementPatches(__spreadArrays$1(diffAttributes(oldNode.props, newNode.props), patches, removeChildrenPatches), __spreadArrays$1(childrenPatches));
                 }
             }
             else {
@@ -2399,13 +2422,6 @@ const defaultPropertyValueConverter = {
                 return value !== null && value !== 'false';
             case Number:
                 return value === null ? null : Number(value);
-            case Object: // It can also be a string
-                try {
-                    value = JSON.parse(value);
-                }
-                catch (error) {
-                    return value;
-                }
             case Array:
                 return JSON.parse(value);
             case VirtualNode: {
@@ -2421,6 +2437,13 @@ const defaultPropertyValueConverter = {
                 const functionName = value.replace('()', '').trim();
                 return window[functionName];
             }
+            case Object: // It can also be a string
+                try {
+                    value = JSON.parse(value);
+                }
+                catch (error) {
+                    return value;
+                }
         }
         return value;
     },
@@ -2552,7 +2575,7 @@ const MetadataInitializerMixin = Base => class MetadataInitializer extends Base 
             this.props[name] = value;
         }
         if (mutable === true) { // Generate a setter
-            const setter = function (newValue) {
+            const setter = function (newValue, callback) {
                 const oldValue = this.props[name];
                 if (oldValue === newValue) {
                     return;
@@ -2565,6 +2588,7 @@ const MetadataInitializerMixin = Base => class MetadataInitializer extends Base 
                 else {
                     this.setProperty(name, newValue);
                 }
+                callback === null || callback === void 0 ? void 0 : callback();
             };
             var setterName = this.getSetterName(name);
             this[setterName] = setter.bind(this);
@@ -3072,6 +3096,10 @@ const ContainerMixin = Base => { var _a; return _a = class Container extends Bas
         }
         onChildConnected(event) {
             const { child } = event.detail;
+            if (this.acceptChild !== undefined &&
+                !this.acceptChild(child)) {
+                return;
+            }
             this.addChild(child);
         }
         onChildDisconnected(event) {
@@ -4098,7 +4126,7 @@ class SingleValueField extends Field {
         // Retrieve the new value
         const input = event.target;
         const value = this.getNewValue(input);
-        //this.setValue(value); // Update the current value
+        //this.setValue(value); // Do not update the current value, since it can keep changing
         this.validate(value); // Validate the field on input
     }
     onChange(event) {
@@ -4106,8 +4134,8 @@ class SingleValueField extends Field {
         // Retrieve the new value
         const input = event.target;
         const value = this.getNewValue(input);
-        this.setValue(value); // Update the current value
-        //this.validate(value); // Validate the field on change
+        this.setValue(value, this.onValueSet); // Update the current value
+        //this.validate(value); // No need to validate again since this happens on input
         this.dispatchEvent(new CustomEvent(valueChanged, {
             detail: {
                 name,
@@ -4141,7 +4169,7 @@ class SingleValueField extends Field {
 }
 SingleValueField.properties = {
     value: {
-        type: String,
+        type: Object,
         mutable: true,
         reflect: true
     }
@@ -4291,24 +4319,87 @@ customElements.define(`${config.tagPrefix}-date-field`, DateField);
 
 //@ts-ignore
 class FileField extends SingleValueField {
+    // constructor() {
+    //     super();
+    //     this.onValueSet = this.onValueSet.bind(this);
+    // }
     [renderField]() {
         const { name, 
         //value,
         accept, capture, multiple, size, 
         //required,
-        disabled } = this.props;
-        return (h("input", { type: "file", name: name, id: name, accept: accept, capture: capture, multiple: multiple, size: size, 
-            //class={this.getCSSClass()}
-            //required={required}
-            style: { minWidth: '220px' }, 
-            // className={inputClass}
-            //value={value} //TODO: Use it to populate a preview section
-            onChange: this.onChange, 
-            // onFocus={onFocus}
-            onBlur: this.onBlur, 
-            // title={error}
-            // ref={i => this.inputref = i}
-            disabled: disabled }));
+        disabled, } = this.props;
+        return (h("div", null,
+            this.renderFileList(),
+            h("input", { type: "file", name: name, id: name, accept: accept, capture: capture, multiple: multiple, size: size, 
+                //class={this.getCSSClass()}
+                //required={required}
+                style: { minWidth: '220px' }, onChange: this.onChange, 
+                // onFocus={onFocus}
+                onBlur: this.onBlur, 
+                // title={error}
+                // ref={i => this.inputref = i}
+                disabled: disabled })));
+    }
+    // nodeDidUpdate(node, nodeChanges) {
+    //     super.nodeDidUpdate?.(node, nodeChanges);
+    //     const {
+    //         name,
+    //         value
+    //     } = this.props;
+    //     if (node.id === name) { // It is our input field
+    //         if (node.files.length === 0) {
+    //             console.log('Input does have not any files');
+    //             if (value !== undefined) {
+    //                 if (Array.isArray(value)) {
+    //                     // value.forEach(item => input.files.);
+    //                 }
+    //                 else {
+    //                     const file = new File([...value.content], value.fileName, {
+    //                         type: value.contentType
+    //                     });
+    //                     node.files.push(file);
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+    // onValueSet() {
+    //     const {
+    //         name,
+    //         value
+    //     } = this.props;
+    //     const input: HTMLInputElement = document.getElementById(name) as HTMLInputElement;
+    //     if (input?.files?.length === 0) {
+    //         console.log('Input does have not any files');
+    //         if (value !== undefined) {
+    //             if (Array.isArray(value)) {
+    //                 // value.forEach(item => input.files.);
+    //             }
+    //         }
+    //     }
+    // }
+    renderFileList() {
+        const { preview, value, size } = this.props;
+        if (preview === false) {
+            return null;
+        }
+        if (value === undefined) {
+            return null;
+        }
+        const data = Array.isArray(value) ? value : [value]; // Ensure it is an array
+        return (h("gcl-list", { 
+            // id="listWithData"
+            size: size, 
+            // selection='["c"]'
+            // selectable
+            // selectionChanged={this.showSelection}
+            data: data, renderData: record => {
+                const { fileName, content } = record;
+                return (h("gcl-list-item", { value: fileName },
+                    h("gcl-text", null, fileName),
+                    h("img", { style: "width: 48px; height: 48px;", src: `data:image/jpeg;base64,${content}` })));
+            } }));
     }
 }
 // static component = {
@@ -4321,9 +4412,14 @@ FileField.properties = {
         type: String
     },
     capture: {
-        type: Boolean
+        type: Boolean,
+        value: true
     },
     multiple: {
+        type: Boolean
+    },
+    /** Whether to preview the files (that can be previewed) */
+    preview: {
         type: Boolean
     }
 };
@@ -4532,6 +4628,9 @@ class Form extends AsyncDataSubmitableMixin(AsyncDataLoadableMixin(ErrorableMixi
         const data = this._record.getData();
         this.populateFields(data);
     }
+    acceptChild(child) {
+        return child instanceof Field; // Only accept fields
+    }
     onChildAdded(child) {
         child.dataField = this._record.addField(child.props);
     }
@@ -4581,7 +4680,7 @@ class Form extends AsyncDataSubmitableMixin(AsyncDataLoadableMixin(ErrorableMixi
         for (const key in data) {
             if (data.hasOwnProperty(key)) {
                 const field = fieldsMap.get(key);
-                field.setValue(data[key]);
+                field.setValue(data[key], field.onValueSet);
             }
         }
     }
@@ -4805,7 +4904,7 @@ class ContactsList extends CustomElement {
                     h("gcl-text", null,
                         "Description: ",
                         description),
-                    h("img", { style: "width: 64px; height: 64px; border-radius: 50%;", src: `data:image/jpeg;base64,${avatar}` })));
+                    h("img", { style: "width: 64px; height: 64px; border-radius: 50%;", src: `data:image/jpeg;base64,${avatar.content}` })));
             } }));
     }
     showSelection(selection) {
