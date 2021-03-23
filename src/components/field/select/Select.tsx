@@ -72,7 +72,7 @@ export class Select extends AsyncDataLoadableMixin(SingleValueField) {
             displayProperty
         } = this.props;
 
-        if (options != undefined) {
+        if (options !== undefined) {
 
             if (emptyOption !== undefined) {
 
@@ -89,7 +89,7 @@ export class Select extends AsyncDataLoadableMixin(SingleValueField) {
             return options;
         }
 
-        if (data != undefined) {
+        if (data !== undefined) {
 
             return (
                 <Fragment>

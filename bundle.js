@@ -4280,8 +4280,8 @@ class Select extends AsyncDataLoadableMixin(SingleValueField) {
             onBlur: this.onBlur, disabled: disabled }, this.renderOptions()));
     }
     renderOptions() {
-        const { emptyOption, options, data, } = this.props;
-        if (options != undefined) {
+        const { emptyOption, options, data, valueProperty, displayProperty } = this.props;
+        if (options !== undefined) {
             if (emptyOption !== undefined) {
                 // Prepend the empty option
                 const { label, value } = emptyOption;
@@ -4289,8 +4289,8 @@ class Select extends AsyncDataLoadableMixin(SingleValueField) {
             }
             return options;
         }
-        if (data != undefined) {
-            return (h(Fragment, null));
+        if (data !== undefined) {
+            return (h(Fragment, null, data.map(item => h("option", { value: item[valueProperty] }, item[displayProperty]))));
         }
         return null; // No options to render
     }
