@@ -26,6 +26,33 @@ export class ContactForm extends CustomElement {
                     required
                 />
 
+                <gcl-select                  
+                    label="Genre"
+                    name="genre"
+                    empty-option={{
+                        label: '--Please choose an option--',
+                        value: ''
+                    }}
+                    // options={
+                    //     <Fragment>
+                    //         <option value="male">Male</option>
+                    //         <option value="female">Female</option>
+                    //     </Fragment>
+                    // }
+                    data={[
+                        {
+                            code: 'm',
+                            description: 'Male'
+                        },
+                        {
+                            code: 'f',
+                            description: 'Female'
+                        }
+                    ]}
+                >
+
+                </gcl-select>
+
                 <gcl-date-field
                     label="Date of Birth"
                     name="dateOfBirth"
@@ -40,7 +67,7 @@ export class ContactForm extends CustomElement {
                 // required
                 />
 
-                <gcl-multiline-text-field
+                <gcl-text-area
                     label="Description"
                     name="description"
                     rows="5"

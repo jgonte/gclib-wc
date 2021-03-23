@@ -4,7 +4,7 @@ import { renderField } from '../Field';
 import { SingleValueField } from '../SingleValueField';
 
 //@ts-ignore
-export class MultilineTextField extends SingleValueField {
+export class TextArea extends SingleValueField {
 
     // static component = {
 
@@ -62,4 +62,4 @@ export class MultilineTextField extends SingleValueField {
 }
 
 //@ts-ignore
-customElements.define(`${config.tagPrefix}-multiline-text-field`, MultilineTextField);
+customElements.define(`${config.tagPrefix}-text-area`, TextArea);

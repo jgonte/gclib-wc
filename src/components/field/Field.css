@@ -10,6 +10,7 @@ label {
 }
 
 input, 
+select,
 textarea {
     flex: 1 0 0px;
     outline: none;
@@ -17,7 +18,8 @@ textarea {
     border-color: var(--gcl-color-medium);
 }
 
-textarea {
+textarea,
+select {
     min-width: 200px;
     font-family: inherit;
 }
@@ -27,23 +29,27 @@ input[type='date'] {
 }
 
 input:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
     border-style: solid;
     border-color: var(--gcl-color-primary);
 }
 
 input[size='large'],
-textarea[size='large'] {
+textarea[size='large'],
+select[size='large'] {
     border-width: var(--gcl-width-size-large);
 }
 
 input[size='medium'],
-textarea[size='medium'] {
+textarea[size='medium'],
+select[size='medium'] {
     border-width: var(--gcl-width-size-medium);
 }
 
 input[size='small'],
-textarea[size='small'] {
+textarea[size='small'],
+select[size='small'] {
     border-width: var(--gcl-width-size-small);
 }
 

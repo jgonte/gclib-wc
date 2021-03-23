@@ -3,6 +3,22 @@ import { config } from '../../config';
 import { renderField } from '../Field';
 import { SingleValueField } from '../SingleValueField';
 
+function formatSize(size) {
+
+    if (size < 1024) {
+
+        return size + 'bytes';
+    }
+    else if (size >= 1024 && size < 1048576) {
+
+        return (size / 1024).toFixed(1) + 'KB';
+    }
+    else if (size >= 1048576) {
+
+        return (size / 1048576).toFixed(1) + 'MB';
+    }
+}
+
 //@ts-ignore
 export class FileField extends SingleValueField {
 
@@ -34,12 +50,12 @@ export class FileField extends SingleValueField {
         }
     };
 
-    // constructor() {
+    constructor() {
 
-    //     super();
+        super();
 
-    //     this.onValueSet = this.onValueSet.bind(this);
-    // }
+        this.openFileDialog = this.openFileDialog.bind(this);
+    }
 
     [renderField](): VirtualNode {
 
@@ -57,7 +73,14 @@ export class FileField extends SingleValueField {
 
         return (
             <div>
+
+                <gcl-button variant="primary" click={this.openFileDialog}>
+                    <gcl-icon name="upload"></gcl-icon>
+                    <gcl-text>Click here to upload files</gcl-text>
+                </gcl-button>
+
                 {this.renderFileList()}
+
                 <input
                     type="file"
                     name={name}
@@ -68,7 +91,7 @@ export class FileField extends SingleValueField {
                     size={size}
                     //class={this.getCSSClass()}
                     //required={required}
-                    style={{ minWidth: '220px' }}
+                    style={{ opacity: 0 }} // Note: opacity is used to hide the file input instead of visibility: hidden or display: none, because assistive technology interprets the latter two styles to mean the file input isn't interactive.
                     onChange={this.onChange}
                     // onFocus={onFocus}
                     onBlur={this.onBlur}
@@ -78,6 +101,15 @@ export class FileField extends SingleValueField {
                 />
             </div>
         );
+    }
+
+    openFileDialog() {
+
+        const {
+            name
+        } = this.props;
+
+        this.document.getElementById(name).click();
     }
 
     // nodeDidUpdate(node, nodeChanges) {
@@ -170,14 +202,23 @@ export class FileField extends SingleValueField {
                 data={data}
                 renderData={record => {
                     const {
-                        fileName,
+                        name,
+                        size,
                         content
                     } = record;
 
+                    // The content can be either read from the server or selected from a File object
+                    const src = content.indexOf('blob:') === -1 ?
+                        `data:image/jpeg;base64,${content}` :
+                        content;
+
                     return (
-                        <gcl-list-item value={fileName}>
-                            <gcl-text>{fileName}</gcl-text>
-                            <img style="width: 48px; height: 48px;" src={`data:image/jpeg;base64,${content}`} />                     
+                        <gcl-list-item value={name}>
+                            <gcl-text intl-key="name">Name:</gcl-text>
+                            <gcl-text>{name}</gcl-text>
+                            <gcl-text intl-key="size">Size:</gcl-text>
+                            <gcl-text>{formatSize(size)}</gcl-text>
+                            <img style="width: 48px; height: 48px;" src={src} />
                         </gcl-list-item>
                     );
                 }}>

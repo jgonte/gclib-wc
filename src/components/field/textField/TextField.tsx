@@ -28,7 +28,7 @@ export class TextField extends SingleValueField {
                 type="text"
                 name={name}
                 id={name}
-                size={size}
+                size={size} // Needed for the CSS to get the right size
                 //class={this.getCSSClass()}
                 //required={required}
                 // style={{ maxWidth, width }}

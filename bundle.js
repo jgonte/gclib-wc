@@ -1403,6 +1403,9 @@ var FragmentNode = (function () {
         this.element = documentFragment;
         return documentFragment;
     };
+    FragmentNode.prototype.prependChildNode = function (vNode) {
+        this.children.unshift(vNode);
+    };
     FragmentNode.prototype.appendChildNode = function (vNode) {
         this.children.push(vNode);
     };
@@ -2582,8 +2585,14 @@ const MetadataInitializerMixin = Base => class MetadataInitializer extends Base 
                 }
                 this.validatePropertyOptions(name, newValue, options);
                 // console.log(`Property: '${name}' of custom element: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
-                if (reflect) { // This will trigger the attributeChangedCallback
+                if (reflect) {
+                    // This will trigger the attributeChangedCallback
                     this.setAttribute(attribute, defaultPropertyValueConverter.toAttribute(newValue, type));
+                    if (typeof newValue === 'object') {
+                        // Using JSON.serialize will wipe out any functions from the object
+                        // Therefore after setting the attributes we set the new value as an object
+                        this.setProperty(name, newValue);
+                    }
                 }
                 else {
                     this.setProperty(name, newValue);
@@ -2794,14 +2803,18 @@ class CustomElement extends VirtualDomComponentMixin(MetadataInitializerMixin(HT
     }
     /**
      * Sets the property bypassing any serialization
-     * @param name The name of the property
+     * @param attribute The name of the property
      * @param value The value of the property
      */
-    setProperty(name, value) {
+    setProperty(attribute, value) {
+        // Get the mapped property
+        const property = this.constructor.propertiesByAttribute[attribute];
+        const name = property !== undefined ? property.name : attribute;
         const oldValue = this.props[name];
         if (oldValue === value) {
             return;
         }
+        // console.log(`setProperty: '${name}' of custom element: [${this.constructor.name}] value: <${value}>`);
         if (typeof value === 'function') {
             this.props[name] = value.bind(this);
         }
@@ -4150,11 +4163,28 @@ class SingleValueField extends Field {
         switch (input.type) {
             case 'file':
                 {
+                    const { files } = input;
+                    if (files.length === 0) { // No files selected
+                        return value;
+                    }
                     if (input.multiple === true) {
-                        value = input.files;
+                        value = Array.from(files).map(f => {
+                            return {
+                                name: f.name,
+                                type: f.type,
+                                size: f.size,
+                                content: URL.createObjectURL(f)
+                            };
+                        });
                     }
                     else {
-                        value = input.files[0];
+                        const f = files[0];
+                        value = {
+                            name: f.name,
+                            type: f.type,
+                            size: f.size,
+                            content: URL.createObjectURL(f)
+                        };
                     }
                 }
                 break;
@@ -4202,7 +4232,7 @@ class TextField extends SingleValueField {
 customElements.define(`${config.tagPrefix}-text-field`, TextField);
 
 //@ts-ignore
-class MultilineTextField extends SingleValueField {
+class TextArea extends SingleValueField {
     [renderField]() {
         const { name, value, rows, cols, size, 
         //required,
@@ -4226,7 +4256,7 @@ class MultilineTextField extends SingleValueField {
 //         `${config.assetsFolder}/TextField/TextField.css`
 //     ]
 // };
-MultilineTextField.properties = {
+TextArea.properties = {
     rows: {
         type: Number
     },
@@ -4235,7 +4265,60 @@ MultilineTextField.properties = {
     }
 };
 //@ts-ignore
-customElements.define(`${config.tagPrefix}-multiline-text-field`, MultilineTextField);
+customElements.define(`${config.tagPrefix}-text-area`, TextArea);
+
+//@ts-ignore
+class Select extends AsyncDataLoadableMixin(SingleValueField) {
+    [renderField]() {
+        const { name, value, size, 
+        //required,
+        disabled } = this.props;
+        return (h("select", { name: name, id: name, 
+            // style={{ maxWidth, width }}
+            value: value, size: size, onInput: this.onInput, onChange: this.onChange, 
+            // onFocus={onFocus}
+            onBlur: this.onBlur, disabled: disabled }, this.renderOptions()));
+    }
+    renderOptions() {
+        const { emptyOption, options, data, } = this.props;
+        if (options != undefined) {
+            if (emptyOption !== undefined) {
+                // Prepend the empty option
+                const { label, value } = emptyOption;
+                options.prependChildNode(h("option", { value: value }, label));
+            }
+            return options;
+        }
+        if (data != undefined) {
+            return (h(Fragment, null));
+        }
+        return null; // No options to render
+    }
+}
+Select.properties = {
+    /**
+     * The name of the property to map the value of the option
+     */
+    valueProperty: {
+        attribute: 'value-property',
+        type: String,
+        value: 'code'
+    },
+    displayProperty: {
+        attribute: 'display-property',
+        type: String,
+        value: 'description'
+    },
+    emptyOption: {
+        attribute: 'empty-option',
+        type: Object
+    },
+    options: {
+        type: VirtualNode
+    }
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-select`, Select);
 
 //@ts-ignore
 class HiddenField extends SingleValueField {
@@ -4317,12 +4400,23 @@ class DateField extends MinMaxMixin(SingleValueField) {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-date-field`, DateField);
 
+function formatSize(size) {
+    if (size < 1024) {
+        return size + 'bytes';
+    }
+    else if (size >= 1024 && size < 1048576) {
+        return (size / 1024).toFixed(1) + 'KB';
+    }
+    else if (size >= 1048576) {
+        return (size / 1048576).toFixed(1) + 'MB';
+    }
+}
 //@ts-ignore
 class FileField extends SingleValueField {
-    // constructor() {
-    //     super();
-    //     this.onValueSet = this.onValueSet.bind(this);
-    // }
+    constructor() {
+        super();
+        this.openFileDialog = this.openFileDialog.bind(this);
+    }
     [renderField]() {
         const { name, 
         //value,
@@ -4330,16 +4424,23 @@ class FileField extends SingleValueField {
         //required,
         disabled, } = this.props;
         return (h("div", null,
+            h("gcl-button", { variant: "primary", click: this.openFileDialog },
+                h("gcl-icon", { name: "upload" }),
+                h("gcl-text", null, "Click here to upload files")),
             this.renderFileList(),
             h("input", { type: "file", name: name, id: name, accept: accept, capture: capture, multiple: multiple, size: size, 
                 //class={this.getCSSClass()}
                 //required={required}
-                style: { minWidth: '220px' }, onChange: this.onChange, 
+                style: { opacity: 0 }, onChange: this.onChange, 
                 // onFocus={onFocus}
                 onBlur: this.onBlur, 
                 // title={error}
                 // ref={i => this.inputref = i}
                 disabled: disabled })));
+    }
+    openFileDialog() {
+        const { name } = this.props;
+        this.document.getElementById(name).click();
     }
     // nodeDidUpdate(node, nodeChanges) {
     //     super.nodeDidUpdate?.(node, nodeChanges);
@@ -4395,10 +4496,17 @@ class FileField extends SingleValueField {
             // selectable
             // selectionChanged={this.showSelection}
             data: data, renderData: record => {
-                const { fileName, content } = record;
-                return (h("gcl-list-item", { value: fileName },
-                    h("gcl-text", null, fileName),
-                    h("img", { style: "width: 48px; height: 48px;", src: `data:image/jpeg;base64,${content}` })));
+                const { name, size, content } = record;
+                // The content can be either read from the server or selected from a File object
+                const src = content.indexOf('blob:') === -1 ?
+                    `data:image/jpeg;base64,${content}` :
+                    content;
+                return (h("gcl-list-item", { value: name },
+                    h("gcl-text", { "intl-key": "name" }, "Name:"),
+                    h("gcl-text", null, name),
+                    h("gcl-text", { "intl-key": "size" }, "Size:"),
+                    h("gcl-text", null, formatSize(size)),
+                    h("img", { style: "width: 48px; height: 48px;", src: src })));
             } }));
     }
 }
@@ -4922,9 +5030,29 @@ class ContactForm extends CustomElement {
         return (h("gcl-form", { id: "contactForm", "load-url": "http://localhost:60314/api/contacts/1", "submit-url": "http://localhost:60314/api/contacts/", size: "medium" },
             h("gcl-hidden-field", { name: "id", "is-id": "true" }),
             h("gcl-text-field", { label: "Name", name: "name", required: true }),
+            h("gcl-select", { label: "Genre", name: "genre", "empty-option": {
+                    label: '--Please choose an option--',
+                    value: ''
+                }, 
+                // options={
+                //     <Fragment>
+                //         <option value="male">Male</option>
+                //         <option value="female">Female</option>
+                //     </Fragment>
+                // }
+                data: [
+                    {
+                        code: 'm',
+                        description: 'Male'
+                    },
+                    {
+                        code: 'f',
+                        description: 'Female'
+                    }
+                ] }),
             h("gcl-date-field", { label: "Date of Birth", name: "dateOfBirth" }),
             h("gcl-number-field", { label: "Reputation", name: "reputation", min: "1", max: "10" }),
-            h("gcl-multiline-text-field", { label: "Description", name: "description", rows: "5", cols: "30" }),
+            h("gcl-text-area", { label: "Description", name: "description", rows: "5", cols: "30" }),
             h("gcl-file-field", { label: "Avatar", name: "avatar" })));
     }
 }
@@ -4961,4 +5089,4 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
-export { Alert, App, Button, ContactForm, ContactsList, DateField, FileField, Form, Header, HiddenField, Icon, List, ListItem, MultilineTextField, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, NumberField, Overlay, Panel, Table, Text, TextField, ValidationSummary };
+export { Alert, App, Button, ContactForm, ContactsList, DateField, FileField, Form, Header, HiddenField, Icon, List, ListItem, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, NumberField, Overlay, Panel, Select, Table, Text, TextArea, TextField, ValidationSummary };

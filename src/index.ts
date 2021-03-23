@@ -22,7 +22,9 @@ export { List } from './components/list/List';
 
 export { TextField } from './components/field/textField/TextField';
 
-export { MultilineTextField } from './components/field/multilineTextField/MultilineTextField';
+export { TextArea } from './components/field/textArea/TextArea';
+
+export { Select } from './components/field/select/Select';
 
 export { HiddenField } from './components/field/hiddenField/HiddenField';
 

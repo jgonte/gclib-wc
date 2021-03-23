@@ -57,31 +57,55 @@ export abstract class SingleValueField extends Field {
             },
             bubbles: true,
             composed: true
-        }));   
+        }));
     }
 
-    getNewValue(input: HTMLInputElement) : any {
+    getNewValue(input: HTMLInputElement): any {
 
         let value: any;
 
         switch (input.type) {
-            case 'file': {
+            case 'file':
+                {
+                    const {
+                        files
+                    } = input;
 
-                if (input.multiple === true) {
+                    if (files.length === 0) { // No files selected
 
-                    value = input.files;
+                        return value;
+                    }
+
+                    if (input.multiple === true) {
+
+                        value = Array.from(files).map(f => {
+
+                            return {
+                                name: f.name,
+                                type: f.type,
+                                size: f.size,
+                                content: URL.createObjectURL(f)
+                            };
+                        });
+                    }
+                    else {
+
+                        const f = files[0];
+
+                        value = {
+                            name: f.name,
+                            type: f.type,
+                            size: f.size,
+                            content: URL.createObjectURL(f)
+                        };
+                    }
                 }
-                else {
-
-                    value= input.files[0];
-                }              
-            }
-            break;
-            default: {
-                
-                value = input.value;
-            }
-            break;
+                break;
+            default:
+                {
+                    value = input.value;
+                }
+                break;
         }
 
         return value;

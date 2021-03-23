@@ -102,10 +102,15 @@ export default abstract class CustomElement extends
 
     /**
      * Sets the property bypassing any serialization
-     * @param name The name of the property
+     * @param attribute The name of the property
      * @param value The value of the property
      */
-    setProperty(name: string, value: any) {
+    setProperty(attribute: string, value: any) {
+
+        // Get the mapped property
+        const property = (this.constructor as any).propertiesByAttribute[attribute];
+
+        const name = property !== undefined ? property.name : attribute;
 
         const oldValue = this.props[name];
 
@@ -113,6 +118,8 @@ export default abstract class CustomElement extends
 
             return;
         }
+
+        // console.log(`setProperty: '${name}' of custom element: [${this.constructor.name}] value: <${value}>`);
 
         if (typeof value === 'function') {
 
@@ -125,5 +132,5 @@ export default abstract class CustomElement extends
 
         this.requestUpdate();
     }
-    
+   
 }

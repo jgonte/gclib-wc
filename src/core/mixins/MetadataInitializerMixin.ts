@@ -103,9 +103,17 @@ const MetadataInitializerMixin = Base =>
 
                     // console.log(`Property: '${name}' of custom element: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
 
-                    if (reflect) { // This will trigger the attributeChangedCallback
+                    if (reflect) { 
 
+                        // This will trigger the attributeChangedCallback
                         this.setAttribute(attribute, defaultPropertyValueConverter.toAttribute(newValue, type));
+
+                        if (typeof newValue === 'object') {
+
+                            // Using JSON.serialize will wipe out any functions from the object
+                            // Therefore after setting the attributes we set the new value as an object
+                            this.setProperty(name, newValue);
+                        }
                     }
                     else {
 
