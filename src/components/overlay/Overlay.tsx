@@ -1,5 +1,5 @@
 import { Fragment, h } from 'gclib-vdom';
-import CustomElement from '../../core/CustomElement';
+import CustomElement from '../../core/customElement/CustomElement';
 import { config } from '../config';
 
 export class Overlay extends CustomElement {

@@ -1,6 +1,6 @@
 import { formatDate } from 'gclib-utils';
 import { h } from 'gclib-vdom';
-import CustomElement from '../src/core/CustomElement';
+import CustomElement from '../src/core/customElement/CustomElement';
 
 /**
  * Shows a contacts list populated from a back end
@@ -17,7 +17,7 @@ export class ContactsList extends CustomElement {
                 selection='[2]'
                 selectable
                 selectionChanged={this.showSelection}
-                renderData={record => {
+                renderRecord={record => {
                     const {
                         id,
                         name,

@@ -1,29 +1,25 @@
-import { h } from 'gclib-vdom';
-import CustomElement from "../../core/CustomElement";
+import { Fragment, h } from 'gclib-vdom';
+import CustomElement from "../../core/customElement/CustomElement";
 import { config } from '../config';
 import { DataRecord, ValidationContext } from 'gclib-utils';
 import { DataFieldDescriptor } from 'gclib-utils/dist/types/data/record/Interfaces';
 import Validator from 'gclib-utils/dist/types/data/validation/validators/Validator';
 import { Field } from '../field/Field';
-import ErrorableMixin, { renderError } from '../mixins/errorable/ErrorableMixin';
 import SizableMixin from '../mixins/sizable/SizableMixin';
-import AsyncDataLoadableMixin from '../mixins/data/AsyncDataLoadableMixin';
-import AsyncDataSubmitableMixin, { renderSubmitting } from '../mixins/data/AsyncDataSubmitableMixin';
+import DataLoadableMixin from '../mixins/data/DataLoadableMixin';
+import SubmittableMixin from '../mixins/data/SubmittableMixin';
 import ValidatableMixin from '../mixins/validatable/ValidatableMixin';
 import ContainerMixin from '../../core/mixins/ContainerMixin';
 import { valueChanged } from '../field/SingleValueField';
-import { renderDerived } from '../mixins/Internals';
 
 //@ts-ignore
 export class Form extends
-    AsyncDataSubmitableMixin(
-        AsyncDataLoadableMixin(
-            ErrorableMixin(
-                ValidatableMixin(
-                    ContainerMixin(
-                        SizableMixin(
-                            CustomElement
-                        )
+    SubmittableMixin(
+        DataLoadableMixin(
+            ValidatableMixin(
+                ContainerMixin(
+                    SizableMixin(
+                        CustomElement
                     )
                 )
             )
@@ -59,26 +55,6 @@ export class Form extends
     render() {
 
         const {
-            error,
-            submitting
-        } = this.state;
-
-        if (error !== undefined) {
-
-            return this[renderError as any]();
-        }
-
-        if (submitting === true) {
-
-            return this[renderSubmitting as any]();
-        }
-
-        return this[renderDerived]();
-    }
-
-    [renderDerived]() {
-
-        const {
             validationWarnings,
             validationErrors
         } = this.state;
@@ -88,15 +64,21 @@ export class Form extends
         } = this.props;
 
         return (
-            <form size={size}>
-                <slot />
-                <gcl-validation-summary
-                    size={size}
-                    warnings={validationWarnings}
-                    errors={validationErrors}
-                />
-                {this.renderButtons()}
-            </form>
+            <Fragment>
+                {this.renderLoading()}
+                {this.renderError()}
+                {this.renderSubmitting()}
+                <form size={size}>
+                    <slot />
+                    <gcl-validation-summary
+                        size={size}
+                        warnings={validationWarnings}
+                        errors={validationErrors}
+                    />
+                    {this.renderButtons()}
+                </form>
+            </Fragment>
+
         );
     }
 
@@ -200,9 +182,13 @@ export class Form extends
 
     connectedCallback() {
 
+        super.connectedCallback?.();
+
         this.loadsCollection = false;
 
-        super.connectedCallback?.();
+        this.initLoader();
+
+        this.initSubmitter();
 
         this.addEventListener(valueChanged, this.onValueChanged);
 

@@ -1,5 +1,5 @@
 import { h } from 'gclib-vdom';
-import CustomElement from '../src/core/CustomElement';
+import CustomElement from '../src/core/customElement/CustomElement';
 
 export class MyListSingleSelectionLoadEmptyData extends CustomElement {
 
@@ -15,7 +15,7 @@ export class MyListSingleSelectionLoadEmptyData extends CustomElement {
                 data={[
                     // Empty
                 ]}
-                renderData={record => {
+                renderRecord={record => {
                     const {
                         value,
                         iconName,

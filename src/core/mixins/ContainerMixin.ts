@@ -1,5 +1,5 @@
 import visitChildren from "../helpers/visitChildren";
-import { ComponentMetadata, CustomPropertyDescriptor } from "../Interfaces";
+import { CustomElementMetadata, CustomElementPropertyDescriptor } from "../customElement/Interfaces";
 import { childConnected, childDisconnected } from './ChildMixin';
 
 const ContainerMixin = Base =>
@@ -124,9 +124,9 @@ const ContainerMixin = Base =>
          */
         passPropsToChild(child: HTMLElement) {
 
-            const componentMetadata: ComponentMetadata = (this.constructor as any).componentMetadata;
+            const componentMetadata: CustomElementMetadata = (this.constructor as any).componentMetadata;
 
-            const properties: CustomPropertyDescriptor[] = Object.values(componentMetadata.properties)
+            const properties: CustomElementPropertyDescriptor[] = Object.values(componentMetadata.properties)
                 .filter(p => p.passToChildren === true);
 
             if (properties.length === 0) {
@@ -178,9 +178,9 @@ const ContainerMixin = Base =>
                 children
             } = this.state;
 
-            const componentMetadata: ComponentMetadata = (this.constructor as any).componentMetadata;
+            const componentMetadata: CustomElementMetadata = (this.constructor as any).componentMetadata;
 
-            const property: CustomPropertyDescriptor = Object.values(componentMetadata.properties)
+            const property: CustomElementPropertyDescriptor = Object.values(componentMetadata.properties)
                 .filter(p => p.attribute === attributeName)[0];
 
             if (!property.passToChildren) {

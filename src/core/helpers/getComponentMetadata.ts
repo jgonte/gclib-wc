@@ -1,8 +1,8 @@
-import { ComponentMetadata } from "../Interfaces";
+import { CustomElementMetadata } from "../customElement/Interfaces";
 
 export default function getComponentMetadata(ctor) {
 
-    const metadata : ComponentMetadata = {
+    const metadata : CustomElementMetadata = {
         component: {},
         properties: {},
         state: {}

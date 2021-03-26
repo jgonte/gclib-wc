@@ -1,18 +1,15 @@
 import { Fetcher } from "gclib-utils";
 import { ErrorResponse } from "gclib-utils/dist/types/data/transfer/Interfaces";
-import { Fragment, h } from "gclib-vdom";
-import { renderDerived as renderDerived } from "../Internals";
-
-export const renderSubmitting = Symbol('renderSubmitting');
+import { h } from "gclib-vdom";
 
 /**
  * Mixin to implement a component that can post data to a server
  * The derived/subclass must also implement ErrorableMixin
  * @param Base
  */
-const AsyncDataSubmitableMixin = Base =>
+const SubmitableMixin = Base =>
 
-    class AsyncDataSubmitable extends Base {
+    class Submitable extends Base {
 
         static properties = {
 
@@ -26,7 +23,7 @@ const AsyncDataSubmitableMixin = Base =>
             },
 
             method: {
-                type: String,    
+                type: String,
                 options: ['post', 'put']
             },
 
@@ -42,9 +39,9 @@ const AsyncDataSubmitableMixin = Base =>
             }
         };
 
-        constructor() {
+        constructor(props?, children?) {
 
-            super();
+            super(props, children);
 
             this.submit = this.submit.bind(this);
 
@@ -53,31 +50,26 @@ const AsyncDataSubmitableMixin = Base =>
             this.onSubmitError = this.onSubmitError.bind(this);
         }
 
-        [renderSubmitting]() {
+        renderSubmitting() {
 
             const {
                 submitting
             } = this.state;
 
-            if (submitting === true) {
+            if (submitting === false) {
 
-                return (
-                    <Fragment>
-                        <gcl-overlay >
-                            <gcl-alert
-                                closable="false"
-                                type="info"
-                                message="...Submitting"
-                            />
-                        </gcl-overlay>
-                        { this[renderDerived as any]()}
-                    </Fragment>
-                );
+                return null;
             }
-            else {
 
-                return this[renderDerived as any]();
-            }
+            return (
+                <gcl-overlay >
+                    <gcl-alert
+                        closable="false"
+                        type="info"
+                        message="...Submitting"
+                    />
+                </gcl-overlay>
+            );
         }
 
         submit() {
@@ -131,9 +123,7 @@ const AsyncDataSubmitableMixin = Base =>
             return data.id !== undefined ? 'put' : 'post';
         }
 
-        connectedCallback() {
-
-            super.connectedCallback?.();
+        initSubmitter() {
 
             const {
                 submitUrl,
@@ -164,4 +154,4 @@ const AsyncDataSubmitableMixin = Base =>
 
     };
 
-export default AsyncDataSubmitableMixin;
+export default SubmitableMixin;

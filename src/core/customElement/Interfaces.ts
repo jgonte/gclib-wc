@@ -1,6 +1,6 @@
 import { Observer } from "gclib-utils";
 
-export interface ComponentDescriptor {
+export interface CustomElementDescriptor {
 
     /**
      * Whether create a shadow DOM for the component
@@ -14,7 +14,7 @@ export interface ComponentDescriptor {
     styleUrls?: string[];
 }
 
-export interface CustomPropertyDescriptor {
+export interface CustomElementPropertyDescriptor {
     /**
      * The name of the property in the props object
      */
@@ -61,21 +61,21 @@ export interface CustomPropertyDescriptor {
     required: boolean;
 }
 
-export interface ComponentMetadata {
+export interface CustomElementMetadata {
 
-    component: ComponentDescriptor;
+    component: CustomElementDescriptor;
 
-    properties: Record<string, CustomPropertyDescriptor>;
+    properties: Record<string, CustomElementPropertyDescriptor>;
 
     state: any;
 }
 
-export interface ComponentMetadataHolder {
+export interface CustomElementMetadataHolder {
 
-    componentMetadata: ComponentMetadata;
+    componentMetadata: CustomElementMetadata;
 }
 
-export interface MetadataInitializerConstructor extends ComponentMetadataHolder {
+export interface CustomElementConstructor extends CustomElementMetadataHolder {
 
     /** The merged style content */
     style?: string;

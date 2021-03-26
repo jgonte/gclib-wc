@@ -1,5 +1,5 @@
 import { h } from 'gclib-vdom';
-import CustomElement from '../src/core/CustomElement';
+import CustomElement from '../src/core/customElement/CustomElement';
 
 export class MyTable extends CustomElement {
 

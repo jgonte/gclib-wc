@@ -2539,7 +2539,7 @@ function loadStyles(ctor) {
     });
 }
 
-const MetadataInitializerMixin = Base => class MetadataInitializer extends Base {
+const CustomElementMetadataInitializerMixin = Base => class CustomElementMetadataInitializer extends Base {
     constructor() {
         super();
         this.initialize();
@@ -2694,9 +2694,16 @@ const MetadataInitializerMixin = Base => class MetadataInitializer extends Base 
     }
 };
 
+/**
+ * Connects the CustomElement or the FunctionalComponent to the virtual dom rendering cycle
+ * @param Base
+ * @returns
+ */
 const VirtualDomComponentMixin = Base => class VirtualDomComponent extends Base {
-    constructor() {
-        super();
+    // The props and children are ignored for custom elements but they are needed for Functional Components
+    // so they are included in the constructor
+    constructor(props, children) {
+        super(props, children);
         if (this.nodeDidUpdate !== undefined) {
             this.nodeDidUpdate = this.nodeDidUpdate.bind(this);
         }
@@ -2750,7 +2757,7 @@ const VirtualDomComponentMixin = Base => class VirtualDomComponent extends Base 
     }
 };
 
-class CustomElement extends VirtualDomComponentMixin(MetadataInitializerMixin(HTMLElement)) {
+class CustomElement extends VirtualDomComponentMixin(CustomElementMetadataInitializerMixin(HTMLElement)) {
     constructor() {
         super();
         this._isUpdating = false;
@@ -3449,25 +3456,27 @@ Overlay.component = {
 customElements.define(`${config.tagPrefix}-overlay`, Overlay);
 
 /**
- * The following symbols allow for mixins to call the render method of the derived class that extends those mixins
- * For that, the derived class must import the symbol and implement that method using the symbol as the name of the method
- */
-const renderDerived = Symbol('renderDerived');
-
-const renderError = Symbol('renderError');
-/**
  * Mixin that handles errors
  * @param Base
  */
 const ErrorableMixin = Base => { var _a; return _a = class Errorable extends Base {
-        [renderError]() {
-            return (h(Fragment, null,
-                h("gcl-overlay", null,
-                    h("gcl-alert", { type: "error", message: this.getErrorMessage(), closable: true, close: () => {
-                            this.setError(undefined);
-                        } })),
-                this[renderDerived]()));
+        constructor(props, children) {
+            super(props, children);
         }
+        renderError() {
+            const { error } = this.state;
+            if (error === undefined) {
+                return null;
+            }
+            return (h("gcl-overlay", null,
+                h("gcl-alert", { type: "error", message: this.getErrorMessage(), closable: true, style: { maxWidth: '90%' }, close: () => {
+                        this.setError(undefined);
+                    } })));
+        }
+        /**
+         * Tries to guess where the error message from the server is
+         * @returns The error message from the server
+         */
         getErrorMessage() {
             const { error } = this.state;
             if (error instanceof Error) {
@@ -3497,30 +3506,23 @@ const ErrorableMixin = Base => { var _a; return _a = class Errorable extends Bas
     _a; };
 
 /**
- * Render when the data property has been passed to the element
+ * Enables rendering data for a component
+ * @param Base
+ * @returns
  */
-const renderData = Symbol('renderData');
-/**
- * Render when the data property has been passed to the element but it is an empty array
- */
-const renderEmptyData = Symbol('renderEmptyData');
-/**
- * Render when no data property has been passed to the element
- */
-const renderNoData = Symbol('renderNoData');
-const DataLoadableMixin = Base => { var _a; return _a = class DataLoadable extends Base {
-        render() {
-            const { data } = this.props;
-            return data !== undefined ?
-                this[renderData]() :
-                // The derived components must implement this method to allow to display their children if no data was provided
-                this[renderNoData]();
+const DataMixin = Base => { var _a; return _a = class Data extends Base {
+        constructor(props, children) {
+            super(props, children);
         }
-        [renderData]() {
-            const { data, renderData: renderRecord } = this.props;
-            if (data.length === 0) { // The data was provided but it was empty
-                return this[renderEmptyData]();
+        renderData() {
+            const { data } = this.props;
+            if (data === undefined) {
+                return this.renderNoData();
             }
+            if (data.length === 0) { // The data was provided but it was empty
+                return this.renderEmptyData();
+            }
+            const { renderRecord } = this;
             if (renderRecord !== undefined) {
                 return (h(Fragment, null, data.map(record => renderRecord(record))));
             }
@@ -3528,8 +3530,18 @@ const DataLoadableMixin = Base => { var _a; return _a = class DataLoadable exten
                 return JSON.stringify(data);
             }
         }
-        [renderEmptyData]() {
+        renderNoData() {
+            return null;
+        }
+        renderEmptyData() {
             return 'There is no data to display';
+        }
+        bindRenderRecord() {
+            // This method is optional since the component might not use the data but have hardcoded children
+            const renderRecord = this.props.renderRecord || this.renderRecord;
+            if (renderRecord !== undefined) {
+                this.renderRecord = renderRecord.bind(this);
+            }
         }
     },
     _a.properties = {
@@ -3543,38 +3555,26 @@ const DataLoadableMixin = Base => { var _a; return _a = class DataLoadable exten
         /**
          * The function to render the data item
          */
-        renderData: {
+        renderRecord: {
             type: Function
         }
     },
     _a; };
 
-const AsyncDataLoadableMixin = Base => { var _a; return _a = 
-//@ts-ignore
-class AsyncDataLoadable extends ErrorableMixin(DataLoadableMixin(Base)) {
-        constructor() {
-            super();
+const LoadableMixin = Base => { var _a; return _a = class Loadable extends Base {
+        constructor(props, children) {
+            super(props, children);
             this.loadsCollection = true; // Internal configuration
             this.onLoadData = this.onLoadData.bind(this);
             this.onLoadError = this.onLoadError.bind(this);
         }
-        render() {
+        renderLoading() {
             const { loading } = this.state;
-            if (loading === true) {
-                const { renderLoading } = this.props;
-                if (renderLoading !== undefined) {
-                    return renderLoading();
-                }
-                else {
-                    return (h(Fragment, null,
-                        h("gcl-overlay", null,
-                            h("gcl-alert", { closable: "false", type: "info", message: "...Loading" })),
-                        super.render()));
-                }
+            if (loading === false) {
+                return null;
             }
-            else {
-                return super.render();
-            }
+            return (h("gcl-overlay", null,
+                h("gcl-alert", { closable: "false", type: "info", message: "...Loading" })));
         }
         load() {
             const { loadUrl } = this.props;
@@ -3584,9 +3584,7 @@ class AsyncDataLoadable extends ErrorableMixin(DataLoadableMixin(Base)) {
                 url: loadUrl
             });
         }
-        connectedCallback() {
-            var _a;
-            (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        initLoader() {
             const { loadUrl, autoLoad } = this.props;
             if (loadUrl !== undefined) {
                 this._loader = this.loadsCollection === true ?
@@ -3626,12 +3624,6 @@ class AsyncDataLoadable extends ErrorableMixin(DataLoadableMixin(Base)) {
         autoLoad: {
             type: Boolean,
             value: true
-        },
-        /**
-         * To render a custom loading if wanted
-         */
-        renderLoading: {
-            type: Function
         }
     },
     _a.state = {
@@ -3641,15 +3633,26 @@ class AsyncDataLoadable extends ErrorableMixin(DataLoadableMixin(Base)) {
     },
     _a; };
 
+/**
+ * Packs the common used mixins in a loading data scenario
+ * @param Base
+ * @returns
+ */
+const DataLoadableMixin = Base => class DataLoadable extends LoadableMixin(ErrorableMixin(DataMixin(Base))) {
+};
+
 //@ts-ignore
-class Table extends AsyncDataLoadableMixin(CustomElement) {
+class Table extends DataLoadableMixin(CustomElement) {
     render() {
         const { caption, header, body, footer } = this.props;
-        return (h("table", null,
-            caption || null,
-            header || this.renderHeader(),
-            body || this.renderBody(),
-            footer || null));
+        return (h(Fragment, null,
+            this.renderLoading(),
+            this.renderError(),
+            h("table", null,
+                caption || null,
+                header || this.renderHeader(),
+                body || this.renderBody(),
+                footer || null)));
     }
     renderHeader() {
         const { columns } = this.props;
@@ -3664,10 +3667,7 @@ class Table extends AsyncDataLoadableMixin(CustomElement) {
             }))));
     }
     renderBody() {
-        const { data } = this.props;
-        return (h("tbody", null, data.map((record, i) => {
-            return this.renderRecord(record, i);
-        })));
+        return (h("tbody", null, this.renderData()));
     }
     renderRecord(record, i) {
         const { columns, rowClick, rowDoubleClick, cellClick } = this.props;
@@ -3680,6 +3680,12 @@ class Table extends AsyncDataLoadableMixin(CustomElement) {
                 return (h("td", { onClick: () => cellClick && cellClick(record, i, j) }, value));
             }
         })));
+    }
+    connectedCallback() {
+        var _a;
+        (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        this.bindRenderRecord();
+        this.initLoader();
     }
 }
 Table.component = {
@@ -3935,13 +3941,25 @@ class SelectionContainer extends ContainerMixin(Base) {
     },
     _a; };
 
-class List extends SelectionContainerMixin(SizableMixin(AsyncDataLoadableMixin(CustomElement))) {
+class List extends SelectionContainerMixin(SizableMixin(DataLoadableMixin(CustomElement))) {
+    render() {
+        return (h(Fragment, null,
+            this.renderLoading(),
+            this.renderError(),
+            h("ul", null, this.renderData())));
+    }
     /**
      * When there is no data provided to the component, render its children
      */
-    [renderNoData]() {
+    renderNoData() {
         return (h("ul", null,
             h("slot", null)));
+    }
+    connectedCallback() {
+        var _a;
+        (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        this.bindRenderRecord();
+        this.initLoader();
     }
 }
 List.component = {
@@ -4268,7 +4286,7 @@ TextArea.properties = {
 customElements.define(`${config.tagPrefix}-text-area`, TextArea);
 
 //@ts-ignore
-class Select extends AsyncDataLoadableMixin(SingleValueField) {
+class Select extends SingleValueField {
     [renderField]() {
         const { name, value, size, 
         //required,
@@ -4280,17 +4298,14 @@ class Select extends AsyncDataLoadableMixin(SingleValueField) {
             onBlur: this.onBlur, disabled: disabled }, this.renderOptions()));
     }
     renderOptions() {
-        const { emptyOption, options, data, valueProperty, displayProperty } = this.props;
-        if (options !== undefined) {
+        const { emptyOption, options } = this.props;
+        if (options != undefined) {
             if (emptyOption !== undefined) {
                 // Prepend the empty option
                 const { label, value } = emptyOption;
                 options.prependChildNode(h("option", { value: value }, label));
             }
             return options;
-        }
-        if (data !== undefined) {
-            return (h(Fragment, null, data.map(item => h("option", { value: item[valueProperty] }, item[displayProperty]))));
         }
         return null; // No options to render
     }
@@ -4495,7 +4510,7 @@ class FileField extends SingleValueField {
             // selection='["c"]'
             // selectable
             // selectionChanged={this.showSelection}
-            data: data, renderData: record => {
+            data: data, renderRecord: record => {
                 const { name, size, content } = record;
                 // The content can be either read from the server or selected from a File object
                 const src = content.indexOf('blob:') === -1 ?
@@ -4581,30 +4596,25 @@ ValidationSummary.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-validation-summary`, ValidationSummary);
 
-const renderSubmitting = Symbol('renderSubmitting');
 /**
  * Mixin to implement a component that can post data to a server
  * The derived/subclass must also implement ErrorableMixin
  * @param Base
  */
-const AsyncDataSubmitableMixin = Base => { var _a; return _a = class AsyncDataSubmitable extends Base {
-        constructor() {
-            super();
+const SubmitableMixin = Base => { var _a; return _a = class Submitable extends Base {
+        constructor(props, children) {
+            super(props, children);
             this.submit = this.submit.bind(this);
             this.onSubmitData = this.onSubmitData.bind(this);
             this.onSubmitError = this.onSubmitError.bind(this);
         }
-        [renderSubmitting]() {
+        renderSubmitting() {
             const { submitting } = this.state;
-            if (submitting === true) {
-                return (h(Fragment, null,
-                    h("gcl-overlay", null,
-                        h("gcl-alert", { closable: "false", type: "info", message: "...Submitting" })),
-                    this[renderDerived]()));
+            if (submitting === false) {
+                return null;
             }
-            else {
-                return this[renderDerived]();
-            }
+            return (h("gcl-overlay", null,
+                h("gcl-alert", { closable: "false", type: "info", message: "...Submitting" })));
         }
         submit() {
             const { submitUrl } = this.props;
@@ -4633,9 +4643,7 @@ const AsyncDataSubmitableMixin = Base => { var _a; return _a = class AsyncDataSu
             // Use conventions
             return data.id !== undefined ? 'put' : 'post';
         }
-        connectedCallback() {
-            var _a;
-            (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        initSubmitter() {
             const { submitUrl, } = this.props;
             if (submitUrl !== undefined) {
                 this._fetcher = new Fetcher({
@@ -4678,29 +4686,23 @@ const AsyncDataSubmitableMixin = Base => { var _a; return _a = class AsyncDataSu
     _a; };
 
 //@ts-ignore
-class Form extends AsyncDataSubmitableMixin(AsyncDataLoadableMixin(ErrorableMixin(ValidatableMixin(ContainerMixin(SizableMixin(CustomElement)))))) {
+class Form extends SubmitableMixin(DataLoadableMixin(ValidatableMixin(ContainerMixin(SizableMixin(CustomElement))))) {
     constructor() {
         super();
         this._record = new DataRecord();
         this.reset = this.reset.bind(this);
     }
     render() {
-        const { error, submitting } = this.state;
-        if (error !== undefined) {
-            return this[renderError]();
-        }
-        if (submitting === true) {
-            return this[renderSubmitting]();
-        }
-        return this[renderDerived]();
-    }
-    [renderDerived]() {
         const { validationWarnings, validationErrors } = this.state;
         const { size } = this.props;
-        return (h("form", { size: size },
-            h("slot", null),
-            h("gcl-validation-summary", { size: size, warnings: validationWarnings, errors: validationErrors }),
-            this.renderButtons()));
+        return (h(Fragment, null,
+            this.renderLoading(),
+            this.renderError(),
+            this.renderSubmitting(),
+            h("form", { size: size },
+                h("slot", null),
+                h("gcl-validation-summary", { size: size, warnings: validationWarnings, errors: validationErrors }),
+                this.renderButtons())));
     }
     renderButtons() {
         return (h("div", null,
@@ -4754,8 +4756,10 @@ class Form extends AsyncDataSubmitableMixin(AsyncDataLoadableMixin(ErrorableMixi
     }
     connectedCallback() {
         var _a;
-        this.loadsCollection = false;
         (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        this.loadsCollection = false;
+        this.initLoader();
+        this.initSubmitter();
         this.addEventListener(valueChanged, this.onValueChanged);
         // Pass the properties to the data record
     }
@@ -4960,7 +4964,7 @@ class MyListSingleSelectionLoadData extends CustomElement {
                     textKey: 'goodMorning',
                     lang: 'de'
                 }
-            ], renderData: record => {
+            ], renderRecord: record => {
                 const { value, iconName, textKey, lang } = record;
                 return (h("gcl-list-item", { value: value },
                     h("gcl-icon", { name: iconName }),
@@ -4978,7 +4982,7 @@ class MyListSingleSelectionLoadEmptyData extends CustomElement {
     render() {
         return (h("gcl-list", { id: "listWithEmptyData", size: "small", selection: '["c"]', selectable: true, selectionChanged: this.showSelection, data: [
             // Empty
-            ], renderData: record => {
+            ], renderRecord: record => {
                 const { value, iconName, textKey, lang } = record;
                 return (h("gcl-list-item", { value: value },
                     h("gcl-icon", { name: iconName }),
@@ -4997,7 +5001,7 @@ customElements.define('my-list-single-selection-load-empty-data', MyListSingleSe
  */
 class ContactsList extends CustomElement {
     render() {
-        return (h("gcl-list", { id: "contactsList", "load-url": "http://localhost:60314/api/contacts", size: "medium", selection: '[2]', selectable: true, selectionChanged: this.showSelection, renderData: record => {
+        return (h("gcl-list", { id: "contactsList", "load-url": "http://localhost:60314/api/contacts", size: "medium", selection: '[2]', selectable: true, selectionChanged: this.showSelection, renderRecord: record => {
                 const { id, name, dateOfBirth, reputation, description, avatar } = record;
                 return (h("gcl-list-item", { value: id },
                     h("gcl-text", null,
@@ -5022,6 +5026,152 @@ class ContactsList extends CustomElement {
 //@ts-ignore
 customElements.define('contacts-list', ContactsList);
 
+class FunctionalComponent {
+    constructor(props, children) {
+        this.props = props;
+        this.children = children;
+    }
+}
+
+function getComponentMetadata$1(ctor) {
+    var _a;
+    const metadata = {
+        properties: {},
+        state: {}
+    };
+    while (ctor !== undefined) {
+        const { properties, state } = ctor;
+        // Merge the property descriptors
+        metadata.properties = Object.assign(Object.assign({}, metadata.properties), properties);
+        // Merge the state descriptor
+        metadata.state = Object.assign(Object.assign({}, metadata.state), state);
+        ctor = (_a = Object.getPrototypeOf(ctor.prototype)) === null || _a === void 0 ? void 0 : _a.constructor;
+    }
+    return metadata;
+}
+/**
+ * Mixin that initializes the properties for the component
+ * @param Base
+ * @returns
+ */
+const ComponentMetadataInitializerMixin = Base => { var _a; return _a = class ComponentMetadataInitializer extends Base {
+        constructor(props, children) {
+            super(props, children);
+            if (this.constructor.metadata === undefined) {
+                this.constructor.metadata = getComponentMetadata$1(this.constructor);
+            }
+            const { properties, state } = this.constructor.metadata;
+            // Properties
+            this.props = props || {};
+            for (var name in properties) {
+                if (properties.hasOwnProperty(name)) {
+                    this.initializeProperty(name, properties[name]);
+                }
+            }
+            // State
+            this.state = {};
+            for (var name in state) {
+                if (state.hasOwnProperty(name)) {
+                    this.initializeState(name, state[name]);
+                }
+            }
+        }
+        initializeProperty(name, propertyDescriptor) {
+            const { attribute, //  The name of the JSX attribute mapped to the property       
+            value // The default value of the property if no attribute is set in the JSX
+             } = propertyDescriptor;
+            if (this.props[name] === undefined) { // Property is not initialized
+                if (attribute !== undefined && attribute !== name) {
+                    const val = this.props[attribute]; // See if that attribute has a value set
+                    if (val !== undefined) {
+                        this.props[name] = val;
+                        delete this.props[attribute];
+                    }
+                }
+                if (this.props[name] === undefined && // The value was not set from the attribute
+                    value !== undefined) { // It has a default value
+                    this.props[name] = value;
+                }
+            }
+        }
+        initializeState(name, stateDescriptor) {
+            const { value } = stateDescriptor;
+            if (value !== undefined) { // Initialize the state to the default value if any
+                this.state[name] = value;
+            }
+            const setter = function (newValue) {
+                const oldValue = this.state[name];
+                if (oldValue === newValue) {
+                    return;
+                }
+                // console.log(`State: '${name}' of component: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
+                this.state[name] = newValue;
+                this.requestUpdate();
+            };
+            var setterName = this.getSetterName(name);
+            this[setterName] = setter.bind(this);
+        }
+        getSetterName(name) {
+            return `set${name[0].toUpperCase()}${name.substring(1)}`;
+        }
+    },
+    /** The merged properties from the ones declared in the component and the mixins */
+    _a.metadata = undefined,
+    _a; };
+
+class Component extends ComponentMetadataInitializerMixin(FunctionalComponent) {
+    constructor(props, children) {
+        super(props, children);
+    }
+}
+
+// The select component expect children of they option. It will ignore any other component
+// Therefore, to output that, we need to extend Component instead of CustomElement
+//@ts-ignore
+class SelectOptions extends DataLoadableMixin(Component) {
+    constructor(props, children) {
+        super(props, children);
+        this.bindRenderRecord();
+        this.initLoader();
+    }
+    render() {
+        return (h(Fragment, null,
+            this.renderEmptyOption(),
+            this.renderData()));
+    }
+    renderEmptyOption() {
+        const { emptyOption } = this.props;
+        if (emptyOption === undefined) {
+            return null;
+        }
+        const { label, value } = emptyOption;
+        return (h("option", { value: value }, label));
+    }
+    renderRecord(record) {
+        const { valueProperty, displayProperty } = this.props;
+        return (h("option", { value: record[valueProperty] }, record[displayProperty]));
+    }
+}
+SelectOptions.properties = {
+    /**
+     * The name of the property to map the value of the option
+     */
+    valueProperty: {
+        attribute: 'value-property',
+        type: String,
+        value: 'code'
+    },
+    displayProperty: {
+        attribute: 'display-property',
+        type: String,
+        value: 'description'
+    },
+    emptyOption: {
+        attribute: 'empty-option',
+        type: Object
+    }
+};
+
 /**
  * Shows a contact form populated and submitable to a back end
  */
@@ -5030,26 +5180,19 @@ class ContactForm extends CustomElement {
         return (h("gcl-form", { id: "contactForm", "load-url": "http://localhost:60314/api/contacts/1", "submit-url": "http://localhost:60314/api/contacts/", size: "medium" },
             h("gcl-hidden-field", { name: "id", "is-id": "true" }),
             h("gcl-text-field", { label: "Name", name: "name", required: true }),
-            h("gcl-select", { label: "Genre", name: "genre", "empty-option": {
-                    label: '--Please choose an option--',
-                    value: ''
-                }, 
-                // options={
-                //     <Fragment>
-                //         <option value="male">Male</option>
-                //         <option value="female">Female</option>
-                //     </Fragment>
-                // }
-                data: [
-                    {
-                        code: 'm',
-                        description: 'Male'
-                    },
-                    {
-                        code: 'f',
-                        description: 'Female'
-                    }
-                ] }),
+            h("gcl-select", { label: "Genre", name: "genre", options: h(SelectOptions, { "empty-option": {
+                        label: '--Please choose an option--',
+                        value: ''
+                    }, data: [
+                        {
+                            code: 'm',
+                            description: 'Male'
+                        },
+                        {
+                            code: 'f',
+                            description: 'Female'
+                        }
+                    ] }) }),
             h("gcl-date-field", { label: "Date of Birth", name: "dateOfBirth" }),
             h("gcl-number-field", { label: "Reputation", name: "reputation", min: "1", max: "10" }),
             h("gcl-text-area", { label: "Description", name: "description", rows: "5", cols: "30" }),

@@ -1,17 +1,9 @@
+import { h } from "gclib-vdom";
 import { CollectionLoader, SingleItemLoader } from "gclib-utils";
-import { Fragment, h } from "gclib-vdom";
-import ErrorableMixin from "../errorable/ErrorableMixin";
-import DataLoadableMixin from "./DataLoadableMixin";
 
-const AsyncDataLoadableMixin = Base =>
+const LoadableMixin = Base =>
 
-    //@ts-ignore
-    class AsyncDataLoadable extends
-        ErrorableMixin(
-            DataLoadableMixin(
-                Base
-            )
-        ) {
+    class Loadable extends Base {
 
         loadsCollection = true; // Internal configuration
 
@@ -32,13 +24,6 @@ const AsyncDataLoadableMixin = Base =>
             autoLoad: {
                 type: Boolean,
                 value: true
-            },
-
-            /**
-             * To render a custom loading if wanted
-             */
-            renderLoading: {
-                type: Function
             }
         };
 
@@ -49,52 +34,35 @@ const AsyncDataLoadableMixin = Base =>
             }
         };
 
-        constructor() {
+        constructor(props?, children?) {
 
-            super();
+            super(props, children);
 
             this.onLoadData = this.onLoadData.bind(this);
 
             this.onLoadError = this.onLoadError.bind(this);
         }
 
-        render() {
+        renderLoading() {
 
             const {
                 loading
             } = this.state;
 
-            if (loading === true) {
+            if (loading === false) {
 
-                const {
-                    renderLoading
-                } = this.props;
-
-                if (renderLoading !== undefined) {
-
-                    return renderLoading();
-                }
-                else {
-
-                    return (
-                        <Fragment>
-                            <gcl-overlay>
-                                <gcl-alert
-                                    closable="false"
-                                    type="info"
-                                    message="...Loading"
-                                />
-                            </gcl-overlay>
-                            { super.render()}
-                        </Fragment>
-                    );
-
-                }
+                return null;
             }
-            else {
 
-                return super.render();
-            }
+            return (
+                <gcl-overlay>
+                    <gcl-alert
+                        closable="false"
+                        type="info"
+                        message="...Loading"
+                    />
+                </gcl-overlay>
+            );
         }
 
         load() {
@@ -112,9 +80,7 @@ const AsyncDataLoadableMixin = Base =>
             });
         }
 
-        connectedCallback() {
-
-            super.connectedCallback?.();
+        initLoader() {
 
             const {
                 loadUrl,
@@ -156,4 +122,4 @@ const AsyncDataLoadableMixin = Base =>
 
     };
 
-export default AsyncDataLoadableMixin;
+export default LoadableMixin;

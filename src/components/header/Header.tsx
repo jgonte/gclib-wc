@@ -1,5 +1,5 @@
 import { Fragment, h, VirtualNode } from 'gclib-vdom';
-import CustomElement from '../../core/CustomElement';
+import CustomElement from '../../core/customElement/CustomElement';
 import { config } from '../config';
 import SizableMixin from '../mixins/sizable/SizableMixin';
 

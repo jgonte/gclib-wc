@@ -1,11 +1,10 @@
-import { h, VirtualNode, FragmentNode, Fragment } from 'gclib-vdom';
+import { h, VirtualNode, FragmentNode } from 'gclib-vdom';
 import { config } from '../../config';
-import AsyncDataLoadableMixin from '../../mixins/data/AsyncDataLoadableMixin';
 import { renderField } from '../Field';
 import { SingleValueField } from '../SingleValueField';
 
 //@ts-ignore
-export class Select extends AsyncDataLoadableMixin(SingleValueField) {
+export class Select extends SingleValueField {
 
     static properties = {
 
@@ -66,13 +65,10 @@ export class Select extends AsyncDataLoadableMixin(SingleValueField) {
 
         const {
             emptyOption,
-            options,
-            data,
-            valueProperty,
-            displayProperty
+            options
         } = this.props;
 
-        if (options !== undefined) {
+        if (options != undefined) {
 
             if (emptyOption !== undefined) {
 
@@ -85,17 +81,7 @@ export class Select extends AsyncDataLoadableMixin(SingleValueField) {
                 (options as FragmentNode).prependChildNode(<option value={value}>{label}</option>)
 
             }
-
             return options;
-        }
-
-        if (data !== undefined) {
-
-            return (
-                <Fragment>
-                    {data.map(item => <option value={item[valueProperty]}>{item[displayProperty]}</option>)}
-                </Fragment>
-            );
         }
 
         return null; // No options to render

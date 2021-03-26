@@ -1,12 +1,12 @@
-import CustomElement from '../../core/CustomElement';
-import { h, VirtualNode } from 'gclib-vdom';
+import CustomElement from '../../core/customElement/CustomElement';
+import { Fragment, h, VirtualNode } from 'gclib-vdom';
 //import SelectionContainerMixin from '../mixins/selectionContainer/SelectionContainerMixin';
 //import TableColumnDefinition from './TableColumnDefinition';
 import { config } from '../config';
-import AsyncDataLoadableMixin from '../mixins/data/AsyncDataLoadableMixin';
+import DataLoadableMixin from '../mixins/data/DataLoadableMixin';
 
 //@ts-ignore
-export class Table extends AsyncDataLoadableMixin(CustomElement) {
+export class Table extends DataLoadableMixin(CustomElement) {
 
     static component = {
         styleUrls: [
@@ -66,12 +66,16 @@ export class Table extends AsyncDataLoadableMixin(CustomElement) {
         } = this.props;
 
         return (
-            <table>
-                {caption || null}
-                {header || this.renderHeader()}
-                {body || this.renderBody()}
-                {footer || null}
-            </table>
+            <Fragment>
+                {this.renderLoading()}
+                {this.renderError()}
+                <table>
+                    {caption || null}
+                    {header || this.renderHeader()}
+                    {body || this.renderBody()}
+                    {footer || null}
+                </table>
+            </Fragment>
         );
     }
 
@@ -106,15 +110,9 @@ export class Table extends AsyncDataLoadableMixin(CustomElement) {
 
     renderBody() {
 
-        const {
-            data
-        } = this.props;
-
         return (
             <tbody>
-                {data.map((record, i) => {
-                    return this.renderRecord(record, i);
-                })}
+                {this.renderData()}
             </tbody>
         );
     }
@@ -160,6 +158,15 @@ export class Table extends AsyncDataLoadableMixin(CustomElement) {
                 })}
             </tr>
         );
+    }
+
+    connectedCallback() {
+
+        super.connectedCallback?.();
+
+        this.bindRenderRecord();
+
+        this.initLoader();
     }
 }
 

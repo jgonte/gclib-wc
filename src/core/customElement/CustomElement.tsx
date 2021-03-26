@@ -1,10 +1,10 @@
-import { MetadataInitializerConstructor } from './Interfaces';
-import MetadataInitializerMixin from './mixins/MetadataInitializerMixin';
-import VirtualDomComponentMixin from './mixins/VirtualDomComponentMixin';
+import { CustomElementConstructor } from './Interfaces';
+import CustomElementMetadataInitializerMixin from './mixins/CustomElementMetadataInitializerMixin';
+import VirtualDomComponentMixin from '../mixins/VirtualDomComponentMixin';
 
 export default abstract class CustomElement extends
     VirtualDomComponentMixin(
-        MetadataInitializerMixin(
+        CustomElementMetadataInitializerMixin(
             HTMLElement
         )
     ) {
@@ -17,7 +17,7 @@ export default abstract class CustomElement extends
 
         const {
             componentMetadata
-        } = this.constructor as unknown as MetadataInitializerConstructor;
+        } = this.constructor as unknown as CustomElementConstructor;
 
         if (componentMetadata.component.shadow === true) {
 
@@ -30,7 +30,7 @@ export default abstract class CustomElement extends
         // Validate that all the required properties have been set
         const {
             componentMetadata
-        } = this.constructor as unknown as MetadataInitializerConstructor;
+        } = this.constructor as unknown as CustomElementConstructor;
 
         const {
             properties
@@ -61,7 +61,7 @@ export default abstract class CustomElement extends
         const {
             style,
             styleLoadedObserver
-        } = this.constructor as unknown as MetadataInitializerConstructor;
+        } = this.constructor as unknown as CustomElementConstructor;
 
         if (styleLoadedObserver !== undefined && style === undefined) {
 

@@ -1,14 +1,21 @@
 import { VirtualText, VirtualNode, FragmentNode, mount, h } from 'gclib-vdom';
 
+/**
+ * Connects the CustomElement or the FunctionalComponent to the virtual dom rendering cycle
+ * @param Base 
+ * @returns 
+ */
 const VirtualDomComponentMixin = Base =>
 
     class VirtualDomComponent extends Base {
 
         private _mountedNode: VirtualNode | VirtualText;
 
-        constructor() {
+        // The props and children are ignored for custom elements but they are needed for Functional Components
+        // so they are included in the constructor
+        constructor(props?: any, children?: any) {
 
-            super();
+            super(props, children);
 
             if (this.nodeDidUpdate !== undefined) {
 

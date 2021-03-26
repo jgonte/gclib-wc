@@ -1,8 +1,8 @@
 import { Observer } from "gclib-utils";
-import defaultPropertyValueConverter from "../helpers/defaultPropertyValueConverter";
-import getComponentMetadata from "../helpers/getComponentMetadata";
-import loadStyles from "../helpers/loadStyles";
-import { CustomPropertyDescriptor, MetadataInitializerConstructor } from "../Interfaces";
+import defaultPropertyValueConverter from "../../helpers/defaultPropertyValueConverter";
+import getComponentMetadata from "../../helpers/getComponentMetadata";
+import loadStyles from "../../helpers/loadStyles";
+import { CustomElementPropertyDescriptor, CustomElementConstructor } from "../Interfaces";
 
 /**
  * Tracks the loaded styles so when all the required styles have been loaded.
@@ -17,9 +17,9 @@ interface LoadedStylesTracker {
     pendingUrls: Set<string>
 }
 
-const MetadataInitializerMixin = Base =>
+const CustomElementMetadataInitializerMixin = Base =>
 
-    class MetadataInitializer extends Base {
+    class CustomElementMetadataInitializer extends Base {
 
         static loadedStylesTracker?: LoadedStylesTracker;
 
@@ -36,7 +36,7 @@ const MetadataInitializerMixin = Base =>
                 componentMetadata,
                 style,
                 styleLoadedObserver
-            } = this.constructor as unknown as MetadataInitializerConstructor;
+            } = this.constructor as unknown as CustomElementConstructor;
 
             const {
                 properties,
@@ -72,7 +72,7 @@ const MetadataInitializerMixin = Base =>
             }
         }
 
-        initializeProperty(name: string, propertyDescriptor: CustomPropertyDescriptor) {
+        initializeProperty(name: string, propertyDescriptor: CustomElementPropertyDescriptor) {
 
             const {
                 attribute, // The name of the HTML attribute mapped to the property
@@ -242,7 +242,7 @@ const MetadataInitializerMixin = Base =>
                 name,
                 type,
                 options
-            } = (this.constructor as unknown as MetadataInitializerConstructor).propertiesByAttribute[attributeName];
+            } = (this.constructor as unknown as CustomElementConstructor).propertiesByAttribute[attributeName];
 
             this.validatePropertyOptions(name, newValue, options);
 
@@ -290,4 +290,4 @@ const MetadataInitializerMixin = Base =>
         }
     }
 
-export default MetadataInitializerMixin
+export default CustomElementMetadataInitializerMixin

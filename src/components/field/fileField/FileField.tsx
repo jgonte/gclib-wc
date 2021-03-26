@@ -200,7 +200,8 @@ export class FileField extends SingleValueField {
                 // selectable
                 // selectionChanged={this.showSelection}
                 data={data}
-                renderData={record => {
+                renderRecord={record => {
+
                     const {
                         name,
                         size,

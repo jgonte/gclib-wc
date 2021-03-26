@@ -1,6 +1,6 @@
 import { h } from 'gclib-vdom';
 import { config } from '../../components/config';
-import CustomElement from '../../core/CustomElement';
+import CustomElement from '../../core/customElement/CustomElement';
 import VariantMixin from '../mixins/variant/VariantMixin';
 import SizableMixin from '../mixins/sizable/SizableMixin';
 import DirectionMixin from '../mixins/direction/DirectionMixin';

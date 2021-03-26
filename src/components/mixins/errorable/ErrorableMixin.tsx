@@ -1,7 +1,4 @@
-import { Fragment, h } from "gclib-vdom";
-import { renderDerived } from "../Internals";
-
-export const renderError = Symbol('renderError');
+import { h } from "gclib-vdom";
 
 /**
  * Mixin that handles errors
@@ -18,25 +15,41 @@ const ErrorableMixin = Base =>
             }
         };
 
-        [renderError]() {
+        constructor(props?, children?) {
+
+            super(props, children);
+        }
+
+        renderError() {
+
+            const {
+                error
+            } = this.state;
+
+            if (error === undefined) {
+
+                return null;
+            }
 
             return (
-                <Fragment>
-                    <gcl-overlay>
-                        <gcl-alert
-                            type="error"
-                            message={this.getErrorMessage()}
-                            closable={true}
-                            close={() => { 
-                                this.setError(undefined);
-                            }}
-                        />
-                    </gcl-overlay>
-                    {this[renderDerived as any]()}
-                </Fragment>
+                <gcl-overlay>
+                    <gcl-alert
+                        type="error"
+                        message={this.getErrorMessage()}
+                        closable={true}
+                        style={{ maxWidth: '90%' }}
+                        close={() => {
+                            this.setError(undefined);
+                        }}
+                    />
+                </gcl-overlay>
             );
         }
 
+        /**
+         * Tries to guess where the error message from the server is
+         * @returns The error message from the server
+         */
         getErrorMessage() {
 
             const {
@@ -60,7 +73,7 @@ const ErrorableMixin = Base =>
                     else if (payload.title !== undefined) {
 
                         return payload.title;
-                    }   
+                    }
                 }
                 else {
 
