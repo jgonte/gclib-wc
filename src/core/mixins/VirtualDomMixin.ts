@@ -1,15 +1,17 @@
-import { VirtualText, VirtualNode, FragmentNode, mount, h } from 'gclib-vdom';
+import { VirtualText, VirtualNode, mount } from 'gclib-vdom';
 
 /**
  * Connects the CustomElement or the FunctionalComponent to the virtual dom rendering cycle
  * @param Base 
  * @returns 
  */
-const VirtualDomComponentMixin = Base =>
+const VirtualDomMixin = Base =>
 
-    class VirtualDomComponent extends Base {
+    class VirtualDom extends Base {
 
         private _mountedNode: VirtualNode | VirtualText;
+
+        private _isUpdating: boolean = false;
 
         // The props and children are ignored for custom elements but they are needed for Functional Components
         // so they are included in the constructor
@@ -42,6 +44,23 @@ const VirtualDomComponentMixin = Base =>
             }
         }
 
+        requestUpdate() {
+    
+            if (this._isUpdating) {
+    
+                return;
+            }
+    
+            this._isUpdating = true;
+    
+            requestAnimationFrame(() => {
+    
+                this.update();
+    
+                this._isUpdating = false;
+            });    
+        }
+
         update() {
 
             let node = this.render();
@@ -51,46 +70,19 @@ const VirtualDomComponentMixin = Base =>
                 console.error('Undefined virtual node. Ensure that you return the node from the render function');
             }
 
+            // Create a virtual text node if the type of node is any primitive
             const nodeType = typeof node;
-
-            const styleUrls = (this.constructor as any).componentMetadata.component.styleUrls;
-
-            const hasStyleUrls = styleUrls.length > 0;
-
-            // If the node is a virtual one or a virtual text and there are styles,
-            // then create a fragment node to hold the virtual node/text plus the style one(s)
-            let requiresFragment = false;
 
             if (nodeType === 'string' ||
                 nodeType === 'number' ||
                 nodeType === 'boolean') {
 
                 node = new VirtualText(node);
-
-                if (hasStyleUrls) {
-
-                    requiresFragment = true;
-                }
             }
 
-            if (node !== null &&
-                node.isVirtualNode &&
-                hasStyleUrls) {
+            if (this.onBeforeMount !== undefined) {
 
-                requiresFragment = true;
-            }
-
-            if (requiresFragment) {
-
-                node = new FragmentNode(null, [node]);
-            }
-
-            if (node !== null &&
-                hasStyleUrls) {
-
-                node.appendChildNode(
-                    <style>{(this.constructor as any).style}</style>
-                )
+                node = this.onBeforeMount(node);
             }
 
             mount(
@@ -104,4 +96,4 @@ const VirtualDomComponentMixin = Base =>
         }
     };
 
-export default VirtualDomComponentMixin;
+export default VirtualDomMixin;

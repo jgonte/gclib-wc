@@ -1,15 +1,14 @@
 import { CustomElementConstructor } from './Interfaces';
 import CustomElementMetadataInitializerMixin from './mixins/CustomElementMetadataInitializerMixin';
-import VirtualDomComponentMixin from '../mixins/VirtualDomComponentMixin';
+import VirtualDomMixin from '../mixins/VirtualDomMixin';
+import { FragmentNode, h } from 'gclib-vdom';
 
 export default abstract class CustomElement extends
-    VirtualDomComponentMixin(
+    VirtualDomMixin(
         CustomElementMetadataInitializerMixin(
             HTMLElement
         )
     ) {
-
-    private _isUpdating: boolean = false;
 
     constructor() {
 
@@ -68,19 +67,7 @@ export default abstract class CustomElement extends
             return; // Requires a style but the style hasn't been loaded or merged yet
         }
 
-        if (this._isUpdating) {
-
-            return;
-        }
-
-        this._isUpdating = true;
-
-        requestAnimationFrame(() => {
-
-            this.update();
-
-            this._isUpdating = false;
-        });    
+        super.requestUpdate();
     }
 
     onStyleLoaded() {
@@ -132,5 +119,32 @@ export default abstract class CustomElement extends
 
         this.requestUpdate();
     }
-   
+
+    onBeforeMount(node) {
+
+        if (node === null) {
+
+            return node; // No style added to a null node
+        }
+
+        const style = (this.constructor as any).style;
+
+        if (style === undefined) {
+
+            return node; // No style to add
+        }
+
+        // We need to append a style
+        if (node.isVirtualNode ||
+            node.isVirtualText) {
+
+            // Create a fragment with the original node as a child so we can append the style
+            node = new FragmentNode(null, [node]);
+        }
+
+        node.appendChildNode(<style>{style}</style>);
+
+        return node;
+    }
+
 }

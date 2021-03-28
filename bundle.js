@@ -1020,10 +1020,10 @@ var Fetcher = (function () {
             if (data.hasOwnProperty(key)) {
                 var value = data[key];
                 if (typeof value === 'object') {
-                    if (value.hasOwnProperty('fileName')) {
-                        var fileName = value.fileName, contentType = value.contentType, content = value.content;
-                        var file = new File(__spreadArrays(content), fileName, {
-                            type: contentType
+                    if (value.hasOwnProperty('name')) {
+                        var name_1 = value.name, type = value.type, content = value.content;
+                        var file = new File(__spreadArrays(content), name_1, {
+                            type: type
                         });
                         formData.append(key, file);
                     }
@@ -2699,11 +2699,12 @@ const CustomElementMetadataInitializerMixin = Base => class CustomElementMetadat
  * @param Base
  * @returns
  */
-const VirtualDomComponentMixin = Base => class VirtualDomComponent extends Base {
+const VirtualDomMixin = Base => class VirtualDom extends Base {
     // The props and children are ignored for custom elements but they are needed for Functional Components
     // so they are included in the constructor
     constructor(props, children) {
         super(props, children);
+        this._isUpdating = false;
         if (this.nodeDidUpdate !== undefined) {
             this.nodeDidUpdate = this.nodeDidUpdate.bind(this);
         }
@@ -2721,46 +2722,39 @@ const VirtualDomComponentMixin = Base => class VirtualDomComponent extends Base 
             return element.parentElement || this.document;
         }
     }
+    requestUpdate() {
+        if (this._isUpdating) {
+            return;
+        }
+        this._isUpdating = true;
+        requestAnimationFrame(() => {
+            this.update();
+            this._isUpdating = false;
+        });
+    }
     update() {
         let node = this.render();
         if (node === undefined) {
             console.error('Undefined virtual node. Ensure that you return the node from the render function');
         }
+        // Create a virtual text node if the type of node is any primitive
         const nodeType = typeof node;
-        const styleUrls = this.constructor.componentMetadata.component.styleUrls;
-        const hasStyleUrls = styleUrls.length > 0;
-        // If the node is a virtual one or a virtual text and there are styles,
-        // then create a fragment node to hold the virtual node/text plus the style one(s)
-        let requiresFragment = false;
         if (nodeType === 'string' ||
             nodeType === 'number' ||
             nodeType === 'boolean') {
             node = new VirtualText(node);
-            if (hasStyleUrls) {
-                requiresFragment = true;
-            }
         }
-        if (node !== null &&
-            node.isVirtualNode &&
-            hasStyleUrls) {
-            requiresFragment = true;
-        }
-        if (requiresFragment) {
-            node = new FragmentNode(null, [node]);
-        }
-        if (node !== null &&
-            hasStyleUrls) {
-            node.appendChildNode(h("style", null, this.constructor.style));
+        if (this.onBeforeMount !== undefined) {
+            node = this.onBeforeMount(node);
         }
         mount(this.document, node, this._mountedNode, this.rootElement, this);
         this._mountedNode = node;
     }
 };
 
-class CustomElement extends VirtualDomComponentMixin(CustomElementMetadataInitializerMixin(HTMLElement)) {
+class CustomElement extends VirtualDomMixin(CustomElementMetadataInitializerMixin(HTMLElement)) {
     constructor() {
         super();
-        this._isUpdating = false;
         const { componentMetadata } = this.constructor;
         if (componentMetadata.component.shadow === true) {
             this.attachShadow({ mode: 'open' });
@@ -2787,14 +2781,7 @@ class CustomElement extends VirtualDomComponentMixin(CustomElementMetadataInitia
         if (styleLoadedObserver !== undefined && style === undefined) {
             return; // Requires a style but the style hasn't been loaded or merged yet
         }
-        if (this._isUpdating) {
-            return;
-        }
-        this._isUpdating = true;
-        requestAnimationFrame(() => {
-            this.update();
-            this._isUpdating = false;
-        });
+        super.requestUpdate();
     }
     onStyleLoaded() {
         // console.log(`Style loaded for component ${this.constructor.name} ... requesting update`);
@@ -2829,6 +2816,23 @@ class CustomElement extends VirtualDomComponentMixin(CustomElementMetadataInitia
             this.props[name] = value;
         }
         this.requestUpdate();
+    }
+    onBeforeMount(node) {
+        if (node === null) {
+            return node; // No style added to a null node
+        }
+        const style = this.constructor.style;
+        if (style === undefined) {
+            return node; // No style to add
+        }
+        // We need to append a style
+        if (node.isVirtualNode ||
+            node.isVirtualText) {
+            // Create a fragment with the original node as a child so we can append the style
+            node = new FragmentNode(null, [node]);
+        }
+        node.appendChildNode(h("style", null, style));
+        return node;
     }
 }
 
