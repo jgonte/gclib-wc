@@ -48,7 +48,7 @@ export class List extends
 
     connectedCallback() {
 
-        super.connectedCallback?.();
+        super.connectedCallback();
 
         this.bindRenderRecord();
 

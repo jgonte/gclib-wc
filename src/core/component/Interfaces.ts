@@ -8,12 +8,22 @@ export interface ComponentPropertyDescriptor {
     /**
      * The name of the JSX attribute mapped to the property
      */
-     attribute: string;
+    attribute: string;
 
     /**
      * The default value of the property if no attribute is set in the JSX
      */
     value: any;
+
+    /**
+     * Whether the value of the property can be changed
+     */
+    mutable: boolean;
+
+    /**
+     * The range to restrict the values of the property
+     */
+    options: string[];
 }
 
 export interface ComponentStateDescriptor {

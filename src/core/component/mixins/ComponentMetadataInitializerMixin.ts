@@ -85,7 +85,9 @@ const ComponentMetadataInitializerMixin = Base =>
 
             const {
                 attribute,     //  The name of the JSX attribute mapped to the property       
-                value // The default value of the property if no attribute is set in the JSX
+                value, // The default value of the property if no attribute is set in the JSX
+                mutable,
+                //options
             } = propertyDescriptor;
 
             if (this.props[name] === undefined) { // Property is not initialized
@@ -107,6 +109,34 @@ const ComponentMetadataInitializerMixin = Base =>
 
                     this.props[name] = value;
                 }
+            }
+
+            if (mutable === true) { // Generate a setter
+
+                const setter = function (newValue: any, callback: Function) {
+
+                    const oldValue = this.props[name];
+
+                    if (oldValue === newValue) {
+
+                        return;
+                    }
+
+                    //TODO: Research if this validation is necessary for components
+                    //this.validatePropertyOptions(name, newValue, options);
+
+                    // console.log(`Property: '${name}' of component: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
+
+                    this.props[name] = newValue;
+
+                    this.requestUpdate();
+
+                    callback?.();
+                };
+
+                var setterName = this.getSetterName(name);
+
+                this[setterName] = setter.bind(this);
             }
         }
 

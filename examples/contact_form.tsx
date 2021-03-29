@@ -1,5 +1,5 @@
-import { h } from 'gclib-vdom';
-import SelectOptions from '../src/components/field/select/SelectOptions';
+import { /*Fragment, */ h } from 'gclib-vdom';
+//import SelectOptions from '../src/components/field/select/SelectOptions';
 import CustomElement from '../src/core/customElement/CustomElement';
 
 /**
@@ -30,34 +30,33 @@ export class ContactForm extends CustomElement {
                 <gcl-select
                     label="Genre"
                     name="genre"
-                    options={
-                        <SelectOptions
-                            empty-option={{
-                                label: '--Please choose an option--',
-                                value: ''
-                            }}
-                            data={[
-                                {
-                                    code: 'm',
-                                    description: 'Male'
-                                },
-                                {
-                                    code: 'f',
-                                    description: 'Female'
-                                }
-                            ]}
-                        />
-                    }
-
-                // options={
-                //     <Fragment>
-                //         <option value="male">Male</option>
-                //         <option value="female">Female</option>
-                //     </Fragment>
-                // }
-                // 
+                    empty-option={{
+                        label: '--Please choose an option--',
+                        value: ''
+                    }}
+                    // data={[
+                    //     {
+                    //         code: 'm',
+                    //         description: 'Male'
+                    //     },
+                    //     {
+                    //         code: 'f',
+                    //         description: 'Female'
+                    //     }
+                    // ]}
+                    // options={
+                    //     <Fragment>
+                    //         <option value="m">Male</option>
+                    //         <option value="f">Female</option>
+                    //     </Fragment>
+                    // }
+                    load-url="http://localhost:60314/api/genders"
                 >
-
+                    {/* 
+                    This option does not work
+                    <option value="m">Male</option>
+                    <option value="f">Female</option> 
+                    */}
                 </gcl-select>
 
                 <gcl-date-field

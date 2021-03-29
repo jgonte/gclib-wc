@@ -1,12 +1,12 @@
 import { Fragment, h } from "gclib-vdom";
 import Component from "../../../core/component/Component";
-import DataLoadableMixin from "../../mixins/data/DataLoadableMixin";
+import DataMixin from "../../mixins/data/DataMixin";
 
 // The select component expect children of they option. It will ignore any other component
 // Therefore, to output that, we need to extend Component instead of CustomElement
 //@ts-ignore
 export default class SelectOptions extends
-    DataLoadableMixin(
+    DataMixin(
         Component
     ) {
 
@@ -38,8 +38,6 @@ export default class SelectOptions extends
         super(props, children);
 
         this.bindRenderRecord();
-
-        this.initLoader();
     }
 
     render() {

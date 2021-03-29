@@ -3626,6 +3626,7 @@ const LoadableMixin = Base => { var _a; return _a = class Loadable extends Base 
          * Whether to load the data for the component when the component is connected
          */
         autoLoad: {
+            attribute: 'auto-load',
             type: Boolean,
             value: true
         }
@@ -3960,8 +3961,7 @@ class List extends SelectionContainerMixin(SizableMixin(DataLoadableMixin(Custom
             h("slot", null)));
     }
     connectedCallback() {
-        var _a;
-        (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        super.connectedCallback();
         this.bindRenderRecord();
         this.initLoader();
     }
@@ -4289,32 +4289,154 @@ TextArea.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-text-area`, TextArea);
 
-//@ts-ignore
-class Select extends SingleValueField {
-    [renderField]() {
-        const { name, value, size, 
-        //required,
-        disabled } = this.props;
-        return (h("select", { name: name, id: name, 
-            // style={{ maxWidth, width }}
-            value: value, size: size, onInput: this.onInput, onChange: this.onChange, 
-            // onFocus={onFocus}
-            onBlur: this.onBlur, disabled: disabled }, this.renderOptions()));
-    }
-    renderOptions() {
-        const { emptyOption, options } = this.props;
-        if (options != undefined) {
-            if (emptyOption !== undefined) {
-                // Prepend the empty option
-                const { label, value } = emptyOption;
-                options.prependChildNode(h("option", { value: value }, label));
-            }
-            return options;
-        }
-        return null; // No options to render
+class FunctionalComponent {
+    constructor(props, children) {
+        this.props = props;
+        this.children = children;
     }
 }
-Select.properties = {
+
+function getComponentMetadata$1(ctor) {
+    var _a;
+    const metadata = {
+        properties: {},
+        state: {}
+    };
+    while (ctor !== undefined) {
+        const { properties, state } = ctor;
+        // Merge the property descriptors
+        metadata.properties = Object.assign(Object.assign({}, metadata.properties), properties);
+        // Merge the state descriptor
+        metadata.state = Object.assign(Object.assign({}, metadata.state), state);
+        ctor = (_a = Object.getPrototypeOf(ctor.prototype)) === null || _a === void 0 ? void 0 : _a.constructor;
+    }
+    return metadata;
+}
+/**
+ * Mixin that initializes the properties for the component
+ * @param Base
+ * @returns
+ */
+const ComponentMetadataInitializerMixin = Base => { var _a; return _a = class ComponentMetadataInitializer extends Base {
+        constructor(props, children) {
+            super(props, children);
+            if (this.constructor.metadata === undefined) {
+                this.constructor.metadata = getComponentMetadata$1(this.constructor);
+            }
+            const { properties, state } = this.constructor.metadata;
+            // Properties
+            this.props = props || {};
+            for (var name in properties) {
+                if (properties.hasOwnProperty(name)) {
+                    this.initializeProperty(name, properties[name]);
+                }
+            }
+            // State
+            this.state = {};
+            for (var name in state) {
+                if (state.hasOwnProperty(name)) {
+                    this.initializeState(name, state[name]);
+                }
+            }
+        }
+        initializeProperty(name, propertyDescriptor) {
+            const { attribute, //  The name of the JSX attribute mapped to the property       
+            value, // The default value of the property if no attribute is set in the JSX
+            mutable, } = propertyDescriptor;
+            if (this.props[name] === undefined) { // Property is not initialized
+                if (attribute !== undefined && attribute !== name) {
+                    const val = this.props[attribute]; // See if that attribute has a value set
+                    if (val !== undefined) {
+                        this.props[name] = val;
+                        delete this.props[attribute];
+                    }
+                }
+                if (this.props[name] === undefined && // The value was not set from the attribute
+                    value !== undefined) { // It has a default value
+                    this.props[name] = value;
+                }
+            }
+            if (mutable === true) { // Generate a setter
+                const setter = function (newValue, callback) {
+                    const oldValue = this.props[name];
+                    if (oldValue === newValue) {
+                        return;
+                    }
+                    //TODO: Research if this validation is necessary for components
+                    //this.validatePropertyOptions(name, newValue, options);
+                    // console.log(`Property: '${name}' of component: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
+                    this.props[name] = newValue;
+                    this.requestUpdate();
+                    callback === null || callback === void 0 ? void 0 : callback();
+                };
+                var setterName = this.getSetterName(name);
+                this[setterName] = setter.bind(this);
+            }
+        }
+        initializeState(name, stateDescriptor) {
+            const { value } = stateDescriptor;
+            if (value !== undefined) { // Initialize the state to the default value if any
+                this.state[name] = value;
+            }
+            const setter = function (newValue) {
+                const oldValue = this.state[name];
+                if (oldValue === newValue) {
+                    return;
+                }
+                // console.log(`State: '${name}' of component: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
+                this.state[name] = newValue;
+                this.requestUpdate();
+            };
+            var setterName = this.getSetterName(name);
+            this[setterName] = setter.bind(this);
+        }
+        getSetterName(name) {
+            return `set${name[0].toUpperCase()}${name.substring(1)}`;
+        }
+    },
+    /** The merged properties from the ones declared in the component and the mixins */
+    _a.metadata = undefined,
+    _a; };
+
+class Component extends VirtualDomMixin(ComponentMetadataInitializerMixin(FunctionalComponent)) {
+    constructor(props, children) {
+        super(props, children);
+    }
+    get document() {
+        const { parent } = this.props;
+        return parent.shadowRoot !== null ?
+            parent.shadowRoot :
+            parent;
+    }
+}
+
+// The select component expect children of they option. It will ignore any other component
+// Therefore, to output that, we need to extend Component instead of CustomElement
+//@ts-ignore
+class SelectOptions extends DataMixin(Component) {
+    constructor(props, children) {
+        super(props, children);
+        this.bindRenderRecord();
+    }
+    render() {
+        return (h(Fragment, null,
+            this.renderEmptyOption(),
+            this.renderData()));
+    }
+    renderEmptyOption() {
+        const { emptyOption } = this.props;
+        if (emptyOption === undefined) {
+            return null;
+        }
+        const { label, value } = emptyOption;
+        return (h("option", { value: value }, label));
+    }
+    renderRecord(record) {
+        const { valueProperty, displayProperty } = this.props;
+        return (h("option", { value: record[valueProperty] }, record[displayProperty]));
+    }
+}
+SelectOptions.properties = {
     /**
      * The name of the property to map the value of the option
      */
@@ -4331,9 +4453,73 @@ Select.properties = {
     emptyOption: {
         attribute: 'empty-option',
         type: Object
+    }
+};
+
+//@ts-ignore
+class Select extends ErrorableMixin(LoadableMixin(SingleValueField)) {
+    [renderField]() {
+        const { name, value, size, 
+        //required,
+        disabled } = this.props;
+        return (h("select", { name: name, id: name, 
+            // style={{ maxWidth, width }}
+            value: value, size: size, onInput: this.onInput, onChange: this.onChange, 
+            // onFocus={onFocus}
+            onBlur: this.onBlur, disabled: disabled }, this.renderOptions()));
+    }
+    renderOptions() {
+        const { valueProperty, displayProperty, emptyOption, options, data } = this.props;
+        if (options === undefined) {
+            if (data !== undefined) {
+                return (h(SelectOptions, { "value-property": valueProperty, "display-property": displayProperty, "empty-option": emptyOption, data: data, parent: this }));
+            }
+            else {
+                return null; // No options and no data
+            }
+        }
+        else { // Display the options
+            if (emptyOption !== undefined) {
+                // Prepend the empty option
+                const { label, value } = emptyOption;
+                options.prependChildNode(h("option", { value: value }, label));
+            }
+            return options;
+        }
+    }
+    connectedCallback() {
+        super.connectedCallback();
+        this.initLoader();
+    }
+}
+Select.properties = {
+    emptyOption: {
+        attribute: 'empty-option',
+        type: Object
     },
     options: {
         type: VirtualNode
+    },
+    // Properties to pass through to the SelectOptions
+    /**
+     * The name of the property to map the value of the option
+     */
+    valueProperty: {
+        attribute: 'value-property',
+        type: String,
+        value: 'code'
+    },
+    displayProperty: {
+        attribute: 'display-property',
+        type: String,
+        value: 'description'
+    },
+    /**
+     * The data fed into the element
+     */
+    data: {
+        type: Array,
+        mutable: true
     }
 };
 //@ts-ignore
@@ -5030,152 +5216,6 @@ class ContactsList extends CustomElement {
 //@ts-ignore
 customElements.define('contacts-list', ContactsList);
 
-class FunctionalComponent {
-    constructor(props, children) {
-        this.props = props;
-        this.children = children;
-    }
-}
-
-function getComponentMetadata$1(ctor) {
-    var _a;
-    const metadata = {
-        properties: {},
-        state: {}
-    };
-    while (ctor !== undefined) {
-        const { properties, state } = ctor;
-        // Merge the property descriptors
-        metadata.properties = Object.assign(Object.assign({}, metadata.properties), properties);
-        // Merge the state descriptor
-        metadata.state = Object.assign(Object.assign({}, metadata.state), state);
-        ctor = (_a = Object.getPrototypeOf(ctor.prototype)) === null || _a === void 0 ? void 0 : _a.constructor;
-    }
-    return metadata;
-}
-/**
- * Mixin that initializes the properties for the component
- * @param Base
- * @returns
- */
-const ComponentMetadataInitializerMixin = Base => { var _a; return _a = class ComponentMetadataInitializer extends Base {
-        constructor(props, children) {
-            super(props, children);
-            if (this.constructor.metadata === undefined) {
-                this.constructor.metadata = getComponentMetadata$1(this.constructor);
-            }
-            const { properties, state } = this.constructor.metadata;
-            // Properties
-            this.props = props || {};
-            for (var name in properties) {
-                if (properties.hasOwnProperty(name)) {
-                    this.initializeProperty(name, properties[name]);
-                }
-            }
-            // State
-            this.state = {};
-            for (var name in state) {
-                if (state.hasOwnProperty(name)) {
-                    this.initializeState(name, state[name]);
-                }
-            }
-        }
-        initializeProperty(name, propertyDescriptor) {
-            const { attribute, //  The name of the JSX attribute mapped to the property       
-            value // The default value of the property if no attribute is set in the JSX
-             } = propertyDescriptor;
-            if (this.props[name] === undefined) { // Property is not initialized
-                if (attribute !== undefined && attribute !== name) {
-                    const val = this.props[attribute]; // See if that attribute has a value set
-                    if (val !== undefined) {
-                        this.props[name] = val;
-                        delete this.props[attribute];
-                    }
-                }
-                if (this.props[name] === undefined && // The value was not set from the attribute
-                    value !== undefined) { // It has a default value
-                    this.props[name] = value;
-                }
-            }
-        }
-        initializeState(name, stateDescriptor) {
-            const { value } = stateDescriptor;
-            if (value !== undefined) { // Initialize the state to the default value if any
-                this.state[name] = value;
-            }
-            const setter = function (newValue) {
-                const oldValue = this.state[name];
-                if (oldValue === newValue) {
-                    return;
-                }
-                // console.log(`State: '${name}' of component: [${this.constructor.name}] changed values. Old: <${oldValue}>, new: <${newValue}>`);
-                this.state[name] = newValue;
-                this.requestUpdate();
-            };
-            var setterName = this.getSetterName(name);
-            this[setterName] = setter.bind(this);
-        }
-        getSetterName(name) {
-            return `set${name[0].toUpperCase()}${name.substring(1)}`;
-        }
-    },
-    /** The merged properties from the ones declared in the component and the mixins */
-    _a.metadata = undefined,
-    _a; };
-
-class Component extends ComponentMetadataInitializerMixin(FunctionalComponent) {
-    constructor(props, children) {
-        super(props, children);
-    }
-}
-
-// The select component expect children of they option. It will ignore any other component
-// Therefore, to output that, we need to extend Component instead of CustomElement
-//@ts-ignore
-class SelectOptions extends DataLoadableMixin(Component) {
-    constructor(props, children) {
-        super(props, children);
-        this.bindRenderRecord();
-        this.initLoader();
-    }
-    render() {
-        return (h(Fragment, null,
-            this.renderEmptyOption(),
-            this.renderData()));
-    }
-    renderEmptyOption() {
-        const { emptyOption } = this.props;
-        if (emptyOption === undefined) {
-            return null;
-        }
-        const { label, value } = emptyOption;
-        return (h("option", { value: value }, label));
-    }
-    renderRecord(record) {
-        const { valueProperty, displayProperty } = this.props;
-        return (h("option", { value: record[valueProperty] }, record[displayProperty]));
-    }
-}
-SelectOptions.properties = {
-    /**
-     * The name of the property to map the value of the option
-     */
-    valueProperty: {
-        attribute: 'value-property',
-        type: String,
-        value: 'code'
-    },
-    displayProperty: {
-        attribute: 'display-property',
-        type: String,
-        value: 'description'
-    },
-    emptyOption: {
-        attribute: 'empty-option',
-        type: Object
-    }
-};
-
 /**
  * Shows a contact form populated and submitable to a back end
  */
@@ -5184,19 +5224,10 @@ class ContactForm extends CustomElement {
         return (h("gcl-form", { id: "contactForm", "load-url": "http://localhost:60314/api/contacts/1", "submit-url": "http://localhost:60314/api/contacts/", size: "medium" },
             h("gcl-hidden-field", { name: "id", "is-id": "true" }),
             h("gcl-text-field", { label: "Name", name: "name", required: true }),
-            h("gcl-select", { label: "Genre", name: "genre", options: h(SelectOptions, { "empty-option": {
-                        label: '--Please choose an option--',
-                        value: ''
-                    }, data: [
-                        {
-                            code: 'm',
-                            description: 'Male'
-                        },
-                        {
-                            code: 'f',
-                            description: 'Female'
-                        }
-                    ] }) }),
+            h("gcl-select", { label: "Genre", name: "genre", "empty-option": {
+                    label: '--Please choose an option--',
+                    value: ''
+                }, "load-url": "http://localhost:60314/api/genders" }),
             h("gcl-date-field", { label: "Date of Birth", name: "dateOfBirth" }),
             h("gcl-number-field", { label: "Reputation", name: "reputation", min: "1", max: "10" }),
             h("gcl-text-area", { label: "Description", name: "description", rows: "5", cols: "30" }),

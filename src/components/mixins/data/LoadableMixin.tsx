@@ -22,6 +22,7 @@ const LoadableMixin = Base =>
              * Whether to load the data for the component when the component is connected
              */
             autoLoad: {
+                attribute: 'auto-load',
                 type: Boolean,
                 value: true
             }

@@ -1,12 +1,31 @@
 import { h, VirtualNode, FragmentNode } from 'gclib-vdom';
 import { config } from '../../config';
+import LoadableMixin from '../../mixins/data/LoadableMixin';
+import ErrorableMixin from '../../mixins/errorable/ErrorableMixin';
 import { renderField } from '../Field';
 import { SingleValueField } from '../SingleValueField';
+import SelectOptions from './SelectOptions';
 
 //@ts-ignore
-export class Select extends SingleValueField {
+export class Select extends
+    ErrorableMixin(
+        LoadableMixin(
+            SingleValueField
+        )
+    ) {
 
     static properties = {
+
+        emptyOption: {
+            attribute: 'empty-option',
+            type: Object
+        },
+
+        options: {
+            type: VirtualNode
+        },
+
+        // Properties to pass through to the SelectOptions
 
         /**
          * The name of the property to map the value of the option
@@ -23,13 +42,12 @@ export class Select extends SingleValueField {
             value: 'description'
         },
 
-        emptyOption: {
-            attribute: 'empty-option',
-            type: Object
-        },
-
-        options: {
-            type: VirtualNode
+        /**
+         * The data fed into the element
+         */
+        data: {
+            type: Array,
+            mutable: true
         }
     };
 
@@ -64,11 +82,33 @@ export class Select extends SingleValueField {
     renderOptions() {
 
         const {
+            valueProperty,
+            displayProperty,
             emptyOption,
-            options
+            options,
+            data
         } = this.props;
 
-        if (options != undefined) {
+        if (options === undefined) {
+
+            if (data !== undefined) {
+
+                return (
+                    <SelectOptions
+                        value-property={valueProperty}
+                        display-property={displayProperty}
+                        empty-option={emptyOption}
+                        data={data}
+                        parent={this}
+                    />
+                );
+            }
+            else {
+
+                return null; // No options and no data
+            }
+        }
+        else { // Display the options
 
             if (emptyOption !== undefined) {
 
@@ -78,13 +118,18 @@ export class Select extends SingleValueField {
                     value
                 } = emptyOption;
 
-                (options as FragmentNode).prependChildNode(<option value={value}>{label}</option>)
-
+                (options as FragmentNode).prependChildNode(<option value={value}>{label}</option>);
             }
+
             return options;
         }
+    }
 
-        return null; // No options to render
+    connectedCallback() {
+
+        super.connectedCallback();
+
+        this.initLoader();
     }
 }
 
