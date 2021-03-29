@@ -28,8 +28,8 @@ export class ContactForm extends CustomElement {
                 />
 
                 <gcl-select
-                    label="Genre"
-                    name="genre"
+                    label="Gender"
+                    name="gender"
                     empty-option={{
                         label: '--Please choose an option--',
                         value: ''

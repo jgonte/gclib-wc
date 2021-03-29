@@ -42,6 +42,7 @@ export class Select extends
             value: 'description'
         },
 
+        // We did not use the DataLoadingMixin becase we only use this property to pass through the SelectOptions component
         /**
          * The data fed into the element
          */
@@ -86,7 +87,8 @@ export class Select extends
             displayProperty,
             emptyOption,
             options,
-            data
+            data,
+            value // The value of the select
         } = this.props;
 
         if (options === undefined) {
@@ -100,6 +102,7 @@ export class Select extends
                         empty-option={emptyOption}
                         data={data}
                         parent={this}
+                        selected={value}
                     />
                 );
             }

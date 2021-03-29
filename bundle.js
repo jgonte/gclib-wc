@@ -4432,8 +4432,11 @@ class SelectOptions extends DataMixin(Component) {
         return (h("option", { value: value }, label));
     }
     renderRecord(record) {
-        const { valueProperty, displayProperty } = this.props;
-        return (h("option", { value: record[valueProperty] }, record[displayProperty]));
+        const { valueProperty, displayProperty, selected } = this.props;
+        const value = record[valueProperty];
+        const isSelected = selected !== undefined &&
+            Array.isArray(selected) ? selected.includes(value) : selected === value;
+        return (h("option", { value: value, selected: isSelected }, record[displayProperty]));
     }
 }
 SelectOptions.properties = {
@@ -4453,6 +4456,9 @@ SelectOptions.properties = {
     emptyOption: {
         attribute: 'empty-option',
         type: Object
+    },
+    selected: {
+        type: Object
     }
 };
 
@@ -4469,10 +4475,11 @@ class Select extends ErrorableMixin(LoadableMixin(SingleValueField)) {
             onBlur: this.onBlur, disabled: disabled }, this.renderOptions()));
     }
     renderOptions() {
-        const { valueProperty, displayProperty, emptyOption, options, data } = this.props;
+        const { valueProperty, displayProperty, emptyOption, options, data, value // The value of the select
+         } = this.props;
         if (options === undefined) {
             if (data !== undefined) {
-                return (h(SelectOptions, { "value-property": valueProperty, "display-property": displayProperty, "empty-option": emptyOption, data: data, parent: this }));
+                return (h(SelectOptions, { "value-property": valueProperty, "display-property": displayProperty, "empty-option": emptyOption, data: data, parent: this, selected: value }));
             }
             else {
                 return null; // No options and no data
@@ -4514,6 +4521,7 @@ Select.properties = {
         type: String,
         value: 'description'
     },
+    // We did not use the DataLoadingMixin becase we only use this property to pass through the SelectOptions component
     /**
      * The data fed into the element
      */
@@ -5224,7 +5232,7 @@ class ContactForm extends CustomElement {
         return (h("gcl-form", { id: "contactForm", "load-url": "http://localhost:60314/api/contacts/1", "submit-url": "http://localhost:60314/api/contacts/", size: "medium" },
             h("gcl-hidden-field", { name: "id", "is-id": "true" }),
             h("gcl-text-field", { label: "Name", name: "name", required: true }),
-            h("gcl-select", { label: "Genre", name: "genre", "empty-option": {
+            h("gcl-select", { label: "Gender", name: "gender", "empty-option": {
                     label: '--Please choose an option--',
                     value: ''
                 }, "load-url": "http://localhost:60314/api/genders" }),

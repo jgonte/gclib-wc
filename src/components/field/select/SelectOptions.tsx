@@ -30,6 +30,10 @@ export default class SelectOptions extends
         emptyOption: {
             attribute: 'empty-option',
             type: Object
+        },
+
+        selected: {
+            type: Object
         }
     };
 
@@ -73,9 +77,15 @@ export default class SelectOptions extends
 
         const {
             valueProperty,
-            displayProperty
+            displayProperty,
+            selected
         } = this.props;
 
-        return (<option value={record[valueProperty]}>{record[displayProperty]}</option>);
+        const value = record[valueProperty];
+
+        const isSelected = selected !== undefined && 
+            Array.isArray(selected) ? selected.includes(value) : selected === value;
+
+        return (<option value={value} selected={isSelected}>{record[displayProperty]}</option>);
     }
 }
