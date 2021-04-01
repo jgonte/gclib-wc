@@ -2,10 +2,10 @@ import { h, VirtualNode } from 'gclib-vdom';
 import { config } from '../../config';
 import MinMaxMixin from '../../mixins/minMax/MinMaxMixin';
 import { renderField } from '../Field';
-import { SingleValueField } from '../SingleValueField';
+import { Field } from '../Field';
 
 //@ts-ignore
-export class NumberField extends MinMaxMixin(SingleValueField) {
+export class NumberField extends MinMaxMixin(Field) {
 
     // static component = {
 

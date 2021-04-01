@@ -1,7 +1,7 @@
 import { h, VirtualNode } from 'gclib-vdom';
 import { config } from '../../config';
 import { renderField } from '../Field';
-import { SingleValueField } from '../SingleValueField';
+import { Field } from '../Field';
 
 function formatSize(size) {
 
@@ -20,7 +20,7 @@ function formatSize(size) {
 }
 
 //@ts-ignore
-export class FileField extends SingleValueField {
+export class FileField extends Field {
 
     // static component = {
 

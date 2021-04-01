@@ -1,10 +1,10 @@
 import { h, VirtualNode } from 'gclib-vdom';
 import { config } from '../../config';
 import { renderField } from '../Field';
-import { SingleValueField } from '../SingleValueField';
+import { Field } from '../Field';
 
 //@ts-ignore
-export class TextField extends SingleValueField {
+export class TextField extends Field {
 
     // static component = {
 

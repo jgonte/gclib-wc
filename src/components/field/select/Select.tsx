@@ -3,14 +3,14 @@ import { config } from '../../config';
 import LoadableMixin from '../../mixins/data/LoadableMixin';
 import ErrorableMixin from '../../mixins/errorable/ErrorableMixin';
 import { renderField } from '../Field';
-import { SingleValueField } from '../SingleValueField';
+import { Field } from '../Field';
 import SelectOptions from './SelectOptions';
 
 //@ts-ignore
 export class Select extends
     ErrorableMixin(
         LoadableMixin(
-            SingleValueField
+            Field
         )
     ) {
 

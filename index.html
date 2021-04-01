@@ -12,6 +12,7 @@
 	<script type="module" src="bundle.js"></script>
 
 </head>
+
 <body>
 
 	<gcl-app>
@@ -20,6 +21,9 @@
 		<contacts-list></contacts-list>
 
 		<h4>Contact form (it retrieves data from and posts to a back-end)</h4>
+		<contact-form load-url="http://localhost:60314/api/contacts/1"></contact-form>
+
+		<h4>Contact form (blank form)</h4>
 		<contact-form></contact-form>
 
 		<h4>Icons</h4>
@@ -50,7 +54,8 @@
 		<br />
 		<gcl-text intl-key="goodMorning" lang="it" variant="success"></gcl-text>
 		<br />
-		<gcl-text intl-key="goodMorning" lang="de" variant="danger" style="color:magenta; font-size: 2.5rem;"></gcl-text>
+		<gcl-text intl-key="goodMorning" lang="de" variant="danger" style="color:magenta; font-size: 2.5rem;">
+		</gcl-text>
 		<br />
 
 		<h4>Panels</h4>
@@ -60,7 +65,7 @@
 					<gcl-icon name="archive" variant="tertiary"></gcl-icon>
 					<gcl-text intl-key="goodMorning" lang="de" variant="secondary"></gcl-text>
 				</span>
-				
+
 			</gcl-header>
 			<contacts-list slot="body"></contacts-list>
 			<div slot="footer">This is the footer!</div>

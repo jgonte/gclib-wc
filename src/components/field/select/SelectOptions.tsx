@@ -73,19 +73,38 @@ export default class SelectOptions extends
         return (<option value={value}>{label}</option>);
     }
 
-    renderRecord(record) {
+    renderRecord(record, index) {
 
         const {
             valueProperty,
             displayProperty,
-            selected
+            selected,
+            emptyOption,
+            parent
         } = this.props;
 
         const value = record[valueProperty];
 
-        const isSelected = selected !== undefined && 
-            Array.isArray(selected) ? selected.includes(value) : selected === value;
+        if (selected === undefined) {
 
-        return (<option value={value} selected={isSelected}>{record[displayProperty]}</option>);
+            // Select the first option if there is no selected value and no empty option
+            if (emptyOption === undefined &&
+                index === 0) {
+
+                parent.setValue(value); // Update the value in the parent
+
+                return (<option value={value} selected>{record[displayProperty]}</option>);
+            }
+            else {
+
+                return (<option value={value}>{record[displayProperty]}</option>);
+            }
+        }
+        else { // selected !== undefined
+
+            const isSelected = Array.isArray(selected) ? selected.includes(value) : selected === value;
+
+            return (<option value={value} selected={isSelected}>{record[displayProperty]}</option>);
+        }
     }
 }

@@ -2,7 +2,7 @@ import { h, VirtualNode } from 'gclib-vdom';
 import { config } from '../../config';
 import MinMaxMixin from '../../mixins/minMax/MinMaxMixin';
 import { renderField } from '../Field';
-import { SingleValueField } from '../SingleValueField';
+import { Field } from '../Field';
 //import { formatDate} from 'gclib-utils';
 
 function formatDate(value: string) {
@@ -13,7 +13,7 @@ function formatDate(value: string) {
 }
 
 //@ts-ignore
-export class DateField extends MinMaxMixin(SingleValueField) {
+export class DateField extends MinMaxMixin(Field) {
 
     // static component = {
 

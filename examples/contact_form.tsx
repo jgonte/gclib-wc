@@ -7,12 +7,28 @@ import CustomElement from '../src/core/customElement/CustomElement';
  */
 export class ContactForm extends CustomElement {
 
+    static properties = {
+
+        /**
+         * The URL to retrieve the data from
+         */
+        loadUrl: {
+            attribute: 'load-url',
+            type: String,
+            //required: true Loading the form or other component might be optional
+        }
+    };
+
     render() {
+
+        const {
+            loadUrl
+        } = this.props;
 
         return (
             <gcl-form
                 id="contactForm"
-                load-url="http://localhost:60314/api/contacts/1"
+                load-url={loadUrl}
                 submit-url="http://localhost:60314/api/contacts/"
                 size="medium">
 
@@ -30,10 +46,10 @@ export class ContactForm extends CustomElement {
                 <gcl-select
                     label="Gender"
                     name="gender"
-                    empty-option={{
-                        label: '--Please choose an option--',
-                        value: ''
-                    }}
+                    // empty-option={{
+                    //     label: '--Please choose an option--',
+                    //     value: ''
+                    // }}
                     // data={[
                     //     {
                     //         code: 'm',

@@ -10,6 +10,8 @@ import Validator from 'gclib-utils/dist/types/data/validation/validators/Validat
 
 export const renderField = Symbol('renderField');
 
+export const valueChanged = 'valueChanged';
+
 //@ts-ignore
 export abstract class Field extends
     VisibleMixin(
@@ -59,6 +61,12 @@ export abstract class Field extends
             type: Boolean,
             mutable: true,
             reflect: true
+        },
+
+        value: {
+            type: Object, // Ideally is a string but could be a more complex object
+            mutable: true,
+            reflect: true
         }
     };
 
@@ -67,6 +75,10 @@ export abstract class Field extends
         super();
 
         this.onBlur = this.onBlur.bind(this);
+
+        this.onInput = this.onInput.bind(this);
+
+        this.onChange = this.onChange.bind(this);
     }
 
     [renderWhenVisible]() {
@@ -251,5 +263,93 @@ export abstract class Field extends
         }
 
         return true;
+    }
+
+    onInput(event) {
+
+        // Retrieve the new value
+        const input = event.target as HTMLInputElement;
+
+        const value = this.getNewValue(input);
+
+        //this.setValue(value); // Do not update the current value, since it can keep changing
+
+        this.validate(value); // Validate the field on input
+    }
+
+    onChange(event) {
+
+        const {
+            name
+        } = this.props;
+
+        // Retrieve the new value
+        const input = event.target as HTMLInputElement;
+
+        const value = this.getNewValue(input);
+
+        this.setValue(value, this.onValueSet); // Update the current value
+
+        //this.validate(value); // No need to validate again since this happens on input
+
+        this.dispatchEvent(new CustomEvent(valueChanged, {
+            detail: {
+                name,
+                value
+            },
+            bubbles: true,
+            composed: true
+        }));
+    }
+
+    getNewValue(input: HTMLInputElement): any {
+
+        let value: any;
+
+        switch (input.type) {
+            case 'file':
+                {
+                    const {
+                        files
+                    } = input;
+
+                    if (files.length === 0) { // No files selected
+
+                        return value;
+                    }
+
+                    if (input.multiple === true) {
+
+                        value = Array.from(files).map(f => {
+
+                            return {
+                                name: f.name,
+                                type: f.type,
+                                size: f.size,
+                                content: URL.createObjectURL(f)
+                            };
+                        });
+                    }
+                    else {
+
+                        const f = files[0];
+
+                        value = {
+                            name: f.name,
+                            type: f.type,
+                            size: f.size,
+                            content: URL.createObjectURL(f)
+                        };
+                    }
+                }
+                break;
+            default:
+                {
+                    value = input.value;
+                }
+                break;
+        }
+
+        return value;
     }
 }

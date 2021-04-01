@@ -1,5 +1,3 @@
-import { Fragment, h } from "gclib-vdom";
-
 /**
  * Enables rendering data for a component
  * @param Base 
@@ -54,11 +52,7 @@ const DataMixin = Base =>
 
             if (renderRecord !== undefined) {
 
-                return (
-                    <Fragment>
-                        {data.map(record => renderRecord(record))}
-                    </Fragment>
-                );
+                return data.map((record, index) => renderRecord(record, index));
             }
             else { // Show the user the data
 

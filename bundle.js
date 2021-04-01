@@ -1020,10 +1020,10 @@ var Fetcher = (function () {
             if (data.hasOwnProperty(key)) {
                 var value = data[key];
                 if (typeof value === 'object') {
-                    if (value.hasOwnProperty('name')) {
-                        var name_1 = value.name, type = value.type, content = value.content;
-                        var file = new File(__spreadArrays(content), name_1, {
-                            type: type
+                    if (value.hasOwnProperty('fileName')) {
+                        var fileName = value.fileName, contentType = value.contentType, content = value.content;
+                        var file = new File(__spreadArrays(content), fileName, {
+                            type: contentType
                         });
                         formData.append(key, file);
                     }
@@ -1329,7 +1329,10 @@ function createDOMElement(name, props) {
             document.createElementNS('http://www.w3.org/2000/svg', name) :
             document.createElement(name);
         for (key in props) {
-            setAttribute(element, key, props[key]);
+            var value = props[key];
+            if (value !== false) {
+                setAttribute(element, key, props[key]);
+            }
         }
         return element;
     }
@@ -1589,6 +1592,10 @@ var ElementPatches = (function () {
             for (var i = 0; i < this.childrenPatches.length; ++i) {
                 var patch = this.childrenPatches[i];
                 var childNode = n.childNodes[patch.index];
+                if (childNode === undefined) {
+                    console.warn("Child is undefined. Parent: " + JSON.stringify(n) + ". Patch: " + JSON.stringify(patch));
+                    childNode = n;
+                }
                 patch.patches.applyPatches(n, childNode, hooks, context);
             }
         }
@@ -1721,7 +1728,9 @@ var SetAttributePatch = (function () {
         var n = node instanceof DocumentFragment ?
             parentNode.host :
             node;
-        if (newValue === undefined || newValue === null) {
+        if (newValue === undefined ||
+            newValue === null ||
+            newValue === "false") {
             removeAttribute(n, name);
         }
         else {
@@ -3528,7 +3537,7 @@ const DataMixin = Base => { var _a; return _a = class Data extends Base {
             }
             const { renderRecord } = this;
             if (renderRecord !== undefined) {
-                return (h(Fragment, null, data.map(record => renderRecord(record))));
+                return data.map((record, index) => renderRecord(record, index));
             }
             else { // Show the user the data
                 return JSON.stringify(data);
@@ -4012,11 +4021,14 @@ const VisibleMixin = Base => { var _a; return _a = class Visible extends Base {
     _a; };
 
 const renderField = Symbol('renderField');
+const valueChanged = 'valueChanged';
 //@ts-ignore
 class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(CustomElement)))) {
     constructor() {
         super();
         this.onBlur = this.onBlur.bind(this);
+        this.onInput = this.onInput.bind(this);
+        this.onChange = this.onChange.bind(this);
     }
     [renderWhenVisible]() {
         const { validationWarnings, validationErrors } = this.state;
@@ -4116,47 +4128,6 @@ class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(Custom
         }
         return true;
     }
-}
-Field.component = {
-    styleUrls: [
-        `${config.assetsFolder}/Field/Field.css`
-    ]
-};
-Field.properties = {
-    name: {
-        type: String
-    },
-    isId: {
-        attribute: 'is-id',
-        type: Boolean,
-        value: false
-    },
-    type: {
-        type: Function
-    },
-    label: {
-        type: VirtualNode
-    },
-    disabled: {
-        type: Boolean,
-        mutable: true,
-        reflect: true
-    },
-    required: {
-        type: Boolean,
-        mutable: true,
-        reflect: true
-    }
-};
-
-const valueChanged = 'valueChanged';
-//@ts-ignore
-class SingleValueField extends Field {
-    constructor() {
-        super();
-        this.onInput = this.onInput.bind(this);
-        this.onChange = this.onChange.bind(this);
-    }
     onInput(event) {
         // Retrieve the new value
         const input = event.target;
@@ -4219,7 +4190,36 @@ class SingleValueField extends Field {
         return value;
     }
 }
-SingleValueField.properties = {
+Field.component = {
+    styleUrls: [
+        `${config.assetsFolder}/Field/Field.css`
+    ]
+};
+Field.properties = {
+    name: {
+        type: String
+    },
+    isId: {
+        attribute: 'is-id',
+        type: Boolean,
+        value: false
+    },
+    type: {
+        type: Function
+    },
+    label: {
+        type: VirtualNode
+    },
+    disabled: {
+        type: Boolean,
+        mutable: true,
+        reflect: true
+    },
+    required: {
+        type: Boolean,
+        mutable: true,
+        reflect: true
+    },
     value: {
         type: Object,
         mutable: true,
@@ -4228,7 +4228,7 @@ SingleValueField.properties = {
 };
 
 //@ts-ignore
-class TextField extends SingleValueField {
+class TextField extends Field {
     // static component = {
     //     styleUrls: [
     //         `${config.assetsFolder}/TextField/TextField.css`
@@ -4254,7 +4254,7 @@ class TextField extends SingleValueField {
 customElements.define(`${config.tagPrefix}-text-field`, TextField);
 
 //@ts-ignore
-class TextArea extends SingleValueField {
+class TextArea extends Field {
     [renderField]() {
         const { name, value, rows, cols, size, 
         //required,
@@ -4431,12 +4431,24 @@ class SelectOptions extends DataMixin(Component) {
         const { label, value } = emptyOption;
         return (h("option", { value: value }, label));
     }
-    renderRecord(record) {
-        const { valueProperty, displayProperty, selected } = this.props;
+    renderRecord(record, index) {
+        const { valueProperty, displayProperty, selected, emptyOption, parent } = this.props;
         const value = record[valueProperty];
-        const isSelected = selected !== undefined &&
-            Array.isArray(selected) ? selected.includes(value) : selected === value;
-        return (h("option", { value: value, selected: isSelected }, record[displayProperty]));
+        if (selected === undefined) {
+            // Select the first option if there is no selected value and no empty option
+            if (emptyOption === undefined &&
+                index === 0) {
+                parent.setValue(value); // Update the value in the parent
+                return (h("option", { value: value, selected: true }, record[displayProperty]));
+            }
+            else {
+                return (h("option", { value: value }, record[displayProperty]));
+            }
+        }
+        else { // selected !== undefined
+            const isSelected = Array.isArray(selected) ? selected.includes(value) : selected === value;
+            return (h("option", { value: value, selected: isSelected }, record[displayProperty]));
+        }
     }
 }
 SelectOptions.properties = {
@@ -4463,7 +4475,7 @@ SelectOptions.properties = {
 };
 
 //@ts-ignore
-class Select extends ErrorableMixin(LoadableMixin(SingleValueField)) {
+class Select extends ErrorableMixin(LoadableMixin(Field)) {
     [renderField]() {
         const { name, value, size, 
         //required,
@@ -4534,8 +4546,8 @@ Select.properties = {
 customElements.define(`${config.tagPrefix}-select`, Select);
 
 //@ts-ignore
-class HiddenField extends SingleValueField {
-    [renderField]() {
+class HiddenField extends Field {
+    render() {
         const { name, value, } = this.props;
         return (h("input", { type: "hidden", name: name, value: value }));
     }
@@ -4556,7 +4568,7 @@ const MinMaxMixin = Base => { var _a; return _a = class MinMax extends Base {
     _a; };
 
 //@ts-ignore
-class NumberField extends MinMaxMixin(SingleValueField) {
+class NumberField extends MinMaxMixin(Field) {
     // static component = {
     //     styleUrls: [
     //         `${config.assetsFolder}/numberField/NumberField.css`
@@ -4588,7 +4600,7 @@ function formatDate$1(value) {
     return value.substr(0, i);
 }
 //@ts-ignore
-class DateField extends MinMaxMixin(SingleValueField) {
+class DateField extends MinMaxMixin(Field) {
     // static component = {
     //     styleUrls: [
     //         `${config.assetsFolder}/DateField/DateField.css`
@@ -4625,7 +4637,7 @@ function formatSize(size) {
     }
 }
 //@ts-ignore
-class FileField extends SingleValueField {
+class FileField extends Field {
     constructor() {
         super();
         this.openFileDialog = this.openFileDialog.bind(this);
@@ -5229,19 +5241,26 @@ customElements.define('contacts-list', ContactsList);
  */
 class ContactForm extends CustomElement {
     render() {
-        return (h("gcl-form", { id: "contactForm", "load-url": "http://localhost:60314/api/contacts/1", "submit-url": "http://localhost:60314/api/contacts/", size: "medium" },
+        const { loadUrl } = this.props;
+        return (h("gcl-form", { id: "contactForm", "load-url": loadUrl, "submit-url": "http://localhost:60314/api/contacts/", size: "medium" },
             h("gcl-hidden-field", { name: "id", "is-id": "true" }),
             h("gcl-text-field", { label: "Name", name: "name", required: true }),
-            h("gcl-select", { label: "Gender", name: "gender", "empty-option": {
-                    label: '--Please choose an option--',
-                    value: ''
-                }, "load-url": "http://localhost:60314/api/genders" }),
+            h("gcl-select", { label: "Gender", name: "gender", "load-url": "http://localhost:60314/api/genders" }),
             h("gcl-date-field", { label: "Date of Birth", name: "dateOfBirth" }),
             h("gcl-number-field", { label: "Reputation", name: "reputation", min: "1", max: "10" }),
             h("gcl-text-area", { label: "Description", name: "description", rows: "5", cols: "30" }),
             h("gcl-file-field", { label: "Avatar", name: "avatar" })));
     }
 }
+ContactForm.properties = {
+    /**
+     * The URL to retrieve the data from
+     */
+    loadUrl: {
+        attribute: 'load-url',
+        type: String,
+    }
+};
 //@ts-ignore
 customElements.define('contact-form', ContactForm);
 
