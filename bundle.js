@@ -1020,10 +1020,10 @@ var Fetcher = (function () {
             if (data.hasOwnProperty(key)) {
                 var value = data[key];
                 if (typeof value === 'object') {
-                    if (value.hasOwnProperty('fileName')) {
-                        var fileName = value.fileName, contentType = value.contentType, content = value.content;
-                        var file = new File(__spreadArrays(content), fileName, {
-                            type: contentType
+                    if (value.hasOwnProperty('name')) {
+                        var name_1 = value.name, type = value.type, content = value.content;
+                        var file = new File(__spreadArrays(content), name_1, {
+                            type: type
                         });
                         formData.append(key, file);
                     }

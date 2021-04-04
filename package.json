@@ -42,7 +42,7 @@
     "typescript": "^4.0.5"
   },
   "dependencies": {
-    "gclib-utils": "^1.0.0",
+    "gclib-utils": "^1.0.1",
     "gclib-vdom": "^1.8.5"
   },
   "directories": {
