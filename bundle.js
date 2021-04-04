@@ -1242,6 +1242,8 @@ function isStandardEvent(name) {
         'oninput',
         'onfocus',
         'onblur',
+        'onload',
+        'onunload'
     ].indexOf(name) > -1;
 }
 
@@ -1605,10 +1607,18 @@ var ElementPatches = (function () {
         }
     };
     ElementPatches.prototype.hasPatches = function () {
-        return this.patches.length || this.childrenPatches.length;
+        return this.patches.length > 0 || this.childrenPatches.length > 0;
     };
     return ElementPatches;
 }());
+
+function setAttributes(element, props) {
+    for (var key in props) {
+        if (Object.prototype.hasOwnProperty.call(props, key)) {
+            setAttribute(element, key, props[key]);
+        }
+    }
+}
 
 var ChildElementPatches = (function () {
     function ChildElementPatches(index, patches) {
@@ -2010,14 +2020,6 @@ var ReplaceElementPatch = (function () {
     return ReplaceElementPatch;
 }());
 
-function setAttributes(element, props) {
-    for (var key in props) {
-        if (Object.prototype.hasOwnProperty.call(props, key)) {
-            setAttribute(element, key, props[key]);
-        }
-    }
-}
-
 var SetElementPatch = (function () {
     function SetElementPatch(newNode) {
         this.newNode = newNode;
@@ -2407,11 +2409,6 @@ function diff(oldNode, newNode) {
     }
 }
 
-function mount(rootNode, currentNode, previousNode, node, hooks) {
-    var patches = diff(previousNode, currentNode);
-    patches.applyPatches(rootNode, node, hooks);
-}
-
 function createVirtualNode(o) {
     if (typeof o === 'string') {
         return new VirtualText(o);
@@ -2713,6 +2710,9 @@ const VirtualDomMixin = Base => class VirtualDom extends Base {
     // so they are included in the constructor
     constructor(props, children) {
         super(props, children);
+        /**
+         * Flag to avoid re-requesting update if it is alaready requested
+         */
         this._isUpdating = false;
         if (this.nodeDidUpdate !== undefined) {
             this.nodeDidUpdate = this.nodeDidUpdate.bind(this);
@@ -2742,6 +2742,7 @@ const VirtualDomMixin = Base => class VirtualDom extends Base {
         });
     }
     update() {
+        var _a, _b, _c, _d, _e;
         let node = this.render();
         if (node === undefined) {
             console.error('Undefined virtual node. Ensure that you return the node from the render function');
@@ -2753,10 +2754,39 @@ const VirtualDomMixin = Base => class VirtualDom extends Base {
             nodeType === 'boolean') {
             node = new VirtualText(node);
         }
-        if (this.onBeforeMount !== undefined) {
-            node = this.onBeforeMount(node);
+        // Modify the virtual node if necessary (i.e. add style) before diffing it, to keep it consistent with the mounted one
+        node = this.onBeforeMount(node);
+        const previousNode = this._mountedNode;
+        const patches = diff(previousNode, node);
+        if (!patches.hasPatches()) {
+            return false; // Nothing to mount   
         }
-        mount(this.document, node, this._mountedNode, this.rootElement, this);
+        if (previousNode === undefined) { // Will mount
+            if (node !== null) {
+                (_a = this.willMount) === null || _a === void 0 ? void 0 : _a.call(this);
+            }
+            // else { node === null
+            //     Do nothing
+            // }
+            patches.applyPatches(this.document, undefined, this);
+            if (node != null) {
+                (_b = this.didMount) === null || _b === void 0 ? void 0 : _b.call(this);
+            }
+        }
+        else { // previousNode !== undefined
+            if (node === null) {
+                (_c = this.willUnmount) === null || _c === void 0 ? void 0 : _c.call(this);
+            }
+            else { // node !== null
+                (_d = this.willUpdate) === null || _d === void 0 ? void 0 : _d.call(// node !== null
+                this);
+            }
+            patches.applyPatches(this.document, this.rootElement, this);
+            if (node != null) {
+                (_e = this.didUpdate) === null || _e === void 0 ? void 0 : _e.call(this);
+            }
+        }
+        // Set the new mounted node
         this._mountedNode = node;
     }
 };
@@ -3082,6 +3112,30 @@ const ChildMixin = Base => class Child extends Base {
 };
 
 const ContainerMixin = Base => { var _a; return _a = class Container extends Base {
+        constructor() {
+            super();
+            this.addSlottedChildren = this.addSlottedChildren.bind(this);
+        }
+        addSlottedChildren(event) {
+            const children = event.target.assignedElements();
+            children.forEach(child => {
+                this.addChild(child);
+            });
+        }
+        didMount() {
+            // Add the listener to listen for changes in the slot
+            const slot = this.shadowRoot.querySelector('slot');
+            if (slot !== null) {
+                slot.addEventListener('slotchange', this.addSlottedChildren);
+            }
+        }
+        willUnmount() {
+            // Remove the listener to listen for changes in the slot
+            const slot = this.shadowRoot.querySelector('slot');
+            if (slot !== null) {
+                slot.removeEventListener('slotchange', this.addSlottedChildren);
+            }
+        }
         // nodeDidUpdate(node, nodeChanges) {
         //     if (super.nodeDidUpdate) {
         //         super.nodeDidUpdate(node, nodeChanges);
@@ -3745,6 +3799,7 @@ Table.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-table`, Table);
 
+const selectionChanged = 'selectionChanged';
 /**
  * Allows a component to be selectable
  * @param Base
@@ -3765,7 +3820,7 @@ const SelectableMixin = Base => { var _a; return _a = class Selectable extends C
                 else { // newValue === "false"
                     if (this.props.selected) { // Unselect if selected
                         this.setSelected(false);
-                        this.dispatchEvent(new CustomEvent('selectionChanged', {
+                        this.dispatchEvent(new CustomEvent(selectionChanged, {
                             detail: {
                                 child: this,
                                 removed: this.props.value
@@ -5023,6 +5078,174 @@ Form.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-form`, Form);
 
+const ActivatableMixin = Base => { var _a; return _a = class Activatable extends Base {
+    },
+    _a.component = {
+        styleUrls: [
+            `${config.assetsFolder}/mixins/activatable/Activatable.css`
+        ]
+    },
+    _a.properties = {
+        /**
+         * Whether the element is active
+         */
+        active: {
+            type: Boolean,
+            value: false,
+            mutable: true,
+            reflect: true
+        }
+    },
+    _a; };
+
+const linkClicked = 'linkClicked';
+//@ts-ignore
+class NavigationLink extends ActivatableMixin(SizableMixin(ChildMixin(CustomElement))) {
+    render() {
+        const { label, size, active } = this.props;
+        return (h(Fragment, { size: size, active: active }, label !== undefined ?
+            (h("gcl-text", null, label)) :
+            (h("slot", null))));
+    }
+    onLinkClicked() {
+        this.setActive(true);
+        this.dispatchEvent(new CustomEvent(linkClicked, {
+            detail: {
+                link: this
+            },
+            bubbles: true,
+            composed: true
+        }));
+    }
+    connectedCallback() {
+        var _a;
+        (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        this.addEventListener('click', this.onLinkClicked);
+    }
+    disconnectedCallback() {
+        var _a;
+        (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        this.removeEventListener('click', this.onLinkClicked);
+    }
+}
+NavigationLink.component = {
+    //shadow: false,
+    styleUrls: [
+        `${config.assetsFolder}/navigationLink/NavigationLink.css`
+    ]
+};
+NavigationLink.properties = {
+    /**
+     * The key to retrieve a localized value from an i18n provider
+     */
+    intlKey: {
+        attribute: 'intl-key',
+        type: String
+    },
+    /**
+     * The label of the navigation item
+     */
+    label: {
+        type: String,
+        mutable: true,
+        reflect: true
+    },
+    path: {
+        type: String
+    },
+    content: {
+        type: VirtualNode
+    }
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-nav-link`, NavigationLink);
+
+//@ts-ignore
+class NavigationBar extends SizableMixin(ContainerMixin(CustomElement)) {
+    render() {
+        const { links, size, variant } = this.props;
+        return (h(Fragment, { size: size, variant: variant }, links !== undefined ?
+            this.renderLinks() :
+            (h("slot", null))));
+    }
+    renderLinks() {
+        const { links } = this.props;
+        return links.map(link => h("gcl-nav-link", { path: link.path }, link.Label));
+    }
+    linkClicked(event) {
+        var _a, _b;
+        const link = event.detail.link;
+        const { activeLink } = this.state;
+        if (link !== activeLink) {
+            (_b = (_a = this.props).linkClicked) === null || _b === void 0 ? void 0 : _b.call(_a, link);
+            activeLink === null || activeLink === void 0 ? void 0 : activeLink.setAttribute('active', false);
+            this.setActiveLink(link);
+        }
+    }
+    connectedCallback() {
+        var _a;
+        (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        this.addEventListener(linkClicked, this.linkClicked);
+    }
+    disconnectedCallback() {
+        var _a;
+        (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        this.removeEventListener(linkClicked, this.linkClicked);
+    }
+    onChildAdded(child) {
+        if (child.props.active === true) {
+            this.setActiveLink(child);
+        }
+    }
+}
+NavigationBar.component = {
+    //shadow: false,
+    styleUrls: [
+        `${config.assetsFolder}/navigationBar/NavigationBar.css`
+    ]
+};
+NavigationBar.properties = {
+    links: {
+        type: Array
+    },
+    linkClicked: {
+        attribute: 'link-clicked',
+        type: Function
+    }
+};
+NavigationBar.state = {
+    activeLink: {
+        value: undefined
+    }
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-nav-bar`, NavigationBar);
+
+//@ts-ignore
+class Content extends CustomElement {
+    render() {
+        const { source } = this.props;
+        return (h("iframe", { src: source, onload: () => {
+                const frame = this.document.children[0];
+                const { scrollHeight, offsetHeight, clientHeight } = frame.contentDocument.body;
+                const height = Math.max(scrollHeight, offsetHeight, clientHeight);
+                frame.style.height = height;
+            } }));
+    }
+}
+Content.component = {
+    styleUrls: [
+        `${config.assetsFolder}/content/Content.css`
+    ]
+};
+Content.properties = {
+    source: {
+        type: String
+    }
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-content`, Content);
+
 class MyTable extends CustomElement {
     render() {
         return (h("gcl-table", { caption: h("caption", null,
@@ -5294,4 +5517,4 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
-export { Alert, App, Button, ContactForm, ContactsList, DateField, FileField, Form, Header, HiddenField, Icon, List, ListItem, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, NumberField, Overlay, Panel, Select, Table, Text, TextArea, TextField, ValidationSummary };
+export { Alert, App, Button, ContactForm, ContactsList, Content, DateField, FileField, Form, Header, HiddenField, Icon, List, ListItem, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, NavigationBar, NavigationLink, NumberField, Overlay, Panel, Select, Table, Text, TextArea, TextField, ValidationSummary };

@@ -17,6 +17,15 @@
 
 	<gcl-app>
 
+		<h4>Navigation Bar</h4>
+		<gcl-nav-bar link-clicked="showContent()">
+			<gcl-nav-link path="./home.html" active>Home</gcl-nav-link>
+			<gcl-nav-link path="./contact.html">Contact</gcl-nav-link>
+			<gcl-nav-link path="./about.html">About</gcl-nav-link>
+		</gcl-nav-bar>
+
+		<gcl-content id="content" source="./home.html"></gcl-content>
+
 		<h4>Contacts list (it retrieves data from a back-end)</h4>
 		<contacts-list></contacts-list>
 
@@ -156,6 +165,13 @@
 		// setTimeout(function () {
 		// 	alarmIcon.setAttribute("variant", "tertiary");
 		// }, 10000)
+
+		function showContent(link) {
+
+			const content = document.getElementById('content');
+
+			content.setAttribute("source", link.props.path);
+		}
 
 		function onButtonClicked() {
 

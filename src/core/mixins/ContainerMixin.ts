@@ -16,6 +16,45 @@ const ContainerMixin = Base =>
             }
         };
 
+        constructor() {
+
+            super();
+
+            this.addSlottedChildren = this.addSlottedChildren.bind(this);
+        }
+
+        addSlottedChildren(event) {
+
+            const children = event.target.assignedElements();
+
+            children.forEach(child => {
+
+                this.addChild(child);
+            });
+        }
+
+        didMount() {
+
+            // Add the listener to listen for changes in the slot
+            const slot = this.shadowRoot.querySelector('slot');
+
+            if (slot !== null) {
+
+                slot.addEventListener('slotchange', this.addSlottedChildren);
+            }
+        }
+
+        willUnmount() {
+
+            // Remove the listener to listen for changes in the slot
+            const slot = this.shadowRoot.querySelector('slot');
+
+            if (slot !== null) {
+
+                slot.removeEventListener('slotchange', this.addSlottedChildren);
+            }
+        }
+
         // nodeDidUpdate(node, nodeChanges) {
 
         //     if (super.nodeDidUpdate) {

@@ -1,6 +1,8 @@
 import ContainerMixin from '../../../core/mixins/ContainerMixin';
 import { config } from '../../config';
 
+export const selectionChanged = 'selectionChanged';
+
 /**
  * Allows a component to be selectable
  * @param Base
@@ -73,7 +75,7 @@ const SelectableMixin = Base =>
 
                         this.setSelected(false);
 
-                        this.dispatchEvent(new CustomEvent('selectionChanged', {
+                        this.dispatchEvent(new CustomEvent(selectionChanged, {
                             detail: { 
                                 child: this,
                                 removed: this.props.value 
