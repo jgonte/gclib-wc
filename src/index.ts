@@ -4,6 +4,8 @@ export { Icon } from './components/icon/Icon';
 
 export { Text } from './components/text/Text';
 
+export { CloseTool } from './components/tool/closeTool/CloseTool';
+
 export { Alert } from './components/alert/Alert';
 
 export { Button } from './components/button/Button';

@@ -3059,6 +3059,41 @@ Text.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-text`, Text);
 
+//@ts-ignore
+class CloseTool extends SizableMixin(VariantMixin(CustomElement)) {
+    connectedCallback() {
+        var _a;
+        (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        const { close } = this.props;
+        this.addEventListener('click', close);
+    }
+    disconnectedCallback() {
+        var _a;
+        (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        const { close } = this.props;
+        this.removeEventListener('click', close);
+    }
+    render() {
+        const { variant, size } = this.props;
+        return (h(Fragment, { variant: variant, size: size }, "\u00D7"));
+    }
+}
+CloseTool.component = {
+    styleUrls: [
+        `${config.assetsFolder}/tool/closeTool/CloseTool.css`
+    ]
+};
+CloseTool.properties = {
+    /**
+     * What action to execute when the tool has been closed
+     */
+    close: {
+        type: Function
+    }
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-close-tool`, CloseTool);
+
 function getChildren(node) {
     if (node instanceof HTMLElement) {
         const slot = node.querySelector('slot');
@@ -3270,11 +3305,13 @@ const ContainerMixin = Base => { var _a; return _a = class Container extends Bas
 //@ts-ignore
 class Alert extends SizableMixin(ContainerMixin(CustomElement)) {
     render() {
-        const { type, size } = this.props;
+        const { type, size, closable } = this.props;
         return (h(Fragment, { class: "alert", type: type, size: size },
             this.renderIcon(),
             this.renderMessage(),
-            this.renderCloseButton()));
+            closable === true ?
+                (h("gcl-close-tool", { variant: this.getVariant(), size: size, close: this.close })) :
+                null));
     }
     renderIcon() {
         const { showIcon, icon, size } = this.props;
@@ -3315,13 +3352,9 @@ class Alert extends SizableMixin(ContainerMixin(CustomElement)) {
             default: return "danger";
         }
     }
-    renderCloseButton() {
-        const { closable, close, size } = this.props;
-        if (closable !== true) {
-            return null;
-        }
-        return (h("span", { class: "close-button", onClick: () => close === null || close === void 0 ? void 0 : close() },
-            h("gcl-text", { variant: this.getVariant(), size: size }, "\u00D7")));
+    connectedCallback() {
+        const { close } = this.props;
+        this.close = close === null || close === void 0 ? void 0 : close.bind(this);
     }
 }
 Alert.component = {
@@ -4248,7 +4281,7 @@ class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(Custom
 }
 Field.component = {
     styleUrls: [
-        `${config.assetsFolder}/Field/Field.css`
+        `${config.assetsFolder}/field/Field.css`
     ]
 };
 Field.properties = {
@@ -5518,4 +5551,4 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
-export { Alert, App, Button, ContactForm, ContactsList, Content, DateField, FileField, Form, Header, HiddenField, Icon, List, ListItem, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, NavigationBar, NavigationLink, NumberField, Overlay, Panel, Select, Table, Text, TextArea, TextField, ValidationSummary };
+export { Alert, App, Button, CloseTool, ContactForm, ContactsList, Content, DateField, FileField, Form, Header, HiddenField, Icon, List, ListItem, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, NavigationBar, NavigationLink, NumberField, Overlay, Panel, Select, Table, Text, TextArea, TextField, ValidationSummary };

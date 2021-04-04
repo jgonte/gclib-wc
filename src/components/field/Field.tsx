@@ -27,7 +27,7 @@ export abstract class Field extends
     static component = {
 
         styleUrls: [
-            `${config.assetsFolder}/Field/Field.css`
+            `${config.assetsFolder}/field/Field.css`
         ]
     };
 

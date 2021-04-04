@@ -66,21 +66,25 @@ export class Alert extends
         close: {
             type: Function
         }
-
     };
 
     render() {
 
         const {
             type,
-            size
-        } =this.props;
+            size,
+            closable
+        } = this.props;
 
         return (
             <Fragment class="alert" type={type} size={size}>
                 {this.renderIcon()}
                 {this.renderMessage()}
-                {this.renderCloseButton()}
+                {
+                    closable === true ?
+                        (<gcl-close-tool variant={this.getVariant()} size={size} close={this.close} />) :
+                        null
+                }
             </Fragment>
         );
     }
@@ -100,9 +104,7 @@ export class Alert extends
 
         return icon !== undefined ?
             { icon } :
-            (
-                <gcl-icon name={this.getDefaultIcon()} variant={this.getVariant()} size={size}></gcl-icon>
-            );
+            (<gcl-icon name={this.getDefaultIcon()} variant={this.getVariant()} size={size}></gcl-icon>);
     }
 
     renderMessage() {
@@ -138,6 +140,7 @@ export class Alert extends
         } = this.props;
 
         switch (type) {
+
             case "info": return "info-circle-fill";
             case "success": return "check-circle-fill";
             case "warning": return "exclamation-circle-fill";
@@ -152,6 +155,7 @@ export class Alert extends
         } = this.props;
 
         switch (type) {
+
             case "info": return "primary";
             case "success": return "success";
             case "warning": return "warning";
@@ -159,30 +163,15 @@ export class Alert extends
         }
     }
 
-    renderCloseButton() {
+    connectedCallback() {
 
         const {
-            closable,
-            close,
-            size
+            close
         } = this.props;
 
-        if (closable !== true) {
-
-            return null;
-        }
-
-        return (
-            <span class="close-button"
-                onClick={() => close?.()}
-            >
-                <gcl-text variant={this.getVariant()} size={size}>
-                    &times;
-                </gcl-text>
-
-            </span>
-        );
+        this.close = close?.bind(this);
     }
+
 }
 
 //@ts-ignore

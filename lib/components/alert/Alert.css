@@ -4,19 +4,6 @@
     justify-content: space-between;
 }
 
-.close-button {
-    margin-left: 15px;
-    font-weight: bold;
-    font-size: 22px;
-    line-height: 20px;
-    cursor: pointer;
-    transition: 0.3s;
-}
-
-.close-button:hover {
-    color: darkblue;
-}
-
 :host([type='info']) {
     background-color: var(--gcl-background-color-info);
     border: var(--gcl-border-width) solid var(--gcl-color-info);
