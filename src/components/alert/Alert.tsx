@@ -120,7 +120,7 @@ export class Alert extends
         if (message.isVirtualText) {
 
             return (
-                <gcl-text variant={this.getVariant()} size={size} >
+                <gcl-text variant={this.getVariant()} size={size} style="max-width: 80%;" >
                     {message}
                 </gcl-text>
             );

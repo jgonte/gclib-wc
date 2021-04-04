@@ -2756,6 +2756,7 @@ const VirtualDomMixin = Base => class VirtualDom extends Base {
         }
         // Modify the virtual node if necessary (i.e. add style) before diffing it, to keep it consistent with the mounted one
         node = this.onBeforeMount(node);
+        // Do the diffing
         const previousNode = this._mountedNode;
         const patches = diff(previousNode, node);
         if (!patches.hasPatches()) {
@@ -3290,7 +3291,7 @@ class Alert extends SizableMixin(ContainerMixin(CustomElement)) {
             return null;
         }
         if (message.isVirtualText) {
-            return (h("gcl-text", { variant: this.getVariant(), size: size }, message));
+            return (h("gcl-text", { variant: this.getVariant(), size: size, style: "max-width: 80%;" }, message));
         }
         else { // VirtualNode
             return message;
