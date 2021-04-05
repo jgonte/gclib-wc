@@ -19,152 +19,27 @@
 
 		<h4>Navigation Bar</h4>
 		<gcl-nav-bar link-clicked="showContent()">
-			<gcl-nav-link path="./home.html" active>Home</gcl-nav-link>
-			<gcl-nav-link path="./contact.html">Contact</gcl-nav-link>
-			<gcl-nav-link path="./about.html">About</gcl-nav-link>
+			<gcl-nav-link path="./views/icon.html" active>Icon</gcl-nav-link>
+			<gcl-nav-link path="./views/text.html">Text</gcl-nav-link>
+			<gcl-nav-link path="./views/button.html">Button</gcl-nav-link>
+			<gcl-nav-link path="./views/alert.html">Alert</gcl-nav-link>
+			<gcl-nav-link path="./views/overlay.html">Overlay</gcl-nav-link>
+			<gcl-nav-link path="./views/table.html">Table</gcl-nav-link>
+			<gcl-nav-link path="./views/form.html">Form</gcl-nav-link>
+			<gcl-nav-link path="./views/list.html">List</gcl-nav-link>
+			<gcl-nav-link path="./views/panel.html">Panel</gcl-nav-link>
+			<gcl-nav-link path="./views/counter.html">Counter</gcl-nav-link>
 		</gcl-nav-bar>
 
-		<gcl-content id="content" source="./home.html"></gcl-content>
-
-		<h4>Contacts list (it retrieves data from a back-end)</h4>
-		<contacts-list></contacts-list>
-
-		<h4>Contact form (it retrieves data from and posts to a back-end)</h4>
-		<contact-form load-url="http://localhost:60314/api/contacts/1"></contact-form>
-
-		<h4>Contact form (blank form)</h4>
-		<contact-form></contact-form>
-
-		<h4>Icons</h4>
-		<gcl-icon id="alarm-icon" name="alarm" variant="primary" size="large"></gcl-icon>
-		<gcl-icon name="alarm-fill" variant="secondary" size="medium"></gcl-icon>
-		<gcl-icon name="archive" variant="tertiary" size="small"></gcl-icon>
-		<gcl-icon name="calculator-fill" variant="success" size="large"></gcl-icon>
-		<gcl-icon name="calendar" variant="warning" size="large"></gcl-icon>
-		<gcl-icon name="camera-fill" variant="danger"></gcl-icon>
-		<gcl-icon name="camera-video-fill" variant="light" size="large"></gcl-icon>
-		<gcl-icon name="card-checklist" variant="medium"></gcl-icon>
-		<gcl-icon name="chat-fill" variant="dark"></gcl-icon>
-		<gcl-icon name="compass" size="large" style="color:magenta"></gcl-icon>
-		<gcl-icon name="arrow-right" size="large" variant="success" dir="rtl"></gcl-icon>
-		<gcl-icon name="chevron-right" size="large" variant="medium" dir="rtl"></gcl-icon>
-		<gcl-icon name="bug" style="color:orangered; font-size: 64px;"></gcl-icon>
-
-		<h4>Text</h4>
-		<gcl-text intl-key="goodMorning" variant="primary" size="large"></gcl-text>
-		<br />
-		<gcl-text intl-key="goodMorning" lang="fr" variant="secondary"></gcl-text>
-		<br />
-		<gcl-text value="Buenos días in value" variant="tertiary" size="small"></gcl-text>
-		<br />
-		<gcl-text variant="info" style="color:orangered; font-size: 64px;">Buenos días in slot</gcl-text>
-		<br />
-		<gcl-text intl-key="doesNotExistForAnylanguage" variant="warning"></gcl-text>
-		<br />
-		<gcl-text intl-key="goodMorning" lang="it" variant="success"></gcl-text>
-		<br />
-		<gcl-text intl-key="goodMorning" lang="de" variant="danger" style="color:magenta; font-size: 2.5rem;">
-		</gcl-text>
-		<br />
-
-		<h4>Panels</h4>
-		<gcl-panel>
-			<gcl-header slot="header">
-				<span slot="title">
-					<gcl-icon name="archive" variant="tertiary"></gcl-icon>
-					<gcl-text intl-key="goodMorning" lang="de" variant="secondary"></gcl-text>
-				</span>
-
-			</gcl-header>
-			<contacts-list slot="body"></contacts-list>
-			<div slot="footer">This is the footer!</div>
-		</gcl-panel>
-
-		<h4>Alerts</h4>
-		<gcl-alert message="Some info alert" size="large" close="onCloseAlert()"></gcl-alert>
-		<gcl-alert type="success" message="Some success alert"></gcl-alert>
-		<gcl-alert type="warning" message="Some warning alert" dir="rtl"></gcl-alert>
-		<gcl-alert type="error" message="Some error alert" size="small"></gcl-alert>
-
-		<h4>Button</h4>
-		<gcl-button size="small" click="onButtonClicked()">
-			<gcl-icon name="alarm-fill" variant="secondary"></gcl-icon>
-			<gcl-text>Some text</gcl-text>
-			<gcl-icon name="archive" variant="tertiary"></gcl-icon>
-		</gcl-button>
-		<br />
-		<gcl-button variant="primary" click="onButtonClicked()">
-			<gcl-icon name="alarm-fill"></gcl-icon>
-			<gcl-text>Some text</gcl-text>
-			<gcl-icon name="archive"></gcl-icon>
-		</gcl-button>
-		<br />
-		<gcl-button variant="success" size="large" click="onButtonClicked()" dir="rtl">
-			<gcl-icon name="alarm-fill"></gcl-icon>
-			<gcl-text>Some text</gcl-text>
-			<gcl-icon name="archive"></gcl-icon>
-		</gcl-button>
-		<br />
-
-		<!-- <h4>Overlay</h4>
-		<gcl-overlay id="loadingOverlay" visible="false">
-			<p style="background-color: white;">
-				Loading ...
-				<gcl-button variant="danger" click="closeLoadingOverlay()">Close Loading Overlay</gcl-button>
-			</p>
-		</gcl-overlay>
-
-		<gcl-button variant="success" click="showLoadingOverlay()">Show Loading Overlay</gcl-button> -->
-
-		<!-- Examples -->
-
-		<h4>Table</h4>
-		<my-table></my-table>
-
-		<h4>List Single Selection</h4>
-		<my-list-single-selection id="singleList"></my-list-single-selection>
-
-		<h4>List Single Selection with Data</h4>
-		<my-list-single-selection-load-data></my-list-single-selection-load-data>
-
-		<h4>List Single Selection with Empty Data</h4>
-		<my-list-single-selection-load-empty-data></my-list-single-selection-load-empty-data>
-
-		<h4>List Multiple Selection</h4>
-		<my-list-multiple-selection></my-list-multiple-selection>
-
-		<h4>My counter</h4>
-		<my-counter id="my-counter"></my-counter>
-		<input id="counterSetter" type='number' onchange="setCounter()" />
-
-		<!-- Buttons to operate the list -->
-		<gcl-button variant="primary" click="toggleSelectable()">
-			<gcl-icon name="alarm-fill" class="secondary"></gcl-icon>
-			<gcl-text class="text" id="toggleSelectableText" value="Selectable On"></gcl-text>
-		</gcl-button>
+		<gcl-content id="content" source="./views/icon.html"></gcl-content>
 
 		<h4>Validation Summary</h4>
 		<gcl-validation-summary size="small" warnings='["Warning 1", "Warning 2", "Warning 3"]'
 			errors='["Error 1", "Error 2", "Error 3"]' />
 
-		<h4>Field</h4>
-		<gcl-text-field label="Field 1" name="field1" value="abc" required />
-		<br />
-
-		<!-- <gcl-select name="select"></gcl-select>
-		<br /> -->
-
 	</gcl-app>
 
-	<div id="host"></div>
-
 	<script>
-
-		const alarmIcon = document.querySelector("#alarm-icon");
-
-		// setTimeout(function () {
-		// 	alarmIcon.setAttribute("variant", "tertiary");
-		// }, 10000)
 
 		function showContent(link) {
 
@@ -172,30 +47,6 @@
 
 			content.setAttribute("source", link.props.path);
 		}
-
-		function onButtonClicked() {
-
-			alert('Button clicked!');
-		}
-
-		function onCloseAlert() {
-
-			alert('Trying to close alert!');
-		}
-
-		function showLoadingOverlay() {
-
-			const cmp = document.querySelector("#loadingOverlay");
-
-			cmp.setVisible(true);
-		}
-
-		// function closeLoadingOverlay() {
-
-		// 	const cmp = document.querySelector("#loadingOverlay");
-
-		// 	cmp.setVisible(false);
-		// }
 
 		function changeName() {
 
@@ -213,12 +64,12 @@
 			myCounter.count = counterSetter.value;
 		}
 
-		function showSelection(selection) {
+		// function showSelection(selection) {
 
-			alert('selection: ' + JSON.stringify(selection));
-		}
+		// 	alert('selection: ' + JSON.stringify(selection));
+		// }
 
-		const app = document.querySelector('gcl-app');
+		//const app = document.querySelector('gcl-app');
 
 		// app.addEventListener('valueChanged', e => {
 		// 	alert('valueChanged: ' + JSON.stringify(e.detail));
@@ -237,32 +88,9 @@
 		// 	}));
 		// });
 
-		function toggleSelectable() {
 
-			const list = document.querySelector("#singleList");
-
-			const toggleSelectableText = document.querySelector("#toggleSelectableText");
-
-			list.setAttribute("selectable", !list.props.selectable);
-
-			toggleSelectableText.setValue(list.props.selectable ? "Selectable On" : "Selectable Off");
-		}
 
 	</script>
-
-	<!-- <script>
-
-    var host = document.querySelector('#host');
-    var root = host.attachShadow({mode: 'open'});
-    var svgElem = document.createElementNS('http://www.w3.org/2000/svg', 'svg'),
-      useElem = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-
-    useElem.setAttribute('href', 'lib/components/icon/assets/bootstrap-icons.svg#archive');
-
-    svgElem.appendChild(useElem);
-
-    root.appendChild(svgElem);
-  </script> -->
 
 </body>
 

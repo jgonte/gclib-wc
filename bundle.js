@@ -1225,6 +1225,32 @@ function formatDate(date, format, options) {
     }
 }
 
+var cache = {};
+var resourceLoader = {
+    get: function (path) {
+        return __awaiter(this, void 0, void 0, function () {
+            var content, response;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        content = cache[path];
+                        if (content !== undefined) {
+                            return [2, content];
+                        }
+                        return [4, fetch(path)];
+                    case 1:
+                        response = _a.sent();
+                        return [4, response.text()];
+                    case 2:
+                        content = _a.sent();
+                        cache[path] = content;
+                        return [2, content];
+                }
+            });
+        });
+    }
+};
+
 function isStandardEvent(name) {
     return [
         'onkeydown',
@@ -5136,10 +5162,9 @@ const linkClicked = 'linkClicked';
 //@ts-ignore
 class NavigationLink extends ActivatableMixin(SizableMixin(ChildMixin(CustomElement))) {
     render() {
-        const { label, size, active } = this.props;
-        return (h(Fragment, { size: size, active: active }, label !== undefined ?
-            (h("gcl-text", null, label)) :
-            (h("slot", null))));
+        const { size, active } = this.props;
+        return (h(Fragment, { size: size, active: active },
+            h("slot", null)));
     }
     onLinkClicked() {
         this.setActive(true);
@@ -5163,32 +5188,16 @@ class NavigationLink extends ActivatableMixin(SizableMixin(ChildMixin(CustomElem
     }
 }
 NavigationLink.component = {
-    //shadow: false,
     styleUrls: [
         `${config.assetsFolder}/navigationLink/NavigationLink.css`
     ]
 };
 NavigationLink.properties = {
     /**
-     * The key to retrieve a localized value from an i18n provider
+     * The path to the resource to navigate to
      */
-    intlKey: {
-        attribute: 'intl-key',
-        type: String
-    },
-    /**
-     * The label of the navigation item
-     */
-    label: {
-        type: String,
-        mutable: true,
-        reflect: true
-    },
     path: {
         type: String
-    },
-    content: {
-        type: VirtualNode
     }
 };
 //@ts-ignore
@@ -5258,27 +5267,51 @@ customElements.define(`${config.tagPrefix}-nav-bar`, NavigationBar);
 //@ts-ignore
 class Content extends CustomElement {
     render() {
-        const { source } = this.props;
-        return (h("iframe", { src: source, onload: () => {
-                const frame = this.document.children[0];
-                const { scrollHeight, offsetHeight, clientHeight } = frame.contentDocument.body;
-                const height = Math.max(scrollHeight, offsetHeight, clientHeight);
-                frame.style.height = height;
-            } }));
+        return (h(Fragment, null));
+    }
+    async attributeChangedCallback(attributeName, oldValue, newValue) {
+        var _a;
+        (_a = super.attributeChangedCallback) === null || _a === void 0 ? void 0 : _a.call(this, attributeName, oldValue, newValue);
+        if (attributeName === 'source' && oldValue !== newValue) {
+            const content = await resourceLoader.get(newValue);
+            this.document.innerHTML = content;
+        }
     }
 }
 Content.component = {
-    styleUrls: [
-        `${config.assetsFolder}/content/Content.css`
-    ]
+    shadow: false // Do not create a shadow DOM for this component!
 };
 Content.properties = {
+    /**
+     * The source to set the content from
+     */
     source: {
         type: String
     }
 };
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-content`, Content);
+
+/**
+ * Component to copy the scripts in the slot to the main application one.
+ * Since the scripts declared inside the views, do not work
+ */
+class Script extends CustomElement {
+    render() {
+        return (h("slot", null));
+    }
+    connectedCallback() {
+        // Find the page where the gcl-content is
+        const page = this.host.parent;
+        // Dynamically append a script with the
+        var script = document.createElement("script");
+        var inlineScript = document.createTextNode("alert('Hello World!');");
+        script.appendChild(inlineScript);
+        page.appendChild(script);
+    }
+}
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-script`, Script);
 
 class MyTable extends CustomElement {
     render() {
@@ -5551,4 +5584,4 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
-export { Alert, App, Button, CloseTool, ContactForm, ContactsList, Content, DateField, FileField, Form, Header, HiddenField, Icon, List, ListItem, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, NavigationBar, NavigationLink, NumberField, Overlay, Panel, Select, Table, Text, TextArea, TextField, ValidationSummary };
+export { Alert, App, Button, CloseTool, ContactForm, ContactsList, Content, DateField, FileField, Form, Header, HiddenField, Icon, List, ListItem, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, NavigationBar, NavigationLink, NumberField, Overlay, Panel, Script, Select, Table, Text, TextArea, TextField, ValidationSummary };

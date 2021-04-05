@@ -46,6 +46,8 @@ export { NavigationBar } from './components/navigationBar/NavigationBar';
 
 export { Content } from './components/content/Content';
 
+export { Script } from './components/script/Script';
+
 // examples
 export { MyTable } from '../examples/my-table';
 

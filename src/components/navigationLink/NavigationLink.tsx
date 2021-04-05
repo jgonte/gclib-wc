@@ -1,4 +1,4 @@
-import { Fragment, h, VirtualNode } from 'gclib-vdom';
+import { Fragment, h } from 'gclib-vdom';
 import CustomElement from '../../core/customElement/CustomElement';
 import { config } from '../../components/config';
 import ActivatableMixin from '../mixins/activatable/ActivatableMixin';
@@ -19,8 +19,6 @@ export class NavigationLink extends
 
     static component = {
 
-        //shadow: false,
-
         styleUrls: [
             `${config.assetsFolder}/navigationLink/NavigationLink.css`
         ]
@@ -29,46 +27,23 @@ export class NavigationLink extends
     static properties = {
 
         /**
-         * The key to retrieve a localized value from an i18n provider
+         * The path to the resource to navigate to
          */
-        intlKey: {
-            attribute: 'intl-key',
-            type: String
-        },
-
-        /** 
-         * The label of the navigation item
-         */
-        label: {
-            type: String,
-            mutable: true,
-            reflect: true
-        },
-
         path: {
             type: String
-        },
-
-        content: {
-            type: VirtualNode
         }
     };
 
     render() {
 
         const {
-            label,
             size,
             active
         } = this.props;
 
         return (
             <Fragment size={size} active={active}>
-                {
-                    label !== undefined ?
-                        (<gcl-text>{label}</gcl-text>) :
-                        (<slot />)
-                }
+                <slot />
             </Fragment>
         );
     }

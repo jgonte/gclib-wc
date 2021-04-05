@@ -1,0 +1,28 @@
+<h4>Button</h4>
+<gcl-button size="small" click="onButtonClicked()">
+    <gcl-icon name="alarm-fill" variant="secondary"></gcl-icon>
+    <gcl-text>Some text</gcl-text>
+    <gcl-icon name="archive" variant="tertiary"></gcl-icon>
+</gcl-button>
+<br />
+<gcl-button variant="primary" click="onButtonClicked()">
+    <gcl-icon name="alarm-fill"></gcl-icon>
+    <gcl-text>Some text</gcl-text>
+    <gcl-icon name="archive"></gcl-icon>
+</gcl-button>
+<br />
+<gcl-button variant="success" size="large" click="onButtonClicked()" dir="rtl">
+    <gcl-icon name="alarm-fill"></gcl-icon>
+    <gcl-text>Some text</gcl-text>
+    <gcl-icon name="archive"></gcl-icon>
+</gcl-button>
+<br />
+
+<script>
+
+    function onButtonClicked () {
+
+        alert('Button clicked!');
+    }
+
+</script>

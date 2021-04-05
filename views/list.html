@@ -1,0 +1,33 @@
+<h4>List Single Selection</h4>
+<my-list-single-selection id="singleList"></my-list-single-selection>
+
+<h4>List Single Selection with Data</h4>
+<my-list-single-selection-load-data></my-list-single-selection-load-data>
+
+<h4>List Single Selection with Empty Data</h4>
+<my-list-single-selection-load-empty-data></my-list-single-selection-load-empty-data>
+
+<h4>List Multiple Selection</h4>
+<my-list-multiple-selection></my-list-multiple-selection>
+
+<h4>Contacts list (it retrieves data from a back-end)</h4>
+<contacts-list></contacts-list>
+
+<!-- Buttons to operate the list -->
+<gcl-button variant="primary" click="toggleSelectable()">
+    <gcl-icon name="alarm-fill" class="secondary"></gcl-icon>
+    <gcl-text class="text" id="toggleSelectableText" value="Selectable On"></gcl-text>
+</gcl-button>
+
+<script>
+    function toggleSelectable() {
+
+        const list = document.querySelector("#singleList");
+
+        const toggleSelectableText = document.querySelector("#toggleSelectableText");
+
+        list.setAttribute("selectable", !list.props.selectable);
+
+        toggleSelectableText.setValue(list.props.selectable ? "Selectable On" : "Selectable Off");
+    }
+</script>

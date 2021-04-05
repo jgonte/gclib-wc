@@ -1,19 +1,21 @@
-import { h } from 'gclib-vdom';
+import { h, Fragment } from 'gclib-vdom';
 import CustomElement from '../../core/customElement/CustomElement';
 import { config } from '../../components/config';
+import { resourceLoader } from 'gclib-utils';
 
 //@ts-ignore
 export class Content extends CustomElement {
 
     static component = {
 
-        styleUrls: [
-            `${config.assetsFolder}/content/Content.css`
-        ]
+        shadow: false // Do not create a shadow DOM for this component!
     };
 
     static properties = {
 
+        /**
+         * The source to set the content from
+         */
         source: {
             type: String
         }
@@ -21,31 +23,19 @@ export class Content extends CustomElement {
 
     render() {
 
-        const {
-            source
-        } = this.props;
+        return (<Fragment></Fragment>);
+    }
 
-        return (
-            <iframe src={source} onload={() => {
+    async attributeChangedCallback(attributeName: string, oldValue: string, newValue: string) {
 
-                const frame = this.document.children[0];
-                
-                const {
-                    scrollHeight,
-                    offsetHeight,
-                    clientHeight
-                } = frame.contentDocument.body;
+        super.attributeChangedCallback?.(attributeName, oldValue, newValue);
 
-                const height = Math.max(
-                    scrollHeight,
-                    offsetHeight,
-                    clientHeight
-                );
+        if (attributeName === 'source' && oldValue !== newValue) {
 
-                frame.style.height = height;
+            const content = await resourceLoader.get(newValue);
 
-            }}></iframe>
-        );
+            this.document.innerHTML = content;
+        }
     }
 }
 

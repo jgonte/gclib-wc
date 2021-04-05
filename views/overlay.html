@@ -1,0 +1,27 @@
+<h4>Overlay</h4>
+<gcl-overlay id="loadingOverlay">
+    <p style="background-color: white;">
+        Loading ...
+        <gcl-button variant="danger" click="closeLoadingOverlay()">Close Loading Overlay</gcl-button>
+    </p>
+</gcl-overlay>
+
+<gcl-button variant="success" click="showLoadingOverlay()">Show Loading Overlay</gcl-button>
+
+<script>
+
+    function showLoadingOverlay() {
+
+        const cmp = document.querySelector("#loadingOverlay");
+
+        //cmp.setVisible(true);
+    }
+
+    function closeLoadingOverlay() {
+
+        const cmp = document.querySelector("#loadingOverlay");
+
+        cmp.setVisible(false);
+    }
+
+</script>
