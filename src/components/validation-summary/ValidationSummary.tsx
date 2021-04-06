@@ -1,6 +1,6 @@
 import { Fragment, h } from 'gclib-vdom';
 import CustomElement from '../../core/customElement/CustomElement';
-import { config } from '../../components/config';
+import { config } from '../config';
 import SizableMixin from '../mixins/sizable/SizableMixin';
 
 //@ts-ignore

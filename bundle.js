@@ -5274,7 +5274,32 @@ class Content extends CustomElement {
         (_a = super.attributeChangedCallback) === null || _a === void 0 ? void 0 : _a.call(this, attributeName, oldValue, newValue);
         if (attributeName === 'source' && oldValue !== newValue) {
             const content = await resourceLoader.get(newValue);
-            this.document.innerHTML = content;
+            const parser = new DOMParser();
+            // Even though it is a fragment, it creates a full HTML document
+            const body = parser.parseFromString(content, "text/html").body;
+            // Clear any previous content
+            while (this.document.firstChild) {
+                this.document.firstChild.remove();
+            }
+            const scripts = [];
+            Array.from(body.children).forEach(child => {
+                if (child.tagName === 'SCRIPT') {
+                    scripts.push(child);
+                }
+                else { // Add it to this component
+                    this.document.appendChild(child);
+                }
+            });
+            // Remove any scripts with the data-view attributes set
+            document.body.querySelectorAll('[data-view]').forEach(script => script.remove());
+            // At this point all the children were added. Execute the scripts if any
+            scripts.forEach(oldScript => {
+                const newScript = document.createElement("script");
+                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                newScript.setAttribute('data-view', newValue); // Set the view attribute so we can remove it when other views are selected
+                newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                document.body.appendChild(newScript);
+            });
         }
     }
 }
@@ -5291,27 +5316,6 @@ Content.properties = {
 };
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-content`, Content);
-
-/**
- * Component to copy the scripts in the slot to the main application one.
- * Since the scripts declared inside the views, do not work
- */
-class Script extends CustomElement {
-    render() {
-        return (h("slot", null));
-    }
-    connectedCallback() {
-        // Find the page where the gcl-content is
-        const page = this.host.parent;
-        // Dynamically append a script with the
-        var script = document.createElement("script");
-        var inlineScript = document.createTextNode("alert('Hello World!');");
-        script.appendChild(inlineScript);
-        page.appendChild(script);
-    }
-}
-//@ts-ignore
-customElements.define(`${config.tagPrefix}-script`, Script);
 
 class MyTable extends CustomElement {
     render() {
@@ -5584,4 +5588,4 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
-export { Alert, App, Button, CloseTool, ContactForm, ContactsList, Content, DateField, FileField, Form, Header, HiddenField, Icon, List, ListItem, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, NavigationBar, NavigationLink, NumberField, Overlay, Panel, Script, Select, Table, Text, TextArea, TextField, ValidationSummary };
+export { Alert, App, Button, CloseTool, ContactForm, ContactsList, Content, DateField, FileField, Form, Header, HiddenField, Icon, List, ListItem, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, NavigationBar, NavigationLink, NumberField, Overlay, Panel, Select, Table, Text, TextArea, TextField, ValidationSummary };

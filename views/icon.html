@@ -14,9 +14,11 @@
 <gcl-icon name="bug" style="color:orangered; font-size: 64px;"></gcl-icon>
 
 <script>
-    const alarmIcon = document.querySelector("#alarm-icon");
+
+    alert('Icon');
 
     setTimeout(function () {
+        const alarmIcon = document.querySelector("#alarm-icon");
         alarmIcon.setAttribute("variant", "tertiary");
     }, 5000);
 

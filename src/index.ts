@@ -4,7 +4,7 @@ export { Icon } from './components/icon/Icon';
 
 export { Text } from './components/text/Text';
 
-export { CloseTool } from './components/tool/closeTool/CloseTool';
+export { CloseTool } from './components/tool/close-tool/CloseTool';
 
 export { Alert } from './components/alert/Alert';
 
@@ -36,17 +36,15 @@ export { DateField } from './components/field/dateField/DateField';
 
 export { FileField } from './components/field/fileField/FileField';
 
-export { ValidationSummary} from './components/validationSummary/ValidationSummary';
+export { ValidationSummary} from './components/validation-summary/ValidationSummary';
 
 export { Form } from './components/form/Form';
 
-export { NavigationLink } from './components/navigationLink/NavigationLink';
+export { NavigationLink } from './components/navigation-link/NavigationLink';
 
-export { NavigationBar } from './components/navigationBar/NavigationBar';
+export { NavigationBar } from './components/navigation-bar/NavigationBar';
 
 export { Content } from './components/content/Content';
-
-export { Script } from './components/script/Script';
 
 // examples
 export { MyTable } from '../examples/my-table';

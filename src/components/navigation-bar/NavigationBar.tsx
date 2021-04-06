@@ -1,8 +1,8 @@
 import { Fragment, h } from 'gclib-vdom';
 import CustomElement from '../../core/customElement/CustomElement';
-import { config } from '../../components/config';
+import { config } from '../config';
 import SizableMixin from '../mixins/sizable/SizableMixin';
-import { linkClicked } from '../navigationLink/NavigationLink';
+import { linkClicked } from '../navigation-link/NavigationLink';
 import ContainerMixin from '../../core/mixins/ContainerMixin';
 
 //@ts-ignore

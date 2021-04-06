@@ -18,6 +18,7 @@
 	<gcl-app>
 
 		<h4>Navigation Bar</h4>
+		
 		<gcl-nav-bar link-clicked="showContent()">
 			<gcl-nav-link path="./views/icon.html" active>Icon</gcl-nav-link>
 			<gcl-nav-link path="./views/text.html">Text</gcl-nav-link>
@@ -29,14 +30,14 @@
 			<gcl-nav-link path="./views/list.html">List</gcl-nav-link>
 			<gcl-nav-link path="./views/panel.html">Panel</gcl-nav-link>
 			<gcl-nav-link path="./views/counter.html">Counter</gcl-nav-link>
+			<gcl-nav-link path="./views/validation-summary.html">Validation Summary</gcl-nav-link>
 		</gcl-nav-bar>
 
 		<gcl-content id="content" source="./views/icon.html"></gcl-content>
 
-		<h4>Validation Summary</h4>
-		<gcl-validation-summary size="small" warnings='["Warning 1", "Warning 2", "Warning 3"]'
-			errors='["Error 1", "Error 2", "Error 3"]' />
+		<footer>Copyright &copy;<gcl-current-year/>Green Components Software</footer>
 
+		
 	</gcl-app>
 
 	<script>
