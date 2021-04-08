@@ -14,7 +14,7 @@ export class CloseTool extends
 
     static component = {
         styleUrls: [
-            `${config.assetsFolder}/tool/closeTool/CloseTool.css`
+            `${config.assetsFolder}/tool/close-tool/CloseTool.css`
         ]
     };
 

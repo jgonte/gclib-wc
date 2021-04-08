@@ -15,11 +15,15 @@
 
 <script>
 
-    alert('Icon');
-
     setTimeout(function () {
+        
         const alarmIcon = document.querySelector("#alarm-icon");
-        alarmIcon.setAttribute("variant", "tertiary");
+
+        if (alarmIcon !== null) { // User might have left the page after the timeout was set
+
+            alarmIcon.setAttribute("variant", "tertiary");
+        }
+        
     }, 5000);
 
 </script>

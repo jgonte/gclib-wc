@@ -1,7 +1,7 @@
 import { h, Fragment } from 'gclib-vdom';
 import CustomElement from '../../core/customElement/CustomElement';
 import { config } from '../../components/config';
-import { resourceLoader } from 'gclib-utils';
+import { resourceLoader, Route, Router } from 'gclib-utils';
 
 //@ts-ignore
 export class Content extends CustomElement {
@@ -17,9 +17,26 @@ export class Content extends CustomElement {
          * The source to set the content from
          */
         source: {
+            type: String,
+            mutable: true,
+            reflect: true
+        },
+
+        /**
+         * The source to load when the route does not exist
+         */
+        notFound: {
+            attribute: 'not-found',
             type: String
         }
     };
+
+    constructor() {
+
+        super();
+
+        this.onRouteChanged = this.onRouteChanged.bind(this);
+    }
 
     render() {
 
@@ -75,6 +92,22 @@ export class Content extends CustomElement {
 
                 document.body.appendChild(newScript);
             });
+        }
+    }
+
+    onRouteChanged(route: Route, router: Router) {
+
+        if (route === undefined) {
+
+            const {
+                notFound
+            } = this.props;
+
+            this.setSource(notFound);
+        }
+        else {
+
+            this.setSource(route.view);
         }
     }
 }

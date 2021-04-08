@@ -1,5 +1,5 @@
 import resolve from 'rollup-plugin-node-resolve';
-import common from 'rollup-plugin-commonjs';
+import commonjs from 'rollup-plugin-commonjs';
 
 export default [{
   input: 'lib/src/index.js',
@@ -9,7 +9,7 @@ export default [{
   },
   context: 'window',
   plugins: [
-    common(),
+    commonjs(),
     resolve()
   ]
 }];

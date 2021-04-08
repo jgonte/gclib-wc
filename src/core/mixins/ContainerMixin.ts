@@ -27,10 +27,7 @@ const ContainerMixin = Base =>
 
             const children = event.target.assignedElements();
 
-            children.forEach(child => {
-
-                this.addChild(child);
-            });
+            children.forEach(child => this.addChild(child));
         }
 
         didMount() {
@@ -38,7 +35,18 @@ const ContainerMixin = Base =>
             // Add the listener to listen for changes in the slot
             const slot = this.shadowRoot.querySelector('slot');
 
-            if (slot !== null) {
+            if (slot === null) {
+
+                return; // There is no slot to get the children from
+            }
+
+            const children = slot.assignedElements();
+
+            if (children.length > 0) { // The children have been already loaded
+
+                children.forEach(child => this.addChild(child));
+            }
+            else { // Listen for any change in the slot
 
                 slot.addEventListener('slotchange', this.addSlottedChildren);
             }

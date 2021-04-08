@@ -1,3 +1,6 @@
+// Exports from external libraries
+export { Router } from 'gclib-utils';
+
 export { App } from './components/app/App';
 
 export { Icon } from './components/icon/Icon';
@@ -45,6 +48,10 @@ export { NavigationLink } from './components/navigation-link/NavigationLink';
 export { NavigationBar } from './components/navigation-bar/NavigationBar';
 
 export { Content } from './components/content/Content';
+
+export { CurrentYear } from './components/current-year/CurrentYear';
+
+
 
 // examples
 export { MyTable } from '../examples/my-table';

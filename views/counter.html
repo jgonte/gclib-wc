@@ -1,3 +1,18 @@
 <h4>My counter</h4>
 <my-counter id="my-counter"></my-counter>
 <input id="counterSetter" type='number' onchange="setCounter()" />
+
+<script>
+
+    alert('Counter');
+
+    function setCounter() {
+
+        const myCounter = document.querySelector("#my-counter");
+
+        const counterSetter = document.querySelector("#counterSetter");
+
+        myCounter.count = counterSetter.value;
+    }
+
+</script>

@@ -1251,6 +1251,45 @@ var resourceLoader = {
     }
 };
 
+var Router = (function (_super) {
+    __extends(Router, _super);
+    function Router(routes) {
+        var _this = _super.call(this, 'onRouteChanged') || this;
+        _this.routes = [];
+        _this.routes = routes;
+        _this.onRouteChange = _this.onRouteChange.bind(_this);
+        window.addEventListener('hashchange', _this.onRouteChange);
+        return _this;
+    }
+    Router.prototype.initialize = function () {
+        var currentPath = window.location.hash.substr(1);
+        var route = this.routes.filter(function (r) { return r.path === currentPath; })[0];
+        if (route === undefined) {
+            route = this.routes.filter(function (r) { return r.default === true; })[0];
+            window.location.hash = "#" + route.path;
+        }
+        else {
+            this.notify(route);
+        }
+    };
+    Router.prototype.onRouteChange = function (event) {
+        var currentPath = window.location.hash.substr(1);
+        var route = this.routes.filter(function (r) { return r.path === currentPath; })[0];
+        this.notify(route);
+    };
+    Router.prototype.navigate = function (path) {
+        if (path === undefined) {
+            var route = this.routes.filter(function (r) { return r.default === true; })[0];
+            window.location.hash = "#" + route.path;
+        }
+        else {
+            var route = this.routes.filter(function (r) { return r.path === path; })[0];
+            window.location.hash = route !== undefined ? "#" + route.path : '#/notFound';
+        }
+    };
+    return Router;
+}(Observer));
+
 function isStandardEvent(name) {
     return [
         'onkeydown',
@@ -3106,7 +3145,7 @@ class CloseTool extends SizableMixin(VariantMixin(CustomElement)) {
 }
 CloseTool.component = {
     styleUrls: [
-        `${config.assetsFolder}/tool/closeTool/CloseTool.css`
+        `${config.assetsFolder}/tool/close-tool/CloseTool.css`
     ]
 };
 CloseTool.properties = {
@@ -3180,14 +3219,19 @@ const ContainerMixin = Base => { var _a; return _a = class Container extends Bas
         }
         addSlottedChildren(event) {
             const children = event.target.assignedElements();
-            children.forEach(child => {
-                this.addChild(child);
-            });
+            children.forEach(child => this.addChild(child));
         }
         didMount() {
             // Add the listener to listen for changes in the slot
             const slot = this.shadowRoot.querySelector('slot');
-            if (slot !== null) {
+            if (slot === null) {
+                return; // There is no slot to get the children from
+            }
+            const children = slot.assignedElements();
+            if (children.length > 0) { // The children have been already loaded
+                children.forEach(child => this.addChild(child));
+            }
+            else { // Listen for any change in the slot
                 slot.addEventListener('slotchange', this.addSlottedChildren);
             }
         }
@@ -5189,14 +5233,14 @@ class NavigationLink extends ActivatableMixin(SizableMixin(ChildMixin(CustomElem
 }
 NavigationLink.component = {
     styleUrls: [
-        `${config.assetsFolder}/navigationLink/NavigationLink.css`
+        `${config.assetsFolder}/navigation-link/NavigationLink.css`
     ]
 };
 NavigationLink.properties = {
     /**
-     * The path to the resource to navigate to
+     * The name of the path to append to the URL
      */
-    path: {
+    to: {
         type: String
     }
 };
@@ -5205,6 +5249,10 @@ customElements.define(`${config.tagPrefix}-nav-link`, NavigationLink);
 
 //@ts-ignore
 class NavigationBar extends SizableMixin(ContainerMixin(CustomElement)) {
+    constructor() {
+        super();
+        this.onRouteChanged = this.onRouteChanged.bind(this);
+    }
     render() {
         const { links, size, variant } = this.props;
         return (h(Fragment, { size: size, variant: variant }, links !== undefined ?
@@ -5213,7 +5261,7 @@ class NavigationBar extends SizableMixin(ContainerMixin(CustomElement)) {
     }
     renderLinks() {
         const { links } = this.props;
-        return links.map(link => h("gcl-nav-link", { path: link.path }, link.Label));
+        return links.map(link => h("gcl-nav-link", { path: link.path, view: link.view, size: link.size }, link.Label));
     }
     linkClicked(event) {
         var _a, _b;
@@ -5221,8 +5269,12 @@ class NavigationBar extends SizableMixin(ContainerMixin(CustomElement)) {
         const { activeLink } = this.state;
         if (link !== activeLink) {
             (_b = (_a = this.props).linkClicked) === null || _b === void 0 ? void 0 : _b.call(_a, link);
+            //link.setAttribute('active', true);
             activeLink === null || activeLink === void 0 ? void 0 : activeLink.setAttribute('active', false);
             this.setActiveLink(link);
+            if (this.router !== undefined) {
+                this.router.navigate(link.props.to);
+            }
         }
     }
     connectedCallback() {
@@ -5240,11 +5292,42 @@ class NavigationBar extends SizableMixin(ContainerMixin(CustomElement)) {
             this.setActiveLink(child);
         }
     }
+    onRouteChanged(route, router) {
+        // Save the router so we can navigate on click
+        this.router = router;
+        if (route === undefined) { // Not found route
+            return;
+        }
+        if (!this.setActiveLinkFromRoute(route)) {
+            this.route = route; // Save the route to retry on didMount;
+        }
+    }
+    didMount() {
+        super.didMount();
+        if (this.route !== undefined) {
+            this.setActiveLinkFromRoute(this.route);
+            this.route = undefined;
+        }
+    }
+    setActiveLinkFromRoute(route) {
+        const { children, activeLink } = this.state;
+        if ((children === null || children === void 0 ? void 0 : children.length) === 0) {
+            return false;
+        }
+        const link = children.filter(l => l.props.to === route.path)[0];
+        if (link === activeLink) {
+            return; // The link is already active
+        }
+        link.setAttribute('active', true);
+        activeLink === null || activeLink === void 0 ? void 0 : activeLink.setAttribute('active', false);
+        this.setActiveLink(link);
+        return true;
+    }
 }
 NavigationBar.component = {
     //shadow: false,
     styleUrls: [
-        `${config.assetsFolder}/navigationBar/NavigationBar.css`
+        `${config.assetsFolder}/navigation-bar/NavigationBar.css`
     ]
 };
 NavigationBar.properties = {
@@ -5257,6 +5340,9 @@ NavigationBar.properties = {
     }
 };
 NavigationBar.state = {
+    /**
+     * To track the last active link to deactivate it when other is selected
+     */
     activeLink: {
         value: undefined
     }
@@ -5266,6 +5352,10 @@ customElements.define(`${config.tagPrefix}-nav-bar`, NavigationBar);
 
 //@ts-ignore
 class Content extends CustomElement {
+    constructor() {
+        super();
+        this.onRouteChanged = this.onRouteChanged.bind(this);
+    }
     render() {
         return (h(Fragment, null));
     }
@@ -5302,6 +5392,15 @@ class Content extends CustomElement {
             });
         }
     }
+    onRouteChanged(route, router) {
+        if (route === undefined) {
+            const { notFound } = this.props;
+            this.setSource(notFound);
+        }
+        else {
+            this.setSource(route.view);
+        }
+    }
 }
 Content.component = {
     shadow: false // Do not create a shadow DOM for this component!
@@ -5311,11 +5410,29 @@ Content.properties = {
      * The source to set the content from
      */
     source: {
+        type: String,
+        mutable: true,
+        reflect: true
+    },
+    /**
+     * The source to load when the route does not exist
+     */
+    notFound: {
+        attribute: 'not-found',
         type: String
     }
 };
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-content`, Content);
+
+//@ts-ignore
+class CurrentYear extends CustomElement {
+    render() {
+        return new Date().getFullYear();
+    }
+}
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-current-year`, CurrentYear);
 
 class MyTable extends CustomElement {
     render() {
@@ -5588,4 +5705,4 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
-export { Alert, App, Button, CloseTool, ContactForm, ContactsList, Content, DateField, FileField, Form, Header, HiddenField, Icon, List, ListItem, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, NavigationBar, NavigationLink, NumberField, Overlay, Panel, Select, Table, Text, TextArea, TextField, ValidationSummary };
+export { Alert, App, Button, CloseTool, ContactForm, ContactsList, Content, CurrentYear, DateField, FileField, Form, Header, HiddenField, Icon, List, ListItem, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, NavigationBar, NavigationLink, NumberField, Overlay, Panel, Router, Select, Table, Text, TextArea, TextField, ValidationSummary };

@@ -4,6 +4,7 @@ import { config } from '../config';
 import SizableMixin from '../mixins/sizable/SizableMixin';
 import { linkClicked } from '../navigation-link/NavigationLink';
 import ContainerMixin from '../../core/mixins/ContainerMixin';
+import { Route, Router } from 'gclib-utils';
 
 //@ts-ignore
 export class NavigationBar extends
@@ -18,7 +19,7 @@ export class NavigationBar extends
         //shadow: false,
 
         styleUrls: [
-            `${config.assetsFolder}/navigationBar/NavigationBar.css`
+            `${config.assetsFolder}/navigation-bar/NavigationBar.css`
         ]
     };
 
@@ -36,9 +37,19 @@ export class NavigationBar extends
 
     static state = {
 
+        /**
+         * To track the last active link to deactivate it when other is selected
+         */
         activeLink: {
             value: undefined
         }
+    }
+
+    constructor() {
+
+        super();
+
+        this.onRouteChanged = this.onRouteChanged.bind(this);
     }
 
     render() {
@@ -66,7 +77,7 @@ export class NavigationBar extends
             links
         } = this.props;
 
-        return links.map(link => <gcl-nav-link path={link.path}>{link.Label}</gcl-nav-link>);
+        return links.map(link => <gcl-nav-link path={link.path} view={link.view} size={link.size}>{link.Label}</gcl-nav-link>);
     }
 
     linkClicked(event) {
@@ -81,9 +92,16 @@ export class NavigationBar extends
 
             this.props.linkClicked?.(link);
 
+            //link.setAttribute('active', true);
+
             activeLink?.setAttribute('active', false);
 
             this.setActiveLink(link);
+
+            if (this.router !== undefined) {
+
+                this.router.navigate(link.props.to);
+            }
         }
     }
 
@@ -104,9 +122,65 @@ export class NavigationBar extends
     onChildAdded(child: HTMLElement) {
 
         if ((child as any).props.active === true) {
-             
+
             this.setActiveLink(child);
         }
+    }
+
+    onRouteChanged(route: Route, router: Router) {
+
+        // Save the router so we can navigate on click
+        this.router = router;
+
+        if (route === undefined) { // Not found route
+
+            return;
+        }
+
+        if (!this.setActiveLinkFromRoute(route)) {
+
+            this.route = route; // Save the route to retry on didMount;
+        }
+    }
+
+    didMount() {
+
+        super.didMount();
+
+        if (this.route !== undefined) {
+
+            this.setActiveLinkFromRoute(this.route);
+
+            this.route = undefined;
+        } 
+    }
+
+    setActiveLinkFromRoute(route: Route): boolean {
+
+        const {
+            children,
+            activeLink
+        } = this.state;
+
+        if (children?.length === 0) {
+
+            return false;
+        }
+
+        const link = children.filter(l => l.props.to === route.path)[0];
+
+        if (link === activeLink) {
+
+            return; // The link is already active
+        }
+
+        link.setAttribute('active', true);
+
+        activeLink?.setAttribute('active', false);
+
+        this.setActiveLink(link);
+
+        return true;
     }
 }
 

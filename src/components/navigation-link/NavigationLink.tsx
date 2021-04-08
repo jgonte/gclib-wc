@@ -1,9 +1,9 @@
 import { Fragment, h } from 'gclib-vdom';
 import CustomElement from '../../core/customElement/CustomElement';
-import { config } from '../config';
 import ActivatableMixin from '../mixins/activatable/ActivatableMixin';
 import SizableMixin from '../mixins/sizable/SizableMixin';
 import ChildMixin from '../../core/mixins/ChildMixin';
+import { config } from '../config';
 
 export const linkClicked = 'linkClicked';
 
@@ -20,16 +20,16 @@ export class NavigationLink extends
     static component = {
 
         styleUrls: [
-            `${config.assetsFolder}/navigationLink/NavigationLink.css`
+            `${config.assetsFolder}/navigation-link/NavigationLink.css`
         ]
     };
 
     static properties = {
 
         /**
-         * The path to the resource to navigate to
+         * The name of the path to append to the URL
          */
-        path: {
+        to: {
             type: String
         }
     };

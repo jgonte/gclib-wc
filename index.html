@@ -17,79 +17,57 @@
 
 	<gcl-app>
 
-		<h4>Navigation Bar</h4>
-		
-		<gcl-nav-bar link-clicked="showContent()">
-			<gcl-nav-link path="./views/icon.html" active>Icon</gcl-nav-link>
-			<gcl-nav-link path="./views/text.html">Text</gcl-nav-link>
-			<gcl-nav-link path="./views/button.html">Button</gcl-nav-link>
-			<gcl-nav-link path="./views/alert.html">Alert</gcl-nav-link>
-			<gcl-nav-link path="./views/overlay.html">Overlay</gcl-nav-link>
-			<gcl-nav-link path="./views/table.html">Table</gcl-nav-link>
-			<gcl-nav-link path="./views/form.html">Form</gcl-nav-link>
-			<gcl-nav-link path="./views/list.html">List</gcl-nav-link>
-			<gcl-nav-link path="./views/panel.html">Panel</gcl-nav-link>
-			<gcl-nav-link path="./views/counter.html">Counter</gcl-nav-link>
-			<gcl-nav-link path="./views/validation-summary.html">Validation Summary</gcl-nav-link>
+		<h4>Green Components Demo</h4>
+
+		<gcl-nav-bar id="app-nav-bar">
+			<gcl-nav-link to="/">Icon</gcl-nav-link>
+			<gcl-nav-link to="/text">Text</gcl-nav-link>
+			<gcl-nav-link to="/button">Button</gcl-nav-link>
+			<gcl-nav-link to="/alert">Alert</gcl-nav-link>
+			<gcl-nav-link to="/overlay">Overlay</gcl-nav-link>
+			<gcl-nav-link to="/table">Table</gcl-nav-link>
+			<gcl-nav-link to="/form">Form</gcl-nav-link>
+			<gcl-nav-link to="/list">List</gcl-nav-link>
+			<gcl-nav-link to="/panel">Panel</gcl-nav-link>
+			<gcl-nav-link to="/counter">Counter</gcl-nav-link>
+			<gcl-nav-link to="/validation-summary">Validation Summary</gcl-nav-link>
+			<gcl-nav-link to="/appointments">Appointments</gcl-nav-link>
 		</gcl-nav-bar>
 
-		<gcl-content id="content" source="./views/icon.html"></gcl-content>
+		<gcl-content id="app-content" not-found="./not-found.html"></gcl-content>
 
-		<footer>Copyright &copy;<gcl-current-year/>Green Components Software</footer>
+		<footer>Copyright &copy;<gcl-current-year></gcl-current-year>Green Components Software</footer>
 
-		
 	</gcl-app>
 
-	<script>
+	<script type="module">
 
-		function showContent(link) {
+		import { Router } from './bundle.js';
 
-			const content = document.getElementById('content');
+		var appRouter = new Router([
+			{ path: '/', view: './views/icon.html', default: true },
+			{ path: '/text', view: './views/text.html' },
+			{ path: '/button', view: './views/button.html' },
+			{ path: '/alert', view: './views/alert.html' },
+			{ path: '/overlay', view: './views/overlay.html' },
+			{ path: '/table', view: './views/table.html' },
+			{ path: '/form', view: './views/form.html' },
+			{ path: '/list', view: './views/list.html' },
+			{ path: '/panel', view: './views/panel.html' },
+			{ path: '/counter', view: './views/counter.html' },
+			{ path: '/validation-summary', view: './views/validation-summary.html' },
+			{ path: '/appointments', view: './views/appointments.html' }
+		]);
 
-			content.setAttribute("source", link.props.path);
-		}
+		const appNavBar = document.getElementById('app-nav-bar');
 
-		function changeName() {
+		appRouter.subscribe(appNavBar);
 
-			const myElement = document.querySelector("#myElement");
+		const appContent = document.getElementById('app-content');
 
-			myElement.setAttribute("name", "Some other name");
-		}
+		appRouter.subscribe(appContent);
 
-		function setCounter() {
-
-			const myCounter = document.querySelector("#my-counter");
-
-			const counterSetter = document.querySelector("#counterSetter");
-
-			myCounter.count = counterSetter.value;
-		}
-
-		// function showSelection(selection) {
-
-		// 	alert('selection: ' + JSON.stringify(selection));
-		// }
-
-		//const app = document.querySelector('gcl-app');
-
-		// app.addEventListener('valueChanged', e => {
-		// 	alert('valueChanged: ' + JSON.stringify(e.detail));
-		// });
-
-		// app.addEventListener('selectionChanged', e => {
-
-		// 	const {
-		// 		added,
-		// 		removed
-		// 	} = e.detail;
-
-		// 	alert('selectionChanged: ' + JSON.stringify({
-		// 		added,
-		// 		removed
-		// 	}));
-		// });
-
-
+		appRouter.initialize();
 
 	</script>
 
