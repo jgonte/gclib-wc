@@ -73,7 +73,8 @@ export class Alert extends
         const {
             type,
             size,
-            closable
+            closable,
+            close
         } = this.props;
 
         return (
@@ -82,7 +83,7 @@ export class Alert extends
                 {this.renderMessage()}
                 {
                     closable === true ?
-                        (<gcl-close-tool variant={this.getVariant()} size={size} close={this.close} />) :
+                        (<gcl-close-tool variant={this.getVariant()} size={size} close={close} />) :
                         null
                 }
             </Fragment>
@@ -162,16 +163,6 @@ export class Alert extends
             default: return "danger";
         }
     }
-
-    connectedCallback() {
-
-        const {
-            close
-        } = this.props;
-
-        this.close = close?.bind(this);
-    }
-
 }
 
 //@ts-ignore

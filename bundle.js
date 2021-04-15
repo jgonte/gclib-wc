@@ -3375,12 +3375,12 @@ const ContainerMixin = Base => { var _a; return _a = class Container extends Bas
 //@ts-ignore
 class Alert extends SizableMixin(ContainerMixin(CustomElement)) {
     render() {
-        const { type, size, closable } = this.props;
+        const { type, size, closable, close } = this.props;
         return (h(Fragment, { class: "alert", type: type, size: size },
             this.renderIcon(),
             this.renderMessage(),
             closable === true ?
-                (h("gcl-close-tool", { variant: this.getVariant(), size: size, close: this.close })) :
+                (h("gcl-close-tool", { variant: this.getVariant(), size: size, close: close })) :
                 null));
     }
     renderIcon() {
@@ -3421,10 +3421,6 @@ class Alert extends SizableMixin(ContainerMixin(CustomElement)) {
             case "warning": return "warning";
             default: return "danger";
         }
-    }
-    connectedCallback() {
-        const { close } = this.props;
-        this.close = close === null || close === void 0 ? void 0 : close.bind(this);
     }
 }
 Alert.component = {

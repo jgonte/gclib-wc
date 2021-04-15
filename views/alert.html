@@ -1,14 +1,21 @@
-<h4>Alerts</h4>
-<gcl-alert message="Some info alert" size="large" close="onCloseAlert()"></gcl-alert>
-<gcl-alert type="success" message="Some success alert"  close="onCloseAlert()"></gcl-alert>
-<gcl-alert type="warning" message="Some warning alert" dir="rtl" close="onCloseAlert()"></gcl-alert>
-<gcl-alert type="error" message="Some error alert" size="small" close="onCloseAlert()"></gcl-alert>
+<head>
 
-<script>
+    <script>
 
-    function onCloseAlert() {
+        function onCloseAlert() {
 
-        
-        alert('Trying to close alert!');
-    }
-</script>
+            alert('Trying to close alert!');
+        }
+    </script>
+
+</head>
+
+<body>
+
+    <h4>Alerts</h4>
+    <gcl-alert message="Some info alert" size="large" close="onCloseAlert()"></gcl-alert>
+    <gcl-alert type="success" message="Some success alert" close="onCloseAlert()"></gcl-alert>
+    <gcl-alert type="warning" message="Some warning alert" dir="rtl" close="onCloseAlert()"></gcl-alert>
+    <gcl-alert type="error" message="Some error alert" size="small" close="onCloseAlert()"></gcl-alert>
+
+</body>
