@@ -3,7 +3,19 @@ import CustomElement from '../../core/customElement/CustomElement';
 import { config } from '../../components/config';
 import { resourceLoader, Route, Router } from 'gclib-utils';
 
-//@ts-ignore
+function createScriptNode(oldScript: Element, newValue: string) {
+
+    const newScript = document.createElement("script");
+
+    Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute((attr as any).name, (attr as any).value));
+
+    newScript.setAttribute('data-view', newValue); // Set the view attribute so we can remove it when other views are selected
+
+    newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+
+    return newScript;
+}
+
 export class Content extends CustomElement {
 
     static component = {
@@ -45,7 +57,7 @@ export class Content extends CustomElement {
 
     async attributeChangedCallback(attributeName: string, oldValue: string, newValue: string) {
 
-        super.attributeChangedCallback?.(attributeName, oldValue, newValue);
+        super.attributeChangedCallback ?.(attributeName, oldValue, newValue);
 
         if (attributeName === 'source' && oldValue !== newValue) {
 
@@ -54,7 +66,10 @@ export class Content extends CustomElement {
             const parser = new DOMParser();
 
             // Even though it is a fragment, it creates a full HTML document
-            const body = parser.parseFromString(content, "text/html").body;
+            const {
+                head,
+                body
+            } = parser.parseFromString(content, "text/html");
 
             // Clear any previous content
             while (this.document.firstChild) {
@@ -62,35 +77,39 @@ export class Content extends CustomElement {
                 this.document.firstChild.remove();
             }
 
-            const scripts = [];
+            // Remove any scripts with the data-view attributes set
+            document.head.querySelectorAll('[data-view]').forEach(script => script.remove());
 
+            document.body.querySelectorAll('[data-view]').forEach(script => script.remove());
+
+            // Add any script that appears in the head
+            Array.from(head.children).forEach(child => {
+
+                if (child.tagName === 'SCRIPT') {
+
+                    const newScript = createScriptNode(child, newValue);
+
+                    document.head.appendChild(newScript);
+                }
+                else { // Maybe CSS or Meta
+
+                    throw Error('Not implemented');
+                }
+            });
+
+            // Add the new content
             Array.from(body.children).forEach(child => {
 
                 if (child.tagName === 'SCRIPT') {
 
-                    scripts.push(child);
+                    const newScript = createScriptNode(child, newValue);
+
+                    document.body.appendChild(newScript);
                 }
                 else { // Add it to this component
 
                     this.document.appendChild(child);
                 }
-            });
-
-            // Remove any scripts with the data-view attributes set
-            document.body.querySelectorAll('[data-view]').forEach(script => script.remove());
-
-            // At this point all the children were added. Execute the scripts if any
-            scripts.forEach(oldScript => {
-
-                const newScript = document.createElement("script");
-
-                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute((attr as any).name, (attr as any).value));
-
-                newScript.setAttribute('data-view', newValue); // Set the view attribute so we can remove it when other views are selected
-
-                newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-
-                document.body.appendChild(newScript);
             });
         }
     }
@@ -114,3 +133,5 @@ export class Content extends CustomElement {
 
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-content`, Content);
+
+
