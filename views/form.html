@@ -1,5 +1,47 @@
 <h4>Contact form (it retrieves data from and posts to a back-end)</h4>
-<contact-form load-url="http://localhost:60314/api/contacts/1"></contact-form>
+
+<gcl-form submit-url="http://localhost:60314/api/contacts/" load-url="http://localhost:60314/api/contacts/1">
+
+    <gcl-hidden-field name="id" is-id="true"></gcl-hidden-field>
+
+    <gcl-text-field label="Name" name="name" required></gcl-text-field>
+
+    <gcl-select label="Gender" name="gender" load-url="http://localhost:60314/api/genders" empty-option='{
+            "label": "--Please choose an option--",
+            "value": ""
+        }' required>
+    </gcl-select>
+
+    <gcl-date-field label="Date of Birth" name="dateOfBirth" required></gcl-date-field>
+
+    <gcl-number-field label="Reputation" name="reputation" min="1" max="10" required></gcl-number-field>
+
+    <gcl-text-area label="Description" name="description" rows="5" cols="30" required></gcl-text-area>
+
+    <gcl-file-field label="Avatar" name="avatar" required></gcl-file-field>
+
+</gcl-form>
 
 <h4>Contact form (blank form)</h4>
-<contact-form></contact-form>
+
+<gcl-form submit-url="http://localhost:60314/api/contacts/">
+
+    <gcl-hidden-field name="id" is-id="true"></gcl-hidden-field>
+
+    <gcl-text-field label="Name" name="name" required></gcl-text-field>
+
+    <gcl-select label="Gender" name="gender" load-url="http://localhost:60314/api/genders" empty-option='{
+            "label": "--Please choose an option--",
+            "value": ""
+        }' required>
+    </gcl-select>
+
+    <gcl-date-field label="Date of Birth" name="dateOfBirth" required></gcl-date-field>
+
+    <gcl-number-field label="Reputation" name="reputation" min="1" max="10" required></gcl-number-field>
+
+    <gcl-text-area label="Description" name="description" rows="5" cols="30" required></gcl-text-area>
+
+    <gcl-file-field label="Avatar" name="avatar" required></gcl-file-field>
+
+</gcl-form>

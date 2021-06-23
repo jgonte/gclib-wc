@@ -38,7 +38,7 @@ const SelectableMixin = Base =>
                 type: Boolean,       
                 mutable: true,
                 reflect: true,
-                passToChildren: true // Maybe the children want to show some UI that they were selected
+                //passToChildren: true // Maybe the children want to show some UI that they were selected
             },
 
             /**

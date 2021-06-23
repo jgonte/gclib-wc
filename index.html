@@ -1,4 +1,3 @@
-<html>
 <!DOCTYPE html>
 <html dir="ltr" lang="en">
 
@@ -11,13 +10,19 @@
 
 	<script type="module" src="bundle.js"></script>
 
+	<script type="text/javascript" src="./config/app-config.js"></script>
+
 </head>
 
 <body>
 
 	<gcl-app>
 
-		<h4>Green Components Demo</h4>
+		<gcl-row>
+			<h4>Green Components Demo</h4>
+
+			<gcl-login-section id="login-section"></gcl-login-section>
+		</gcl-row>
 
 		<gcl-nav-bar id="app-nav-bar">
 			<gcl-nav-link to="/">Icon</gcl-nav-link>

@@ -64,15 +64,21 @@ const ErrorableMixin = Base =>
 
                 if (error.payload !== undefined) {
 
-                    const payload = JSON.parse(error.payload);
+                    if (typeof error.payload === 'string') {
 
-                    if (payload.errors !== undefined) {
-
-                        return Object.values(payload.errors).join('\n');
+                        return error.payload;
                     }
-                    else if (payload.title !== undefined) {
+                    else {
+                        const payload = JSON.parse(error.payload);
 
-                        return payload.title;
+                        if (payload.errors !== undefined) {
+
+                            return Object.values(payload.errors).join('\n');
+                        }
+                        else if (payload.title !== undefined) {
+
+                            return payload.title;
+                        }
                     }
                 }
                 else {

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    </head>
+    
+    <body>
+        <script type="module">
+
+            import { OidcProvider } from '../bundle.js';
+    
+            new OidcProvider({ response_mode: "query" }).onLogin();
+    
+        </script>
+    </body>
+</html>

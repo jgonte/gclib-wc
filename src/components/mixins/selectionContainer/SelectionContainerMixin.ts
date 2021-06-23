@@ -39,6 +39,7 @@ const SelectionContainerMixin = Base =>
              * The callback when the selection is changed
              */
             selectionChanged: {
+                attribute: 'selection-changed',
                 type: Function
             }
         };
@@ -53,9 +54,9 @@ const SelectionContainerMixin = Base =>
             }
         };
 
-        constructor() {
+        connectedCallback() {
 
-            super();
+            super.connectedCallback();
 
             this.updateSelection = this.updateSelection.bind(this);
         }

@@ -244,7 +244,7 @@ const ContainerMixin = Base =>
 
                 if ((child as any).props?.hasOwnProperty(name)) {
 
-                    if ((child as any).props[name] === newValue) { // A value different from the default one has not been set
+                    if ((child as any).props[name] !== newValue) { // The value is different from the current one
 
                         child.setAttribute(attributeName, this.props[name]);
                     }

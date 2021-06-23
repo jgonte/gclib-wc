@@ -91,10 +91,10 @@ export class Content extends CustomElement {
 
                     document.head.appendChild(newScript);
                 }
-                else { // Maybe CSS or Meta
+                // else { // Maybe CSS or Meta
 
-                    throw Error('Not implemented');
-                }
+                //     throw Error('Not implemented');
+                // }
             });
 
             // Add the new content

@@ -1,33 +1,65 @@
-<h4>List Single Selection</h4>
-<my-list-single-selection id="singleList"></my-list-single-selection>
+<head>
+    <script>
 
-<h4>List Single Selection with Data</h4>
-<my-list-single-selection-load-data></my-list-single-selection-load-data>
+        function showSelection(selection) {
 
-<h4>List Single Selection with Empty Data</h4>
-<my-list-single-selection-load-empty-data></my-list-single-selection-load-empty-data>
+            alert('Selection: ' + JSON.stringify(selection));
+        }
 
-<h4>List Multiple Selection</h4>
-<my-list-multiple-selection></my-list-multiple-selection>
+        function toggleSelectable() {
 
-<h4>Contacts list (it retrieves data from a back-end)</h4>
-<contacts-list></contacts-list>
+            const list = document.querySelector("#singleList");
 
-<!-- Buttons to operate the list -->
-<gcl-button variant="primary" click="toggleSelectable()">
-    <gcl-icon name="alarm-fill" class="secondary"></gcl-icon>
-    <gcl-text class="text" id="toggleSelectableText" value="Selectable On"></gcl-text>
-</gcl-button>
+            const toggleSelectableText = document.querySelector("#toggleSelectableText");
 
-<script>
-    function toggleSelectable() {
+            alert(!list.props.selectable);
 
-        const list = document.querySelector("#singleList");
+            list.setAttribute("selectable", !list.props.selectable);
 
-        const toggleSelectableText = document.querySelector("#toggleSelectableText");
+            toggleSelectableText.setValue(list.props.selectable ? "Selectable On" : "Selectable Off");
+        }
 
-        list.setAttribute("selectable", !list.props.selectable);
+    </script>
+</head>
 
-        toggleSelectableText.setValue(list.props.selectable ? "Selectable On" : "Selectable Off");
-    }
-</script>
+<body>
+
+    <h4>List Single Selection</h4>
+    <gcl-list id="singleList" selection='["a"]' selectable selection-changed="showSelection()">
+
+        <gcl-list-item value="a">
+            <gcl-icon name="alarm-fill"></gcl-icon>
+            <gcl-text intl-key="goodMorning" lang="en"></gcl-text>
+        </gcl-list-item>
+
+        <gcl-list-item value="b">
+            <gcl-icon name="alarm-fill"></gcl-icon>
+            <gcl-text intl-key="goodMorning" lang="fr"></gcl-text>
+        </gcl-list-item>
+
+        <gcl-list-item value="c">
+            <gcl-icon name="alarm-fill"></gcl-icon>
+            <gcl-text intl-key="goodMorning" lang="de"></gcl-text>
+        </gcl-list-item>
+
+    </gcl-list>
+
+    <!-- Buttons to operate the list -->
+    <gcl-button variant="primary" click="toggleSelectable()">
+        <gcl-icon name="alarm-fill" class="secondary"></gcl-icon>
+        <gcl-text class="text" id="toggleSelectableText" value="Selectable On"></gcl-text>
+    </gcl-button>
+
+    <h4>List Single Selection with Data</h4>
+    <my-list-single-selection-load-data></my-list-single-selection-load-data>
+
+    <h4>List Single Selection with Empty Data</h4>
+    <my-list-single-selection-load-empty-data></my-list-single-selection-load-empty-data>
+
+    <h4>List Multiple Selection</h4>
+    <my-list-multiple-selection></my-list-multiple-selection>
+
+    <h4>Contacts list (it retrieves data from a back-end)</h4>
+    <contacts-list></contacts-list>
+
+</body>
