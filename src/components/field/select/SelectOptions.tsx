@@ -83,28 +83,57 @@ export default class SelectOptions extends
             parent
         } = this.props;
 
-        const value = record[valueProperty];
+        if (typeof record === 'object') { // Not a primitive
 
-        if (selected === undefined) {
+            const value = record[valueProperty];
 
-            // Select the first option if there is no selected value and no empty option
-            if (emptyOption === undefined &&
-                index === 0) {
+            if (selected === undefined) {
 
-                parent.setValue(value); // Update the value in the parent
+                // Select the first option if there is no selected value and no empty option
+                if (emptyOption === undefined &&
+                    index === 0) {
 
-                return (<option value={value} selected>{record[displayProperty]}</option>);
+                    parent.setValue(value); // Update the value in the parent
+
+                    return (<option value={value} selected>{record[displayProperty]}</option>);
+                }
+                else {
+
+                    return (<option value={value}>{record[displayProperty]}</option>);
+                }
             }
-            else {
+            else { // selected !== undefined
 
-                return (<option value={value}>{record[displayProperty]}</option>);
+                const isSelected = Array.isArray(selected) ? selected.includes(value) : selected === value;
+
+                return (<option value={value} selected={isSelected}>{record[displayProperty]}</option>);
             }
         }
-        else { // selected !== undefined
+        else { // Is a primitive
 
-            const isSelected = Array.isArray(selected) ? selected.includes(value) : selected === value;
+            if (selected === undefined) {
 
-            return (<option value={value} selected={isSelected}>{record[displayProperty]}</option>);
+                // Select the first option if there is no selected value and no empty option
+                if (emptyOption === undefined &&
+                    index === 0) {
+
+                    parent.setValue(record); // Update the value in the parent
+
+                    return (<option value={record} selected>{record}</option>);
+                }
+                else {
+
+                    return (<option value={record}>{record}</option>);
+                }
+            }
+            else { // selected !== undefined
+
+                const isSelected = Array.isArray(selected) ? selected.includes(record) : selected === record;
+
+                return (<option value={record} selected={isSelected}>{record}</option>);
+            }
+
         }
+
     }
 }

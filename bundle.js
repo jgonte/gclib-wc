@@ -1211,18 +1211,6 @@ var CollectionLoader = (function (_super) {
     return CollectionLoader;
 }(Fetcher));
 
-function formatDate$1(date, format, options) {
-    if (options === void 0) { options = {
-        year: 'numeric', month: 'numeric', day: 'numeric'
-    }; }
-    if (typeof date === 'string') {
-        date = new Date(date);
-    }
-    switch (format) {
-        default: return date.toLocaleDateString(undefined, options);
-    }
-}
-
 var cache = {};
 var resourceLoader = {
     get: function (path) {
@@ -1831,6 +1819,9 @@ function removeAttribute(element, name) {
     var nameLower = names[0].toLowerCase();
     if (isStandardEvent(nameLower)) {
         var trackedListeners = element._trackedListeners;
+        if (typeof trackedListeners === 'undefined') {
+            return;
+        }
         var trackedListener = trackedListeners[name];
         var eventName = trackedListener.eventName, value = trackedListener.value, useCapture = trackedListener.useCapture;
         element.removeEventListener(eventName, value, useCapture);
@@ -2588,6 +2579,83 @@ function diff(oldNode, newNode) {
     }
 }
 
+function parseFromString(markup, type) {
+    if (type === void 0) { type = 'xml'; }
+    var mime = type === 'html' ? 'text/html' : 'application/xml';
+    var wrappedMarkup = type === 'html' ?
+        "<!DOCTYPE html>\n<html><body>" + markup + "</body></html>" :
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xml>" + markup + "</xml>";
+    var doc = new DOMParser().parseFromString(wrappedMarkup, mime);
+    var tag = type === 'html' ? 'body' : 'xml';
+    return doc.getElementsByTagName(tag)[0].firstChild;
+}
+
+function toVDom(node, options) {
+    if (options === void 0) { options = {}; }
+    if (node === null) {
+        return null;
+    }
+    switch (node.nodeType) {
+        case 1:
+            {
+                var element = node;
+                var nodeName = element.nodeName.toLowerCase();
+                if (nodeName === 'script' && !options.allowScripts) {
+                    throw Error('Script elements are not allowed unless the allowScripts option is set to true');
+                }
+                var props = getProps(element.attributes);
+                var children = getChildren$1(element.childNodes, options);
+                return new VirtualNode(nodeName, props, children);
+            }
+        case 3:
+            {
+                var text = node;
+                var content = text.textContent || '';
+                if (options.excludeTextWithWhiteSpacesOnly &&
+                    /^\s*$/g.test(content)) {
+                    return null;
+                }
+                return new VirtualText(content);
+            }
+        default: return null;
+    }
+}
+function getProps(attributes) {
+    if (attributes === null) {
+        return null;
+    }
+    var count = attributes.length;
+    if (count == 0) {
+        return null;
+    }
+    var props = {};
+    for (var i = 0; i < attributes.length; i++) {
+        var _a = attributes[i], name_1 = _a.name, value = _a.value;
+        props[name_1] = value;
+    }
+    return props;
+}
+function getChildren$1(childNodes, options) {
+    var vnodes = [];
+    childNodes.forEach(function (childNode) {
+        var vnode = toVDom(childNode, options);
+        if (vnode != null) {
+            vnodes.push(vnode);
+        }
+    });
+    return vnodes;
+}
+
+function markupToVDom(markup, type, options) {
+    if (type === void 0) { type = 'xml'; }
+    if (options === void 0) { options = {}; }
+    var node = parseFromString(markup, type);
+    if (node === null) {
+        return null;
+    }
+    return toVDom(node, options);
+}
+
 function createVirtualNode(o) {
     if (typeof o === 'string') {
         return new VirtualText(o);
@@ -2603,6 +2671,10 @@ function createVirtualNode(o) {
     }
 }
 
+function getGlobalFunction(value) {
+    const functionName = value.replace('()', '').trim();
+    return window[functionName];
+}
 const defaultPropertyValueConverter = {
     toProperty: (value, type) => {
         switch (type) {
@@ -2611,7 +2683,17 @@ const defaultPropertyValueConverter = {
             case Number:
                 return value === null ? null : Number(value);
             case Array:
-                return JSON.parse(value);
+                {
+                    // All the properties that are not declared as Function accept a function as alternative by design
+                    // The probing is as follows: 
+                    // Test whether it is really an array
+                    try {
+                        return JSON.parse(value);
+                    }
+                    catch (error) { // Value is a string but not a JSON one, assume a function
+                        return getGlobalFunction(value);
+                    }
+                }
             case VirtualNode: {
                 try {
                     value = JSON.parse(value);
@@ -2622,8 +2704,7 @@ const defaultPropertyValueConverter = {
                 return createVirtualNode(value);
             }
             case Function: { // Extract the string and return the global function
-                const functionName = value.replace('()', '').trim();
-                return window[functionName];
+                return getGlobalFunction(value);
             }
             case Object: // It can also be a string
                 try {
@@ -2653,7 +2734,7 @@ function getComponentMetadata$1(ctor) {
         properties: {},
         state: {}
     };
-    // Set the shadow prpoerty
+    // Set the shadow property
     metadata.component.shadow = (ctor.component || {}).shadow === undefined ? true : ctor.component.shadow;
     // Merge the URL styles
     const set = new Set(); // To avoid URL duplicates
@@ -3331,6 +3412,9 @@ const ContainerMixin = Base => { var _a; return _a = class Container extends Bas
             children.forEach(child => this.addChild(child));
         }
         didMount() {
+            if (this.shadowRoot === null) {
+                return;
+            }
             // Add the listener to listen for changes in the slot
             const slot = this.shadowRoot.querySelector('slot');
             if (slot === null) {
@@ -3345,6 +3429,9 @@ const ContainerMixin = Base => { var _a; return _a = class Container extends Bas
             }
         }
         willUnmount() {
+            if (this.shadowRoot === null) {
+                return;
+            }
             // Remove the listener to listen for changes in the slot
             const slot = this.shadowRoot.querySelector('slot');
             if (slot !== null) {
@@ -3582,13 +3669,32 @@ Alert.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-alert`, Alert);
 
+// import { config } from "../../config";
+const DisableableMixin = Base => { var _a; return _a = class Disableable extends Base {
+    },
+    // static component = {
+    //     styleUrls: [
+    //         `${config.assetsFolder}/mixins/Disableable/Disableable.css`
+    //     ]
+    // };
+    _a.properties = {
+        /**
+         * Whether the element is disabled
+         */
+        disabled: {
+            type: Boolean,
+            value: false
+        }
+    },
+    _a; };
+
 //@ts-ignore
-class Button extends SizableMixin(VariantMixin(DirectionMixin(ContainerMixin(CustomElement)))) {
+class Button extends DisableableMixin(SizableMixin(VariantMixin(DirectionMixin(ContainerMixin(CustomElement))))) {
     render() {
-        const { type, click, size, variant } = this.props;
-        return (h("button", { type: type, size: size, variant: variant, dir: this.getDir(), 
+        const { type, click, size, variant, disabled } = this.props;
+        return (h("button", { type: type, size: size, variant: variant, dir: this.getDir(), disabled: disabled, 
             // class={this.getCSSClass()}
-            onClick: click },
+            onClick: disabled ? null : click },
             h("slot", null)));
     }
 }
@@ -3796,7 +3902,7 @@ const DataMixin = Base => { var _a; return _a = class Data extends Base {
             super(props, children);
         }
         renderData() {
-            const { data } = this.props;
+            const { data, fields } = this.props;
             if (data === undefined) {
                 return this.renderNoData();
             }
@@ -3805,12 +3911,28 @@ const DataMixin = Base => { var _a; return _a = class Data extends Base {
             }
             const { renderRecord } = this;
             if (renderRecord !== undefined) {
-                return data.map((record, index) => renderRecord(record, index));
+                return data.map((record, index) => {
+                    const markup = renderRecord(record, index);
+                    if (typeof markup === 'string') {
+                        return markupToVDom(markup.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
+                    }
+                    else {
+                        return markup;
+                    }
+                });
+            }
+            else if (fields !== undefined) {
+                const fds = typeof fields === 'function' ? fields() : fields;
+                return this.renderFields(fds, data);
             }
             else { // Show the user the data
                 return JSON.stringify(data);
             }
         }
+        // renderField(field: DataFieldDefinition, data: any) : VirtualNode {
+        //     const value = data[field.name];
+        //     return (<gcl-text>{value}</gcl-text>);
+        // }
         renderNoData() {
             return null;
         }
@@ -3834,10 +3956,25 @@ const DataMixin = Base => { var _a; return _a = class Data extends Base {
             mutable: true
         },
         /**
+         * The definition of the fields to translate from the data of the record to the item component to generate
+         */
+        fields: {
+            type: Array // Array<DataFieldDefinition>
+        },
+        /**
          * The function to render the data item
          */
         renderRecord: {
+            attribute: 'render-record',
             type: Function
+        },
+        /**
+         * The name of the property that identifies the record id
+         */
+        recordId: {
+            attribute: 'record-id',
+            type: String,
+            value: 'id'
         }
     },
     _a; };
@@ -3857,31 +3994,8 @@ const LoadableMixin = Base => { var _a; return _a = class Loadable extends Base 
             return (h("gcl-overlay", null,
                 h("gcl-alert", { closable: "false", type: "info", message: "...Loading" })));
         }
-        load() {
-            const { loadUrl } = this.props;
-            this.setError(undefined);
-            this.setLoading(true);
-            this._loader.load({
-                url: loadUrl
-            });
-        }
-        initLoader() {
-            const { loadUrl, autoLoad } = this.props;
-            if (loadUrl !== undefined) {
-                this._loader = this.loadsCollection === true ?
-                    new CollectionLoader({
-                        onData: this.onLoadData,
-                        onError: this.onLoadError
-                    }) :
-                    new SingleItemLoader({
-                        onData: this.onLoadData,
-                        onError: this.onLoadError
-                    });
-                if (autoLoad === true) {
-                    this.load();
-                }
-            }
-        }
+        // abstract initLoader();
+        // abstract load();
         onLoadData(data) {
             this.setLoading(false);
             this.setData(data.payload);
@@ -3916,16 +4030,60 @@ const LoadableMixin = Base => { var _a; return _a = class Loadable extends Base 
     },
     _a; };
 
+const PageableMixin = Base => { var _a; return _a = class Pageable extends Base {
+        paginate(pageIndex, pageSize) {
+            this.setPageIndex(pageIndex);
+            this.setPageSize(pageSize);
+            this.load();
+        }
+    },
+    _a.state = {
+        pageIndex: {
+            value: 1
+        },
+        pageSize: {
+            value: 10
+        }
+    },
+    _a; };
+
 /**
- * Packs the common used mixins in a loading data scenario
- * @param Base
- * @returns
+ * Implements a mixin that loads a collection of records
  */
-const DataLoadableMixin = Base => class DataLoadable extends LoadableMixin(ErrorableMixin(DataMixin(Base))) {
+const CollectionLoadableMixin = Base => class CollectionLoadable extends PageableMixin(LoadableMixin(Base)) {
+    load() {
+        const { loadUrl } = this.props;
+        const { pageIndex, pageSize } = this.state;
+        this.setError(undefined);
+        this.setLoading(true);
+        this._loader.load({
+            url: loadUrl,
+            top: pageSize,
+            skip: pageSize * (pageIndex - 1),
+        });
+    }
+    initLoader() {
+        const { loadUrl, autoLoad } = this.props;
+        if (loadUrl !== undefined) {
+            this._loader = new CollectionLoader({
+                onData: this.onLoadData,
+                onError: this.onLoadError
+            });
+            if (autoLoad === true) {
+                this.load();
+            }
+        }
+    }
+};
+
+/**
+ * Packs the common used mixins in a loading a collection of records scenario
+ */
+const DataCollectionLoadableMixin = Base => class DataCollectionLoadable extends CollectionLoadableMixin(ErrorableMixin(DataMixin(Base))) {
 };
 
 //@ts-ignore
-class Table extends DataLoadableMixin(CustomElement) {
+class Table extends DataCollectionLoadableMixin(CustomElement) {
     render() {
         const { caption, header, body, footer } = this.props;
         return (h(Fragment, null,
@@ -4111,7 +4269,7 @@ class ListItem extends SelectableMixin(SizableMixin(ChildMixin(CustomElement))) 
 }
 ListItem.component = {
     styleUrls: [
-        `${config.assetsFolder}/list/listItem/ListItem.css`
+        `${config.assetsFolder}/list/list-item/ListItem.css`
     ]
 };
 //@ts-ignore
@@ -4226,12 +4384,39 @@ class SelectionContainer extends ContainerMixin(Base) {
     },
     _a; };
 
-class List extends SelectionContainerMixin(SizableMixin(DataLoadableMixin(CustomElement))) {
+class List extends SelectionContainerMixin(SizableMixin(DataCollectionLoadableMixin(CustomElement))) {
     render() {
         return (h(Fragment, null,
             this.renderLoading(),
             this.renderError(),
-            h("ul", null, this.renderData())));
+            h("ul", null,
+                this.renderHeader(),
+                this.renderData())));
+    }
+    renderHeader() {
+        const { fields } = this.props;
+        if (fields === undefined) {
+            return null;
+        }
+        const fds = typeof fields === 'function' ? fields() : fields;
+        const children = fds.map(f => {
+            return (h("span", { class: "list-cell", style: {
+                    width: f.width || '100px'
+                } }, f.display));
+        });
+        return (h("gcl-list-item", { selectable: "false" }, children));
+    }
+    renderFields(fields, data) {
+        const { recordId } = this.props;
+        return data.map(record => {
+            const value = record[recordId];
+            const children = fields.map(f => {
+                return (h("span", { class: "list-cell", style: {
+                        width: f.width || '100px'
+                    } }, record[f.name]));
+            });
+            return (h("gcl-list-item", { value: value }, children));
+        });
     }
     /**
      * When there is no data provided to the component, render its children
@@ -4253,6 +4438,134 @@ List.component = {
 };
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-list`, List);
+
+/**
+ * Pager component
+ */
+//@ts-ignore
+class Pager extends SizableMixin(CustomElement) {
+    constructor() {
+        super();
+        this.goFirst = this.goFirst.bind(this);
+        this.goPrevious = this.goPrevious.bind(this);
+        this.goNext = this.goNext.bind(this);
+        this.goLast = this.goLast.bind(this);
+    }
+    goFirst() {
+        let { pageIndex, pageSize } = this.state;
+        if (pageIndex == 1) {
+            return;
+        }
+        pageIndex = 1;
+        this.setPageIndex(pageIndex);
+        this.pageableView.paginate(pageIndex, pageSize);
+    }
+    goPrevious() {
+        let { pageIndex, pageSize } = this.state;
+        if (pageIndex == 1) {
+            return;
+        }
+        --pageIndex;
+        this.setPageIndex(pageIndex);
+        this.pageableView.paginate(pageIndex, pageSize);
+    }
+    goNext() {
+        let { pageIndex, pageSize } = this.state;
+        const { totalPages } = this.props;
+        if (pageIndex === totalPages) {
+            return;
+        }
+        ++pageIndex;
+        this.setPageIndex(pageIndex);
+        this.pageableView.paginate(pageIndex, pageSize);
+    }
+    goLast() {
+        let { pageIndex, pageSize } = this.state;
+        const { totalPages } = this.props;
+        if (pageIndex === totalPages) {
+            return;
+        }
+        pageIndex = totalPages;
+        this.setPageIndex(pageIndex);
+        this.pageableView.paginate(pageIndex, pageSize);
+    }
+    render() {
+        const { pageIndex } = this.state;
+        const { totalPages } = this.props;
+        return (h("gcl-row", null,
+            h("gcl-button", { variant: "primary", onClick: this.goFirst, disabled: pageIndex === 1 },
+                h("gcl-icon", { name: "chevron-double-left" })),
+            h("gcl-button", { variant: "primary", onClick: this.goPrevious, disabled: pageIndex === 1 },
+                h("gcl-icon", { name: "chevron-left" })),
+            pageIndex,
+            " of ",
+            totalPages,
+            h("gcl-button", { variant: "primary", onClick: this.goNext, disabled: pageIndex === totalPages },
+                h("gcl-icon", { name: "chevron-right" })),
+            h("gcl-button", { variant: "primary", onClick: this.goLast, disabled: pageIndex === totalPages },
+                h("gcl-icon", { name: "chevron-double-right" })),
+            this.renderSizeChanger()));
+    }
+    renderSizeChanger() {
+        const { pageSizes } = this.props;
+        if (pageSizes === undefined) {
+            return null;
+        }
+        return (h("span", null,
+            h("gcl-select", { data: pageSizes, style: { width: '3rem' } }),
+            "/ Page"));
+    }
+    connectedCallback() {
+        var _a;
+        (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        const { viewId } = this.props;
+        this.pageableView = document.getElementById(viewId);
+    }
+    disconnectedCallback() {
+        var _a;
+        (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        this.pageableView = null;
+    }
+}
+Pager.component = {
+    styleUrls: [
+        `${config.assetsFolder}/pager/Pager.css`
+    ]
+};
+Pager.properties = {
+    /**
+     * The id of the view to paginate
+     */
+    viewId: {
+        attribute: 'view-id',
+        type: String,
+        required: true
+    },
+    /**
+     * The total of pages
+     */
+    totalPages: {
+        attribute: 'total-pages',
+        type: Number,
+        value: 1,
+        required: true
+    },
+    pageSizes: {
+        attribute: 'page-sizes',
+        type: Array,
+        value: ['10', '25', '50', '100']
+    }
+};
+Pager.state = {
+    pageIndex: {
+        value: 1
+    },
+    pageSize: {
+        value: 10
+    }
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-pager`, Pager);
 
 const ValidatableMixin = Base => { var _a; return _a = class Validatable extends Base {
     },
@@ -4706,21 +5019,40 @@ class SelectOptions extends DataMixin(Component) {
     }
     renderRecord(record, index) {
         const { valueProperty, displayProperty, selected, emptyOption, parent } = this.props;
-        const value = record[valueProperty];
-        if (selected === undefined) {
-            // Select the first option if there is no selected value and no empty option
-            if (emptyOption === undefined &&
-                index === 0) {
-                parent.setValue(value); // Update the value in the parent
-                return (h("option", { value: value, selected: true }, record[displayProperty]));
+        if (typeof record === 'object') { // Not a primitive
+            const value = record[valueProperty];
+            if (selected === undefined) {
+                // Select the first option if there is no selected value and no empty option
+                if (emptyOption === undefined &&
+                    index === 0) {
+                    parent.setValue(value); // Update the value in the parent
+                    return (h("option", { value: value, selected: true }, record[displayProperty]));
+                }
+                else {
+                    return (h("option", { value: value }, record[displayProperty]));
+                }
             }
-            else {
-                return (h("option", { value: value }, record[displayProperty]));
+            else { // selected !== undefined
+                const isSelected = Array.isArray(selected) ? selected.includes(value) : selected === value;
+                return (h("option", { value: value, selected: isSelected }, record[displayProperty]));
             }
         }
-        else { // selected !== undefined
-            const isSelected = Array.isArray(selected) ? selected.includes(value) : selected === value;
-            return (h("option", { value: value, selected: isSelected }, record[displayProperty]));
+        else { // Is a primitive
+            if (selected === undefined) {
+                // Select the first option if there is no selected value and no empty option
+                if (emptyOption === undefined &&
+                    index === 0) {
+                    parent.setValue(record); // Update the value in the parent
+                    return (h("option", { value: record, selected: true }, record));
+                }
+                else {
+                    return (h("option", { value: record }, record));
+                }
+            }
+            else { // selected !== undefined
+                const isSelected = Array.isArray(selected) ? selected.includes(record) : selected === record;
+                return (h("option", { value: record, selected: isSelected }, record));
+            }
         }
     }
 }
@@ -4748,7 +5080,7 @@ SelectOptions.properties = {
 };
 
 //@ts-ignore
-class Select extends ErrorableMixin(LoadableMixin(Field)) {
+class Select extends ErrorableMixin(CollectionLoadableMixin(Field)) {
     [renderField]() {
         const { name, value, size, 
         //required,
@@ -5082,6 +5414,38 @@ ValidationSummary.properties = {
 customElements.define(`${config.tagPrefix}-validation-summary`, ValidationSummary);
 
 /**
+ * Implements a mixin that loads a single record
+ */
+const SingleLoadableMixin = Base => class SingleLoadable extends LoadableMixin(Base) {
+    load() {
+        const { loadUrl } = this.props;
+        this.setError(undefined);
+        this.setLoading(true);
+        this._loader.load({
+            url: loadUrl
+        });
+    }
+    initLoader() {
+        const { loadUrl, autoLoad } = this.props;
+        if (loadUrl !== undefined) {
+            this._loader = new SingleItemLoader({
+                onData: this.onLoadData,
+                onError: this.onLoadError
+            });
+            if (autoLoad === true) {
+                this.load();
+            }
+        }
+    }
+};
+
+/**
+ * Packs the common used mixins in a loading a single record scenario
+ */
+const DataSingleLoadableMixin = Base => class DataSingleLoadable extends SingleLoadableMixin(ErrorableMixin(DataMixin(Base))) {
+};
+
+/**
  * Mixin to implement a component that can post data to a server
  * The derived/subclass must also implement ErrorableMixin
  * @param Base
@@ -5171,7 +5535,7 @@ const SubmitableMixin = Base => { var _a; return _a = class Submitable extends B
     _a; };
 
 //@ts-ignore
-class Form extends SubmitableMixin(DataLoadableMixin(ValidatableMixin(ContainerMixin(SizableMixin(CustomElement))))) {
+class Form extends SubmitableMixin(DataSingleLoadableMixin(ValidatableMixin(ContainerMixin(SizableMixin(CustomElement))))) {
     constructor() {
         super();
         this._record = new DataRecord();
@@ -5735,158 +6099,6 @@ class MyTable extends CustomElement {
 //@ts-ignore
 customElements.define('my-table', MyTable);
 
-class MyListSingleSelection extends CustomElement {
-    render() {
-        return (h("gcl-list", { selection: '["a"]', selectable: true, selectionChanged: this.showSelection },
-            h("gcl-list-item", { value: "a" },
-                h("gcl-icon", { name: "alarm-fill" }),
-                h("gcl-text", { "intl-key": "goodMorning", lang: "en" })),
-            h("gcl-list-item", { value: "b" },
-                h("gcl-icon", { name: "alarm-fill" }),
-                h("gcl-text", { "intl-key": "goodMorning", lang: "fr" })),
-            h("gcl-list-item", { value: "c" },
-                h("gcl-icon", { name: "alarm-fill" }),
-                h("gcl-text", { "intl-key": "goodMorning", lang: "de" }))));
-    }
-    showSelection(selection) {
-        alert('Selection: ' + JSON.stringify(selection));
-    }
-}
-//@ts-ignore
-customElements.define('my-list-single-selection', MyListSingleSelection);
-
-class MyListMultipleSelection extends CustomElement {
-    render() {
-        return (h("gcl-list", { size: "large", selection: '["a", "c"]', selectable: true, multiple: true, selectionChanged: this.showSelection },
-            h("gcl-list-item", { value: "a" },
-                h("gcl-icon", { name: "alarm-fill" }),
-                h("gcl-text", { "intl-key": "goodMorning", lang: "en" })),
-            h("gcl-list-item", { value: "b" },
-                h("gcl-icon", { name: "alarm-fill" }),
-                h("gcl-text", { "intl-key": "goodMorning", lang: "fr" })),
-            h("gcl-list-item", { value: "c" },
-                h("gcl-icon", { name: "alarm-fill" }),
-                h("gcl-text", { "intl-key": "goodMorning", lang: "de" }))));
-    }
-    showSelection(selection) {
-        alert('Selection: ' + JSON.stringify(selection));
-    }
-}
-//@ts-ignore
-customElements.define('my-list-multiple-selection', MyListMultipleSelection);
-
-class MyListSingleSelectionLoadData extends CustomElement {
-    render() {
-        return (h("gcl-list", { id: "listWithData", size: "small", selection: '["c"]', selectable: true, selectionChanged: this.showSelection, data: [
-                {
-                    value: 'a',
-                    iconName: 'alarm-fill',
-                    textKey: 'goodMorning',
-                    lang: 'en'
-                },
-                {
-                    value: 'b',
-                    iconName: 'alarm-fill',
-                    textKey: 'goodMorning',
-                    lang: 'fr'
-                },
-                {
-                    value: 'c',
-                    iconName: 'alarm-fill',
-                    textKey: 'goodMorning',
-                    lang: 'de'
-                }
-            ], renderRecord: record => {
-                const { value, iconName, textKey, lang } = record;
-                return (h("gcl-list-item", { value: value },
-                    h("gcl-icon", { name: iconName }),
-                    h("gcl-text", { "intl-key": textKey, lang: lang })));
-            } }));
-    }
-    showSelection(selection) {
-        alert('Selection: ' + JSON.stringify(selection));
-    }
-}
-//@ts-ignore
-customElements.define('my-list-single-selection-load-data', MyListSingleSelectionLoadData);
-
-class MyListSingleSelectionLoadEmptyData extends CustomElement {
-    render() {
-        return (h("gcl-list", { id: "listWithEmptyData", size: "small", selection: '["c"]', selectable: true, selectionChanged: this.showSelection, data: [
-            // Empty
-            ], renderRecord: record => {
-                const { value, iconName, textKey, lang } = record;
-                return (h("gcl-list-item", { value: value },
-                    h("gcl-icon", { name: iconName }),
-                    h("gcl-text", { "intl-key": textKey, lang: lang })));
-            } }));
-    }
-    showSelection(selection) {
-        alert('Selection: ' + JSON.stringify(selection));
-    }
-}
-//@ts-ignore
-customElements.define('my-list-single-selection-load-empty-data', MyListSingleSelectionLoadEmptyData);
-
-/**
- * Shows a contacts list populated from a back end
- */
-class ContactsList extends CustomElement {
-    render() {
-        return (h("gcl-list", { id: "contactsList", "load-url": "http://localhost:60314/api/contacts", size: "medium", selection: '[2]', selectable: true, selectionChanged: this.showSelection, renderRecord: record => {
-                const { id, name, dateOfBirth, reputation, description, avatar } = record;
-                return (h("gcl-list-item", { value: id },
-                    h("gcl-text", null,
-                        "Name: ",
-                        name),
-                    h("gcl-text", null,
-                        "Date of Birth: ",
-                        formatDate$1(dateOfBirth)),
-                    h("gcl-text", null,
-                        "Reputation: ",
-                        reputation),
-                    h("gcl-text", null,
-                        "Description: ",
-                        description),
-                    h("img", { style: "width: 64px; height: 64px; border-radius: 50%;", src: `data:image/jpeg;base64,${avatar.content}` })));
-            } }));
-    }
-    showSelection(selection) {
-        alert('Selection: ' + JSON.stringify(selection));
-    }
-}
-//@ts-ignore
-customElements.define('contacts-list', ContactsList);
-
-/**
- * Shows a contact form populated and submitable to a back end
- */
-class ContactForm extends CustomElement {
-    render() {
-        const { loadUrl } = this.props;
-        return (h("gcl-form", { id: "contactForm", "load-url": loadUrl, "submit-url": "http://localhost:60314/api/contacts/", size: "medium" },
-            h("gcl-hidden-field", { name: "id", "is-id": "true" }),
-            h("gcl-text-field", { label: "Name", name: "name", required: true }),
-            h("gcl-select", { label: "Gender", name: "gender", "load-url": "http://localhost:60314/api/genders" }),
-            h("gcl-date-field", { label: "Date of Birth", name: "dateOfBirth" }),
-            h("gcl-number-field", { label: "Reputation", name: "reputation", min: "1", max: "10" }),
-            h("gcl-text-area", { label: "Description", name: "description", rows: "5", cols: "30" }),
-            h("gcl-file-field", { label: "Avatar", name: "avatar" })));
-    }
-}
-ContactForm.properties = {
-    /**
-     * The URL to retrieve the data from
-     */
-    loadUrl: {
-        attribute: 'load-url',
-        type: String,
-        //required: true Loading the form or other component might be optional
-    }
-};
-//@ts-ignore
-customElements.define('contact-form', ContactForm);
-
 class MyCounter extends CustomElement {
     constructor() {
         super();
@@ -5900,7 +6112,7 @@ class MyCounter extends CustomElement {
         return (h("div", null,
             h("h4", null, "Counter"),
             this.props.count,
-            h("gcl-button", { click: this.increment }, "Increment")));
+            h("gcl-button", { onClick: this.increment }, "Increment")));
     }
 }
 MyCounter.properties = {
@@ -5917,4 +6129,4 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
-export { Alert, App, Button, CloseTool, ContactForm, ContactsList, Content, CurrentYear, DateField, FileField, Form, Header, HiddenField, Icon, List, ListItem, LoginSection, MyCounter, MyListMultipleSelection, MyListSingleSelection, MyListSingleSelectionLoadData, MyListSingleSelectionLoadEmptyData, MyTable, NavigationBar, NavigationLink, NumberField, OidcProvider, Overlay, Panel, Router, Row, Select, Table, Text, TextArea, TextField, ValidationSummary, appCtrl };
+export { Alert, App, Button, CloseTool, Content, CurrentYear, DateField, FileField, Form, Header, HiddenField, Icon, List, ListItem, LoginSection, MyCounter, MyTable, NavigationBar, NavigationLink, NumberField, OidcProvider, Overlay, Pager, Panel, Router, Row, Select, Table, Text, TextArea, TextField, ValidationSummary, appCtrl };

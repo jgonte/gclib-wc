@@ -8,7 +8,7 @@ export default function getComponentMetadata(ctor) {
         state: {}
     };
 
-    // Set the shadow prpoerty
+    // Set the shadow property
     metadata.component.shadow = (ctor.component || {}).shadow === undefined ? true : ctor.component.shadow;
 
     // Merge the URL styles

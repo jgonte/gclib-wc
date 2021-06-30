@@ -1,3 +1,5 @@
+import { markupToVDom, VirtualNode, VirtualText } from "gclib-vdom";
+
 /**
  * Enables rendering data for a component
  * @param Base 
@@ -18,10 +20,27 @@ const DataMixin = Base =>
             },
 
             /**
+             * The definition of the fields to translate from the data of the record to the item component to generate
+             */
+            fields: {
+                type: Array // Array<DataFieldDefinition>
+            },
+
+            /**
              * The function to render the data item
              */
             renderRecord: {
+                attribute: 'render-record',
                 type: Function
+            },
+
+            /**
+             * The name of the property that identifies the record id
+             */
+            recordId: {
+                attribute: 'record-id',
+                type: String,
+                value: 'id'
             }
         };
 
@@ -30,10 +49,11 @@ const DataMixin = Base =>
             super(props, children);           
         }
 
-        renderData() {
+        renderData() : VirtualNode | VirtualText | string {
 
             const {
-                data
+                data,
+                fields
             } = this.props;
 
             if (data === undefined) {
@@ -52,13 +72,38 @@ const DataMixin = Base =>
 
             if (renderRecord !== undefined) {
 
-                return data.map((record, index) => renderRecord(record, index));
+                return data.map((record, index) => {
+
+                    const markup = renderRecord(record, index);
+
+                    if (typeof markup === 'string') {
+
+                        return markupToVDom(markup.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
+                    }
+                    else {
+
+                        return markup;
+                    }
+                });
+            }
+            else if (fields !== undefined) {
+
+                const fds = typeof fields === 'function' ? fields() : fields;
+
+                return this.renderFields(fds, data);
             }
             else { // Show the user the data
 
                 return JSON.stringify(data);
             }
         }
+
+        // renderField(field: DataFieldDefinition, data: any) : VirtualNode {
+
+        //     const value = data[field.name];
+
+        //     return (<gcl-text>{value}</gcl-text>);
+        // }
 
         renderNoData() {
 

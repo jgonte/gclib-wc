@@ -1,6 +1,13 @@
 import { VirtualNode } from 'gclib-vdom';
 import createVirtualNode from './createVirtualNode';
 
+function getGlobalFunction(value: string) : Function {
+
+    const functionName = value.replace('()', '').trim();
+
+    return (window as any)[functionName];
+}
+
 const defaultPropertyValueConverter = {
 
     toProperty: (value: string, type: Function) => {
@@ -16,8 +23,19 @@ const defaultPropertyValueConverter = {
                 return value === null ? null : Number(value);
 
             case Array:
+                {
+                    // All the properties that are not declared as Function accept a function as alternative by design
+                    // The probing is as follows: 
+                    // Test whether it is really an array
+                    try {
 
-                return JSON.parse(value);
+                        return JSON.parse(value);
+                    }
+                    catch (error) {// Value is a string but not a JSON one, assume a function
+                        
+                        return getGlobalFunction(value);
+                    }
+                }
 
             case VirtualNode: {
 
@@ -35,9 +53,7 @@ const defaultPropertyValueConverter = {
 
             case Function: { // Extract the string and return the global function
 
-                const functionName = value.replace('()', '').trim();
-
-                return window[functionName as any];
+                return getGlobalFunction(value);
             }
 
             case Object: // It can also be a string

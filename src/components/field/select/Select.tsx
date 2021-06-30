@@ -1,6 +1,6 @@
 import { h, VirtualNode, FragmentNode } from 'gclib-vdom';
 import { config } from '../../config';
-import LoadableMixin from '../../mixins/data/LoadableMixin';
+import CollectionLoadableMixin from '../../mixins/data/CollectionLoadableMixin';
 import ErrorableMixin from '../../mixins/errorable/ErrorableMixin';
 import { renderField } from '../Field';
 import { Field } from '../Field';
@@ -9,7 +9,7 @@ import SelectOptions from './SelectOptions';
 //@ts-ignore
 export class Select extends
     ErrorableMixin(
-        LoadableMixin(
+        CollectionLoadableMixin(
             Field
         )
     ) {

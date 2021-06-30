@@ -6,7 +6,7 @@ import { DataFieldDescriptor } from 'gclib-utils/dist/types/data/record/Interfac
 import Validator from 'gclib-utils/dist/types/data/validation/validators/Validator';
 import { Field } from '../field/Field';
 import SizableMixin from '../mixins/sizable/SizableMixin';
-import DataLoadableMixin from '../mixins/data/DataLoadableMixin';
+import DataSingleLoadableMixin from '../mixins/data/DataSingleLoadableMixin';
 import SubmittableMixin from '../mixins/data/SubmittableMixin';
 import ValidatableMixin from '../mixins/validatable/ValidatableMixin';
 import ContainerMixin from '../../core/mixins/ContainerMixin';
@@ -15,7 +15,7 @@ import { valueChanged } from '../field/Field';
 //@ts-ignore
 export class Form extends
     SubmittableMixin(
-        DataLoadableMixin(
+        DataSingleLoadableMixin(
             ValidatableMixin(
                 ContainerMixin(
                     SizableMixin(

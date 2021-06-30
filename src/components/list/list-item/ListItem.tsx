@@ -17,7 +17,7 @@ export class ListItem extends
     static component = {
 
         styleUrls: [
-            `${config.assetsFolder}/list/listItem/ListItem.css`
+            `${config.assetsFolder}/list/list-item/ListItem.css`
         ]
     };
 

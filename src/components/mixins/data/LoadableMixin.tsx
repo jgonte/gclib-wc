@@ -1,5 +1,4 @@
 import { h } from "gclib-vdom";
-import { CollectionLoader, SingleItemLoader } from "gclib-utils";
 
 const LoadableMixin = Base =>
 
@@ -66,46 +65,9 @@ const LoadableMixin = Base =>
             );
         }
 
-        load() {
-
-            const {
-                loadUrl
-            } = this.props;
-
-            this.setError(undefined);
-
-            this.setLoading(true);
-
-            this._loader.load({
-                url: loadUrl
-            });
-        }
-
-        initLoader() {
-
-            const {
-                loadUrl,
-                autoLoad
-            } = this.props;
-
-            if (loadUrl !== undefined) {
-
-                this._loader = this.loadsCollection === true ?
-                    new CollectionLoader({
-                        onData: this.onLoadData,
-                        onError: this.onLoadError
-                    }) :
-                    new SingleItemLoader({
-                        onData: this.onLoadData,
-                        onError: this.onLoadError
-                    });
-
-                if (autoLoad === true) {
-
-                    this.load();
-                }
-            }
-        }
+        // abstract initLoader();
+        
+        // abstract load();
 
         onLoadData(data) {
 

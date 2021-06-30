@@ -19,6 +19,80 @@
             toggleSelectableText.setValue(list.props.selectable ? "Selectable On" : "Selectable Off");
         }
 
+        function formatDate(date, format, options) {
+
+            if (options === void 0) {
+                options = {
+                    year: 'numeric', month: 'numeric', day: 'numeric'
+                };
+            }
+
+            if (typeof date === 'string') {
+                date = new Date(date);
+            }
+
+            switch (format) {
+                default: return date.toLocaleDateString(undefined, options);
+            }
+        }
+
+        function renderListItem(record) {
+
+            const {
+                value,
+                iconName,
+                textKey,
+                lang
+            } = record;
+
+            return `<gcl-list-item value="${value}">
+                    <gcl-icon name="${iconName}"></gcl-icon>
+                    <gcl-text intl-key="${textKey}" lang="${lang}"></gcl-text>
+                </gcl-list-item>`;
+        }
+
+        function renderContact(record) {
+
+            const {
+                id,
+                name,
+                dateOfBirth,
+                reputation,
+                description,
+                avatar
+            } = record;
+
+            const avatarSource = `data:image/jpeg;base64,${avatar.content}`;
+
+            return `<gcl-list-item value="${id}">       
+                <gcl-text>Name: ${name}</gcl-text>
+                <gcl-text>Date of Birth: ${formatDate(dateOfBirth)}</gcl-text>
+                <gcl-text>Reputation: ${reputation}</gcl-text>
+                <gcl-text>Description: ${description}</gcl-text>
+                <img style="width: 64px; height: 64px; border-radius: 50%;" src="${avatarSource}" />
+            </gcl-list-item>`;
+        }
+
+        function getFields() {
+            return [
+                {
+                    name: "name",
+                    display: "Name",
+                    width: '40%'
+                },
+                {
+                    name: "reputation",
+                    display: "Reputation",
+                    width: '20%'
+                },
+                {
+                    name: "description",
+                    display: "Description",
+                    width: '40%'
+                }
+            ];
+        }
+
     </script>
 </head>
 
@@ -51,15 +125,63 @@
     </gcl-button>
 
     <h4>List Single Selection with Data</h4>
-    <my-list-single-selection-load-data></my-list-single-selection-load-data>
+    <gcl-list id="listWithData" size="small" selection='["c"]' selectable selection-changed="showSelection()" data='[
+                {
+                    "value": "a",
+                    "iconName": "alarm-fill",
+                    "textKey": "goodMorning",
+                    "lang": "en"
+                },
+                {
+                    "value": "b",
+                    "iconName": "alarm-fill",
+                    "textKey": "goodMorning",
+                    "lang": "fr"
+                },
+                {
+                    "value": "c",
+                    "iconName": "alarm-fill",
+                    "textKey": "goodMorning",
+                    "lang": "de"
+                }
+            ]' render-record="renderListItem()">
+
+    </gcl-list>
 
     <h4>List Single Selection with Empty Data</h4>
-    <my-list-single-selection-load-empty-data></my-list-single-selection-load-empty-data>
+    <gcl-list id="listWithEmptyData" size="small" selection='["c"]' selectable selection-changed="showSelection()"
+        data="[]" render-record="renderListItem()">
+    </gcl-list>
 
     <h4>List Multiple Selection</h4>
-    <my-list-multiple-selection></my-list-multiple-selection>
+    <gcl-list size="large" selection='["a", "c"]' selectable multiple selection-changed="showSelection()">
+
+        <gcl-list-item value="a">
+            <gcl-icon name="alarm-fill"></gcl-icon>
+            <gcl-text intl-key="goodMorning" lang="en"></gcl-text>
+        </gcl-list-item>
+
+        <gcl-list-item value="b">
+            <gcl-icon name="alarm-fill"></gcl-icon>
+            <gcl-text intl-key="goodMorning" lang="fr"></gcl-text>
+        </gcl-list-item>
+
+        <gcl-list-item value="c">
+            <gcl-icon name="alarm-fill"></gcl-icon>
+            <gcl-text intl-key="goodMorning" lang="de"></gcl-text>
+        </gcl-list-item>
+
+    </gcl-list>
 
     <h4>Contacts list (it retrieves data from a back-end)</h4>
-    <contacts-list></contacts-list>
+    <gcl-list id="contactsList" load-url="http://localhost:60314/api/contacts" size="medium" selection='[2]' selectable
+        selection-changed="showSelection()" render-record="renderContact()">
+    </gcl-list>
+
+    <h4>Contacts list with fields (it retrieves data from a back-end)</h4>
+    <gcl-list id="contactsListWithFields" load-url="http://localhost:60314/api/contacts" size="medium" selection='[2]' selectable
+        selection-changed="showSelection()" fields="getFields()">
+    </gcl-list>
+    <gcl-pager view-id="contactsListWithFields" total-pages="5"></gcl-pager>
 
 </body>

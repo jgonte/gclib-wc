@@ -3,10 +3,10 @@ import { Fragment, h, VirtualNode } from 'gclib-vdom';
 //import SelectionContainerMixin from '../mixins/selectionContainer/SelectionContainerMixin';
 //import TableColumnDefinition from './TableColumnDefinition';
 import { config } from '../config';
-import DataLoadableMixin from '../mixins/data/DataLoadableMixin';
+import DataCollectionLoadableMixin from '../mixins/data/DataCollectionLoadableMixin';
 
 //@ts-ignore
-export class Table extends DataLoadableMixin(CustomElement) {
+export class Table extends DataCollectionLoadableMixin(CustomElement) {
 
     static component = {
         styleUrls: [

@@ -32,6 +32,11 @@ const ContainerMixin = Base =>
 
         didMount() {
 
+            if (this.shadowRoot === null) {
+
+                return;
+            }
+
             // Add the listener to listen for changes in the slot
             const slot = this.shadowRoot.querySelector('slot');
 
@@ -53,6 +58,11 @@ const ContainerMixin = Base =>
         }
 
         willUnmount() {
+
+            if (this.shadowRoot === null) {
+
+                return;
+            }
 
             // Remove the listener to listen for changes in the slot
             const slot = this.shadowRoot.querySelector('slot');

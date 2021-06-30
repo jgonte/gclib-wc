@@ -38,7 +38,7 @@ export class MyCounter extends CustomElement {
             <div>
                 <h4>Counter</h4>
                 {this.props.count}
-                <gcl-button click={this.increment}>Increment</gcl-button>
+                <gcl-button onClick={this.increment}>Increment</gcl-button>
             </div>
         );
 

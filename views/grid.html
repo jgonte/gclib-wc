@@ -1,0 +1,29 @@
+<h4>Grids</h4>
+
+<script>
+
+    function showSelection(selection) {
+
+        alert('Selection: ' + JSON.stringify(selection));
+    }
+
+    function getFields() {
+        
+        return [
+            {
+                name: "name"
+            },
+            {
+                name: "reputation"
+            },
+            {
+                name: "description"
+            }
+        ];
+    }
+
+</script>
+
+<gcl-grid load-url="http://localhost:60314/api/contacts" size="medium" selection='[2]' selectable
+    selection-changed="showSelection()" fields="getFields()">
+</gcl-grid>
