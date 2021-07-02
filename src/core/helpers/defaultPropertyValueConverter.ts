@@ -39,15 +39,6 @@ const defaultPropertyValueConverter = {
 
             case VirtualNode: {
 
-                try {
-
-                    value = JSON.parse(value);
-                }
-                catch (error) {
-
-                    // Value is a string but not a JSON one, do nothing
-                }
-
                 return createVirtualNode(value);
             }
 

@@ -2459,6 +2459,12 @@ function diff(oldNode, newNode) {
                     else {
                         var patches = void 0;
                         var childrenPatches = void 0;
+                        if (isFragmentNode(oldChildren[0])) {
+                            oldChildren = oldChildren[0].children;
+                        }
+                        if (isFragmentNode(newChildren[0])) {
+                            newChildren = newChildren[0].children;
+                        }
                         if (hasKeys(newChildren)) {
                             _a = diffKeyedChildren(oldChildren, newChildren), patches = _a[0], childrenPatches = _a[1];
                         }
@@ -2658,7 +2664,7 @@ function markupToVDom(markup, type, options) {
 
 function createVirtualNode(o) {
     if (typeof o === 'string') {
-        return new VirtualText(o);
+        return markupToVDom(o.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
     }
     if (o.isVirtualNode === true) {
         return new VirtualNode(o.name, o.props, o.children.map(c => createVirtualNode(c)));
@@ -2695,12 +2701,6 @@ const defaultPropertyValueConverter = {
                     }
                 }
             case VirtualNode: {
-                try {
-                    value = JSON.parse(value);
-                }
-                catch (error) {
-                    // Value is a string but not a JSON one, do nothing
-                }
                 return createVirtualNode(value);
             }
             case Function: { // Extract the string and return the global function
@@ -4439,17 +4439,43 @@ List.component = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-list`, List);
 
+const TargetViewHolderMixin = Base => { var _a; return _a = class TargetViewHolder extends Base {
+        connectedCallback() {
+            var _a;
+            (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+            const { targetViewId } = this.props;
+            this.targetView = document.getElementById(targetViewId);
+        }
+        disconnectedCallback() {
+            var _a;
+            (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+            this.targetView = null;
+        }
+    },
+    _a.properties = {
+        /**
+         * The id of the target view to act upon
+         */
+        targetViewId: {
+            attribute: 'target-view-id',
+            type: String,
+            required: true
+        }
+    },
+    _a; };
+
 /**
  * Pager component
  */
 //@ts-ignore
-class Pager extends SizableMixin(CustomElement) {
+class Pager extends TargetViewHolderMixin(SizableMixin(CustomElement)) {
     constructor() {
         super();
         this.goFirst = this.goFirst.bind(this);
         this.goPrevious = this.goPrevious.bind(this);
         this.goNext = this.goNext.bind(this);
         this.goLast = this.goLast.bind(this);
+        this.changePageSize = this.changePageSize.bind(this);
     }
     goFirst() {
         let { pageIndex, pageSize } = this.state;
@@ -4458,7 +4484,7 @@ class Pager extends SizableMixin(CustomElement) {
         }
         pageIndex = 1;
         this.setPageIndex(pageIndex);
-        this.pageableView.paginate(pageIndex, pageSize);
+        this.targetView.paginate(pageIndex, pageSize);
     }
     goPrevious() {
         let { pageIndex, pageSize } = this.state;
@@ -4467,7 +4493,7 @@ class Pager extends SizableMixin(CustomElement) {
         }
         --pageIndex;
         this.setPageIndex(pageIndex);
-        this.pageableView.paginate(pageIndex, pageSize);
+        this.targetView.paginate(pageIndex, pageSize);
     }
     goNext() {
         let { pageIndex, pageSize } = this.state;
@@ -4477,7 +4503,7 @@ class Pager extends SizableMixin(CustomElement) {
         }
         ++pageIndex;
         this.setPageIndex(pageIndex);
-        this.pageableView.paginate(pageIndex, pageSize);
+        this.targetView.paginate(pageIndex, pageSize);
     }
     goLast() {
         let { pageIndex, pageSize } = this.state;
@@ -4487,7 +4513,7 @@ class Pager extends SizableMixin(CustomElement) {
         }
         pageIndex = totalPages;
         this.setPageIndex(pageIndex);
-        this.pageableView.paginate(pageIndex, pageSize);
+        this.targetView.paginate(pageIndex, pageSize);
     }
     render() {
         const { pageIndex } = this.state;
@@ -4511,20 +4537,16 @@ class Pager extends SizableMixin(CustomElement) {
         if (pageSizes === undefined) {
             return null;
         }
-        return (h("span", null,
-            h("gcl-select", { data: pageSizes, style: { width: '3rem' } }),
-            "/ Page"));
+        return (h("gcl-row", null,
+            h("gcl-select", { data: pageSizes, style: { minWidth: '4rem', width: '4rem' }, change: this.changePageSize }),
+            h("span", null, "/ Page")));
     }
-    connectedCallback() {
-        var _a;
-        (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
-        const { viewId } = this.props;
-        this.pageableView = document.getElementById(viewId);
-    }
-    disconnectedCallback() {
-        var _a;
-        (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
-        this.pageableView = null;
+    changePageSize(value) {
+        const pageIndex = 1; // Reset to start
+        this.setPageIndex(pageIndex);
+        const pageSize = parseInt(value);
+        this.setPageSize(pageSize);
+        this.targetView.paginate(pageIndex, pageSize);
     }
 }
 Pager.component = {
@@ -4533,14 +4555,6 @@ Pager.component = {
     ]
 };
 Pager.properties = {
-    /**
-     * The id of the view to paginate
-     */
-    viewId: {
-        attribute: 'view-id',
-        type: String,
-        required: true
-    },
     /**
      * The total of pages
      */
@@ -4566,6 +4580,95 @@ Pager.state = {
 };
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-pager`, Pager);
+
+const texts = {
+    // Comparison operators
+    'eq': 'Equals',
+    'ne': 'Not equals',
+    'gt': 'Greater than',
+    'ge': 'Greater than or equals',
+    'lt': 'Less than',
+    'le': 'Less than or equals',
+    // Logical operators
+    'not': 'Not',
+    'and': 'And',
+    'or': 'Or',
+    // String functions
+    'contains': 'Contains',
+    'startswith': 'Starts with',
+    'endswith': 'Ends with'
+};
+const getText = operator => {
+    const text = texts[operator];
+    if (!text) {
+        throw new Error(`Text not found for operator: '${operator}'`);
+    }
+    return text;
+};
+/**
+ * Component to filter data requests of the target view
+ */
+class FilterField extends CustomElement {
+    constructor() {
+        super();
+        this.operatorChanged = this.operatorChanged.bind(this);
+        this.valueChanged = this.valueChanged.bind(this);
+    }
+    render() {
+        const { field, operators } = this.props;
+        const select = (h("gcl-select", { slot: "after-label", name: "operator", "empty-option": {
+                description: '--Select Operator--',
+                code: ''
+            }, data: this.operatorsToOptions(operators), change: this.operatorChanged }));
+        field.props['input'] = this.valueChanged;
+        field.children.push(select);
+        return field;
+    }
+    operatorsToOptions(operators) {
+        return operators.map(operator => {
+            return {
+                code: operator,
+                description: getText(operator)
+            };
+        });
+    }
+    operatorChanged(event) {
+        alert('operator');
+    }
+    valueChanged(event) {
+        alert('value');
+    }
+}
+FilterField.properties = {
+    /**
+     * The field to render
+     */
+    field: {
+        type: VirtualNode,
+        required: true
+    },
+    /**
+     * The operators of the filter
+     */
+    operators: {
+        type: Array,
+        required: true
+    }
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-filter-field`, FilterField);
+
+/**
+ * Component to filter data requests of the target view
+ */
+class FilterPanel extends TargetViewHolderMixin(CustomElement) {
+    render() {
+        return (h("div", null,
+            h("slot", null)));
+    }
+}
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-filter-panel`, FilterPanel);
 
 const ValidatableMixin = Base => { var _a; return _a = class Validatable extends Base {
     },
@@ -4618,8 +4721,11 @@ class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(Custom
         const { validationWarnings, validationErrors } = this.state;
         const { size } = this.props;
         return (h(Fragment, null,
-            h("div", { class: "field" },
-                this.renderLabel(),
+            h("gcl-row", null,
+                h("gcl-row", null,
+                    h("slot", { name: "before-label" }),
+                    this.renderLabel(),
+                    h("slot", { name: "after-label" })),
                 this[renderField]()),
             h("gcl-validation-summary", { size: size, warnings: validationWarnings, errors: validationErrors })));
     }
@@ -4714,26 +4820,38 @@ class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(Custom
     }
     onInput(event) {
         // Retrieve the new value
-        const input = event.target;
-        const value = this.getNewValue(input);
+        const target = event.target;
+        const value = this.getNewValue(target);
         //this.setValue(value); // Do not update the current value, since it can keep changing
-        this.validate(value); // Validate the field on input
+        const valid = this.validate(value); // Validate the field on input
+        if (!valid) {
+            return;
+        }
+        const { input } = this.props;
+        if (input !== undefined) {
+            input(value);
+        }
     }
     onChange(event) {
-        const { name } = this.props;
+        const { name, change } = this.props;
         // Retrieve the new value
-        const input = event.target;
-        const value = this.getNewValue(input);
-        this.setValue(value, this.onValueSet); // Update the current value
-        //this.validate(value); // No need to validate again since this happens on input
-        this.dispatchEvent(new CustomEvent(valueChanged, {
-            detail: {
-                name,
-                value
-            },
-            bubbles: true,
-            composed: true
-        }));
+        const target = event.target;
+        const value = this.getNewValue(target);
+        if (change !== undefined) {
+            change(value);
+        }
+        else {
+            this.setValue(value, this.onValueSet); // Update the current value
+            //this.validate(value); // No need to validate again since this happens on input
+            this.dispatchEvent(new CustomEvent(valueChanged, {
+                detail: {
+                    name,
+                    value
+                },
+                bubbles: true,
+                composed: true
+            }));
+        }
     }
     getNewValue(input) {
         let value;
@@ -4808,6 +4926,18 @@ Field.properties = {
         type: Object,
         mutable: true,
         reflect: true
+    },
+    /**
+     * Custom input handler
+     */
+    input: {
+        type: Function
+    },
+    /**
+     * Custom change handler
+     */
+    change: {
+        type: Function
     }
 };
 
@@ -5010,12 +5140,11 @@ class SelectOptions extends DataMixin(Component) {
             this.renderData()));
     }
     renderEmptyOption() {
-        const { emptyOption } = this.props;
+        const { valueProperty, displayProperty, emptyOption } = this.props;
         if (emptyOption === undefined) {
             return null;
         }
-        const { label, value } = emptyOption;
-        return (h("option", { value: value }, label));
+        return (h("option", { value: emptyOption[valueProperty] }, emptyOption[displayProperty]));
     }
     renderRecord(record, index) {
         const { valueProperty, displayProperty, selected, emptyOption, parent } = this.props;
@@ -5043,15 +5172,15 @@ class SelectOptions extends DataMixin(Component) {
                 if (emptyOption === undefined &&
                     index === 0) {
                     parent.setValue(record); // Update the value in the parent
-                    return (h("option", { value: record, selected: true }, record));
+                    return (h("option", { value: record, key: record, selected: true }, record));
                 }
                 else {
-                    return (h("option", { value: record }, record));
+                    return (h("option", { value: record, key: record }, record));
                 }
             }
             else { // selected !== undefined
                 const isSelected = Array.isArray(selected) ? selected.includes(record) : selected === record;
-                return (h("option", { value: record, selected: isSelected }, record));
+                return (h("option", { value: record, key: record, selected: isSelected }, record));
             }
         }
     }
@@ -5084,10 +5213,8 @@ class Select extends ErrorableMixin(CollectionLoadableMixin(Field)) {
     [renderField]() {
         const { name, value, size, 
         //required,
-        disabled } = this.props;
-        return (h("select", { name: name, id: name, 
-            // style={{ maxWidth, width }}
-            value: value, size: size, onInput: this.onInput, onChange: this.onChange, 
+        disabled, style } = this.props;
+        return (h("select", { name: name, id: name, style: style, value: value, size: size, onInput: this.onInput, onChange: this.onChange, 
             // onFocus={onFocus}
             onBlur: this.onBlur, disabled: disabled }, this.renderOptions()));
     }
@@ -5105,8 +5232,7 @@ class Select extends ErrorableMixin(CollectionLoadableMixin(Field)) {
         else { // Display the options
             if (emptyOption !== undefined) {
                 // Prepend the empty option
-                const { label, value } = emptyOption;
-                options.prependChildNode(h("option", { value: value }, label));
+                options.prependChildNode(h("option", { value: emptyOption[valueProperty] }, emptyOption[displayProperty]));
             }
             return options;
         }
@@ -5123,6 +5249,9 @@ Select.properties = {
     },
     options: {
         type: VirtualNode
+    },
+    style: {
+        type: String
     },
     // Properties to pass through to the SelectOptions
     /**
@@ -5973,38 +6102,31 @@ class CurrentYear extends CustomElement {
 customElements.define(`${config.tagPrefix}-current-year`, CurrentYear);
 
 /**
- * Layout component to encapsulate flexbox functionality
+ * Layout component to encapsulate flexbox row functionality
  */
 //@ts-ignore
-class Row extends SizableMixin(CustomElement) {
-    // static properties = {
-    //     /**
-    //      * The key to retrieve a localized value from an i18n provider
-    //      */
-    //     intlKey: {
-    //         attribute: 'intl-key',
-    //         type: String
-    //     },
-    //     /** 
-    //      * The value of the text
-    //      */
-    //     value: {
-    //         type: String,
-    //         mutable: true,
-    //         reflect: true
-    //     }
-    // };
+class Row extends CustomElement {
     render() {
-        const { size } = this.props;
-        return (h(Fragment, { size: size },
+        const { justifyContent } = this.props;
+        return (h(Fragment, { style: { justifyContent } },
             h("slot", null)));
     }
 }
 Row.component = {
-    //shadow: false,
     styleUrls: [
-        `${config.assetsFolder}/row/Row.css`
+        `${config.assetsFolder}/layout/row/Row.css`
     ]
+};
+Row.properties = {
+    /**
+     * The type of the alert
+     */
+    justifyContent: {
+        attribute: 'justify-content',
+        type: String,
+        value: 'space-between',
+        options: ['start', 'center', 'space-around', 'space-between', 'space-evenly']
+    }
 };
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-row`, Row);
@@ -6129,4 +6251,4 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
-export { Alert, App, Button, CloseTool, Content, CurrentYear, DateField, FileField, Form, Header, HiddenField, Icon, List, ListItem, LoginSection, MyCounter, MyTable, NavigationBar, NavigationLink, NumberField, OidcProvider, Overlay, Pager, Panel, Router, Row, Select, Table, Text, TextArea, TextField, ValidationSummary, appCtrl };
+export { Alert, App, Button, CloseTool, Content, CurrentYear, DateField, FileField, FilterField, FilterPanel, Form, Header, HiddenField, Icon, List, ListItem, LoginSection, MyCounter, MyTable, NavigationBar, NavigationLink, NumberField, OidcProvider, Overlay, Pager, Panel, Router, Row, Select, Table, Text, TextArea, TextField, ValidationSummary, appCtrl };

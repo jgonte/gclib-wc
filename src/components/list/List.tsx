@@ -2,7 +2,7 @@
 import { Fragment, h } from 'gclib-vdom';
 import CustomElement from '../../core/customElement/CustomElement';
 import { config } from '../config';
-import SelectionContainerMixin from '../mixins/selectionContainer/SelectionContainerMixin';
+import SelectionContainerMixin from '../mixins/selection-container/SelectionContainerMixin';
 import SizableMixin from '../mixins/sizable/SizableMixin';
 import DataCollectionLoadableMixin from '../mixins/data/DataCollectionLoadableMixin';
 import DataFieldDefinition from '../mixins/data/DataFieldDefinition';

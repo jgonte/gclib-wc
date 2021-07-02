@@ -31,6 +31,10 @@ export { List } from './components/list/List';
 
 export { Pager } from './components/pager/Pager';
 
+export { FilterField } from './components/filter/FilterField';
+
+export { FilterPanel } from './components/filter/FilterPanel';
+
 export { TextField } from './components/field/textField/TextField';
 
 export { TextArea } from './components/field/textArea/TextArea';
@@ -59,7 +63,7 @@ export { Content } from './components/content/Content';
 
 export { CurrentYear } from './components/current-year/CurrentYear';
 
-export { Row } from './components/row/Row';
+export { Row } from './components/layout/row/Row';
 
 // examples
 export { MyTable } from '../examples/my-table';

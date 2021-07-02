@@ -57,6 +57,8 @@ export default class SelectOptions extends
     renderEmptyOption() {
 
         const {
+            valueProperty,
+            displayProperty,
             emptyOption
         } = this.props;
 
@@ -65,12 +67,7 @@ export default class SelectOptions extends
             return null;
         }
 
-        const {
-            label,
-            value
-        } = emptyOption;
-
-        return (<option value={value}>{label}</option>);
+        return (<option value={emptyOption[valueProperty]}>{emptyOption[displayProperty]}</option>);
     }
 
     renderRecord(record, index) {
@@ -119,18 +116,18 @@ export default class SelectOptions extends
 
                     parent.setValue(record); // Update the value in the parent
 
-                    return (<option value={record} selected>{record}</option>);
+                    return (<option value={record} key={record} selected>{record}</option>);
                 }
                 else {
 
-                    return (<option value={record}>{record}</option>);
+                    return (<option value={record} key={record} >{record}</option>);
                 }
             }
             else { // selected !== undefined
 
                 const isSelected = Array.isArray(selected) ? selected.includes(record) : selected === record;
 
-                return (<option value={record} selected={isSelected}>{record}</option>);
+                return (<option value={record} key={record} selected={isSelected}>{record}</option>);
             }
 
         }

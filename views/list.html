@@ -179,9 +179,46 @@
     </gcl-list>
 
     <h4>Contacts list with fields (it retrieves data from a back-end)</h4>
-    <gcl-list id="contactsListWithFields" load-url="http://localhost:60314/api/contacts" size="medium" selection='[2]' selectable
-        selection-changed="showSelection()" fields="getFields()">
+
+    <gcl-filter-panel target-view-id="contactsListWithFields">
+
+        <!-- <gcl-filter-field>
+            <gcl-text-field label="Name" name="name">
+                <gcl-select slot="after-label" name="operator" empty-option='{
+                    "label": "Select Operator",
+                    "value": ""
+                }' data='[
+                    {
+                        "code": "eq",
+                        "description": "Equals"
+                    },
+                    {
+                        "code": "contains",
+                        "description": "Contains"
+                    }
+                ]'>
+                </gcl-select>
+            </gcl-text-field>
+        </gcl-filter-field> -->
+
+        <gcl-filter-field 
+            field='<gcl-text-field label="Name" name="name"></gcl-text-field>'
+            operators='[
+                "eq",
+                "contains"
+            ]'>
+        </gcl-filter-field>
+
+        <!-- <gcl-filter-field>
+            <gcl-number-field label="Reputation" name="reputation" min="1" max="10"></gcl-number-field>
+        </gcl-filter-field> -->
+
+    </gcl-filter-panel>
+
+    <gcl-list id="contactsListWithFields" load-url="http://localhost:60314/api/contacts" size="medium" selection='[2]'
+        selectable selection-changed="showSelection()" fields="getFields()">
     </gcl-list>
-    <gcl-pager view-id="contactsListWithFields" total-pages="5"></gcl-pager>
+
+    <gcl-pager target-view-id="contactsListWithFields" total-pages="5"></gcl-pager>
 
 </body>

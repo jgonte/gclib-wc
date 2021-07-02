@@ -1,10 +1,10 @@
-import { VirtualNode, FragmentNode, VirtualText } from 'gclib-vdom';
+import { VirtualNode, FragmentNode, VirtualText, markupToVDom } from 'gclib-vdom';
 
 export default function createVirtualNode(o: any) {
 
     if (typeof o === 'string') {
 
-        return new VirtualText(o);
+        return markupToVDom(o.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
     }
 
     if (o.isVirtualNode === true) {

@@ -2,14 +2,17 @@ import { h } from 'gclib-vdom';
 import CustomElement from '../../core/customElement/CustomElement';
 import { config } from '../../components/config';
 import SizableMixin from '../mixins/sizable/SizableMixin';
+import TargetViewHolderMixin from '../mixins/target-view/TargetViewHolderMixin';
 
 /**
  * Pager component
  */
 //@ts-ignore
 export class Pager extends
-    SizableMixin(
-        CustomElement
+    TargetViewHolderMixin(
+        SizableMixin(
+            CustomElement
+        )
     ) {
 
     static component = {
@@ -20,15 +23,6 @@ export class Pager extends
     };
 
     static properties = {
-
-        /**
-         * The id of the view to paginate
-         */
-        viewId: {
-            attribute: 'view-id',
-            type: String,
-            required: true
-        },
 
         /**
          * The total of pages
@@ -58,8 +52,6 @@ export class Pager extends
         }
     };
 
-    pageableView: any;
-
     constructor() {
 
         super();
@@ -71,6 +63,8 @@ export class Pager extends
         this.goNext = this.goNext.bind(this);
 
         this.goLast = this.goLast.bind(this);
+
+        this.changePageSize = this.changePageSize.bind(this);
     }
 
     goFirst() {
@@ -89,7 +83,7 @@ export class Pager extends
 
         this.setPageIndex(pageIndex);
 
-        this.pageableView.paginate(pageIndex, pageSize);
+        this.targetView.paginate(pageIndex, pageSize);
     }
 
     goPrevious() {
@@ -108,7 +102,7 @@ export class Pager extends
 
         this.setPageIndex(pageIndex);
 
-        this.pageableView.paginate(pageIndex, pageSize);
+        this.targetView.paginate(pageIndex, pageSize);
     }
 
     goNext() {
@@ -131,7 +125,7 @@ export class Pager extends
 
         this.setPageIndex(pageIndex);
 
-        this.pageableView.paginate(pageIndex, pageSize);
+        this.targetView.paginate(pageIndex, pageSize);
     }
 
     goLast() {
@@ -154,7 +148,7 @@ export class Pager extends
 
         this.setPageIndex(pageIndex);
 
-        this.pageableView.paginate(pageIndex, pageSize);
+        this.targetView.paginate(pageIndex, pageSize);
     }
 
     render() {
@@ -206,30 +200,32 @@ export class Pager extends
         }
 
         return (
-            <span>
-                <gcl-select data={pageSizes} style={{ width: '3 rem' }}></gcl-select>
-                / Page
-            </span>
+            <gcl-row>
+                <gcl-select
+                    data={pageSizes}
+                    style={{ minWidth: '4rem', width: '4rem' }}
+                    change={this.changePageSize}
+                >
+                </gcl-select>
+                <span>/ Page</span>
+            </gcl-row>
         );
     }
 
-    connectedCallback() {
+    changePageSize(value) {
 
-        super.connectedCallback?.();
+        const pageIndex = 1; // Reset to start
 
-        const {
-            viewId
-        } = this.props;
+        this.setPageIndex(pageIndex);
 
-        this.pageableView = document.getElementById(viewId);
+        const pageSize = parseInt(value);
+
+        this.setPageSize(pageSize);
+
+        this.targetView.paginate(pageIndex, pageSize);
     }
 
-    disconnectedCallback() {
 
-        super.disconnectedCallback?.();
-
-        this.pageableView = null;
-    }
 }
 
 //@ts-ignore

@@ -67,6 +67,20 @@ export abstract class Field extends
             type: Object, // Ideally is a string but could be a more complex object
             mutable: true,
             reflect: true
+        },
+
+        /**
+         * Custom input handler
+         */
+        input: {
+            type: Function
+        },
+
+        /**
+         * Custom change handler
+         */
+        change: {
+            type: Function
         }
     };
 
@@ -94,10 +108,14 @@ export abstract class Field extends
 
         return (
             <Fragment>
-                <div class="field">
-                    {this.renderLabel()}
+                <gcl-row>
+                    <gcl-row>
+                        <slot name="before-label" />
+                        {this.renderLabel()}
+                        <slot name="after-label" />
+                    </gcl-row>
                     {(this as any)[renderField]()}
-                </div>
+                </gcl-row>
                 <gcl-validation-summary
                     size={size}
                     warnings={validationWarnings}
@@ -268,38 +286,60 @@ export abstract class Field extends
     onInput(event) {
 
         // Retrieve the new value
-        const input = event.target as HTMLInputElement;
+        const target = event.target as HTMLInputElement;
 
-        const value = this.getNewValue(input);
+        const value = this.getNewValue(target);
 
         //this.setValue(value); // Do not update the current value, since it can keep changing
 
-        this.validate(value); // Validate the field on input
+        const valid = this.validate(value); // Validate the field on input
+
+        if (!valid) {
+
+            return;
+        }
+
+        const {
+            input
+        } = this.props;
+
+        if (input !== undefined) {
+
+            input(value);
+        }
     }
 
     onChange(event) {
 
         const {
-            name
+            name,
+            change
         } = this.props;
 
         // Retrieve the new value
-        const input = event.target as HTMLInputElement;
+        const target = event.target as HTMLInputElement;
 
-        const value = this.getNewValue(input);
+        const value = this.getNewValue(target);
 
-        this.setValue(value, this.onValueSet); // Update the current value
+        if (change !== undefined) {
 
-        //this.validate(value); // No need to validate again since this happens on input
+            change(value);
+        }
+        else {
 
-        this.dispatchEvent(new CustomEvent(valueChanged, {
-            detail: {
-                name,
-                value
-            },
-            bubbles: true,
-            composed: true
-        }));
+            this.setValue(value, this.onValueSet); // Update the current value
+
+            //this.validate(value); // No need to validate again since this happens on input
+
+            this.dispatchEvent(new CustomEvent(valueChanged, {
+                detail: {
+                    name,
+                    value
+                },
+                bubbles: true,
+                composed: true
+            }));
+        }
     }
 
     getNewValue(input: HTMLInputElement): any {

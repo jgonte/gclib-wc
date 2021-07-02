@@ -1,6 +1,6 @@
 import CustomElement from '../../core/customElement/CustomElement';
 import { Fragment, h, VirtualNode } from 'gclib-vdom';
-//import SelectionContainerMixin from '../mixins/selectionContainer/SelectionContainerMixin';
+//import SelectionContainerMixin from '../mixins/selection-container/SelectionContainerMixin';
 //import TableColumnDefinition from './TableColumnDefinition';
 import { config } from '../config';
 import DataCollectionLoadableMixin from '../mixins/data/DataCollectionLoadableMixin';

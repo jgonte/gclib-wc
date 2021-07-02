@@ -25,6 +25,10 @@ export class Select extends
             type: VirtualNode
         },
 
+        style: {
+            type: String
+        },
+
         // Properties to pass through to the SelectOptions
 
         /**
@@ -59,14 +63,15 @@ export class Select extends
             value,
             size,
             //required,
-            disabled
+            disabled,
+            style
         } = this.props;
 
         return (
             <select
                 name={name}
                 id={name}
-                // style={{ maxWidth, width }}
+                style={style}
                 value={value}
                 size={size} // Needed for the CSS to get the right size
                 onInput={this.onInput}
@@ -116,12 +121,7 @@ export class Select extends
             if (emptyOption !== undefined) {
 
                 // Prepend the empty option
-                const {
-                    label,
-                    value
-                } = emptyOption;
-
-                (options as FragmentNode).prependChildNode(<option value={value}>{label}</option>);
+                (options as FragmentNode).prependChildNode(<option value={emptyOption[valueProperty]}>{emptyOption[displayProperty]}</option>);
             }
 
             return options;
