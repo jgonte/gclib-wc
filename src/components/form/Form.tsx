@@ -184,7 +184,6 @@ export class Form extends
 
         super.connectedCallback?.();
 
-        this.loadsCollection = false;
 
         this.initLoader();
 

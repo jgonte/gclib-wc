@@ -1,4 +1,5 @@
 import { CollectionLoader } from "gclib-utils";
+import FilterableMixin from "./FilterableMixin";
 import LoadableMixin from "./LoadableMixin";
 import PageableMixin from "./PageableMixin";
 
@@ -9,7 +10,9 @@ const CollectionLoadableMixin = Base =>
 
     class CollectionLoadable extends
         PageableMixin(
-            LoadableMixin(Base)
+            FilterableMixin(
+                LoadableMixin(Base)
+            )           
         ) {
 
         load() {

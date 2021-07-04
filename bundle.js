@@ -2058,6 +2058,8 @@ var AddChildrenPatch = (function () {
                 nodeWillConnect(childElement);
             }
             fragment.appendChild(childElement);
+        });
+        insertedChildrenElements.forEach(function (childElement) {
             if (nodeDidConnect) {
                 nodeDidConnect(childElement);
             }
@@ -2974,8 +2976,17 @@ const VirtualDomMixin = Base => class VirtualDom extends Base {
          * Flag to avoid re-requesting update if it is alaready requested
          */
         this._isUpdating = false;
+        if (this.nodeDidConnect !== undefined) {
+            this.nodeDidConnect = this.nodeDidConnect.bind(this);
+        }
+        if (this.nodeWillConnect !== undefined) {
+            this.nodeWillConnect = this.nodeWillConnect.bind(this);
+        }
         if (this.nodeDidUpdate !== undefined) {
             this.nodeDidUpdate = this.nodeDidUpdate.bind(this);
+        }
+        if (this.nodeWillDisconnect !== undefined) {
+            this.nodeWillDisconnect = this.nodeWillDisconnect.bind(this);
         }
     }
     /**
@@ -3979,10 +3990,20 @@ const DataMixin = Base => { var _a; return _a = class Data extends Base {
     },
     _a; };
 
+const FilterableMixin = Base => { var _a; return _a = class Filterable extends Base {
+        updateFilter(filter) {
+            this.setFilter(filter);
+            this.load();
+        }
+    },
+    _a.state = {
+        filter: {}
+    },
+    _a; };
+
 const LoadableMixin = Base => { var _a; return _a = class Loadable extends Base {
         constructor(props, children) {
             super(props, children);
-            this.loadsCollection = true; // Internal configuration
             this.onLoadData = this.onLoadData.bind(this);
             this.onLoadError = this.onLoadError.bind(this);
         }
@@ -4050,7 +4071,7 @@ const PageableMixin = Base => { var _a; return _a = class Pageable extends Base 
 /**
  * Implements a mixin that loads a collection of records
  */
-const CollectionLoadableMixin = Base => class CollectionLoadable extends PageableMixin(LoadableMixin(Base)) {
+const CollectionLoadableMixin = Base => class CollectionLoadable extends PageableMixin(FilterableMixin(LoadableMixin(Base))) {
     load() {
         const { loadUrl } = this.props;
         const { pageIndex, pageSize } = this.state;
@@ -4440,13 +4461,19 @@ List.component = {
 customElements.define(`${config.tagPrefix}-list`, List);
 
 const TargetViewHolderMixin = Base => { var _a; return _a = class TargetViewHolder extends Base {
-        connectedCallback() {
+        /**
+         * Called when the node and siblings have been connected
+         */
+        nodeDidConnect() {
             var _a;
-            (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+            (_a = super.nodeDidConnect) === null || _a === void 0 ? void 0 : _a.call(this);
             const { targetViewId } = this.props;
             this.targetView = document.getElementById(targetViewId);
+            if (this.targetView === null) {
+                throw Error(`Could not find target view with id: ${targetViewId}`);
+            }
         }
-        disconnectedCallback() {
+        nodeWillDisconnect() {
             var _a;
             (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
             this.targetView = null;
@@ -4605,6 +4632,7 @@ const getText = operator => {
     }
     return text;
 };
+const filterChanged = 'filterChanged';
 /**
  * Component to filter data requests of the target view
  */
@@ -4620,6 +4648,7 @@ class FilterField extends CustomElement {
                 description: '--Select Operator--',
                 code: ''
             }, data: this.operatorsToOptions(operators), change: this.operatorChanged }));
+        this.fieldName = field.props['name'];
         field.props['input'] = this.valueChanged;
         field.children.push(select);
         return field;
@@ -4632,11 +4661,37 @@ class FilterField extends CustomElement {
             };
         });
     }
-    operatorChanged(event) {
-        alert('operator');
+    operatorChanged(operator) {
+        this.operator = operator;
+        const { fieldName, value } = this;
+        if (value === undefined) {
+            return; // Ignore when the operator has changed if there is no value to filter
+        }
+        this.dispatchEvent(new CustomEvent(filterChanged, {
+            detail: {
+                fieldName,
+                operator,
+                value
+            },
+            bubbles: true,
+            composed: true
+        }));
     }
-    valueChanged(event) {
-        alert('value');
+    valueChanged(value) {
+        this.value = value;
+        const { fieldName, operator } = this;
+        if (operator === undefined) {
+            return; // Ignore when the value has changed if there is no operator to filter
+        }
+        this.dispatchEvent(new CustomEvent(filterChanged, {
+            detail: {
+                fieldName,
+                operator,
+                value
+            },
+            bubbles: true,
+            composed: true
+        }));
     }
 }
 FilterField.properties = {
@@ -4662,9 +4717,84 @@ customElements.define(`${config.tagPrefix}-filter-field`, FilterField);
  * Component to filter data requests of the target view
  */
 class FilterPanel extends TargetViewHolderMixin(CustomElement) {
+    constructor() {
+        super(...arguments);
+        /**
+         * The collection of filters to create the query from
+         */
+        this.filters = [];
+    }
     render() {
         return (h("div", null,
             h("slot", null)));
+    }
+    connectedCallback() {
+        var _a;
+        (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        this.addEventListener(filterChanged, this.handleFilterChanged);
+    }
+    disconnectedCallback() {
+        var _a;
+        (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        this.removeEventListener(filterChanged, this.handleFilterChanged);
+    }
+    handleFilterChanged(event) {
+        const { fieldName, operator, value } = event.detail;
+        clearTimeout(this.timeout);
+        this.timeout = setTimeout(() => {
+            const filter = this.getFilter(fieldName, operator, value);
+            this.targetView.updateFilter(filter);
+        }, 1000);
+        event.stopPropagation();
+    }
+    getFilter(fieldName, operator, value) {
+        if (fieldName === undefined) {
+            throw new Error('Field name is required.');
+        }
+        if (operator === undefined) {
+            throw new Error('Operator is required.');
+        }
+        // Unique filters by field name for this component
+        let selectedFilters = this.filters.filter(f => f.fieldName === fieldName);
+        switch (selectedFilters.length) {
+            case 0:
+                { // Filter does not exist
+                    if (value) {
+                        this.filters.push({
+                            fieldName: fieldName,
+                            operator: operator,
+                            value: value
+                        });
+                    }
+                }
+                break;
+            case 1:
+                {
+                    if (!value) { // Remove the filter by field name when the value is empty
+                        const item = this.filters.find(f => f.fieldName === fieldName);
+                        const index = this.filters.indexOf(item);
+                        this.filters.splice(index, 1);
+                    }
+                    else { // Update the operator and value of existing filter
+                        let filter = selectedFilters[0];
+                        filter.operator = operator;
+                        filter.value = value;
+                    }
+                }
+                break;
+            default: // Duplicate filter
+                throw new Error(`Duplicate filters for field: '${fieldName}'`);
+        }
+        // Update the filter to send to the server
+        switch (this.filters.length) {
+            case 0: return null;
+            case 1: return this.filters[0];
+            default:
+                return {
+                    operator: 'and',
+                    filters: this.filters
+                };
+        }
     }
 }
 //@ts-ignore
@@ -5735,7 +5865,6 @@ class Form extends SubmitableMixin(DataSingleLoadableMixin(ValidatableMixin(Cont
     connectedCallback() {
         var _a;
         (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
-        this.loadsCollection = false;
         this.initLoader();
         this.initSubmitter();
         this.addEventListener(valueChanged, this.onValueChanged);
@@ -5908,11 +6037,12 @@ class NavigationBar extends SizableMixin(ContainerMixin(CustomElement)) {
             return;
         }
         if (!this.setActiveLinkFromRoute(route)) {
-            this.route = route; // Save the route to retry on didMount;
+            this.route = route; // Save the route to retry on nodeDidConnect;
         }
     }
-    didMount() {
-        super.didMount();
+    nodeDidConnect() {
+        var _a;
+        (_a = super.nodeDidConnect) === null || _a === void 0 ? void 0 : _a.call(this);
         if (this.route !== undefined) {
             this.setActiveLinkFromRoute(this.route);
             this.route = undefined;

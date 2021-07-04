@@ -16,18 +16,26 @@ const TargetViewHolderMixin = Base =>
 
         targetView: any;
 
-        connectedCallback() {
+        /**
+         * Called when the node and siblings have been connected
+         */
+        nodeDidConnect() {
 
-            super.connectedCallback?.();
+            super.nodeDidConnect?.();
     
             const {
                 targetViewId
             } = this.props;
     
             this.targetView = document.getElementById(targetViewId);
+
+            if (this.targetView === null) {
+
+                throw Error(`Could not find target view with id: ${targetViewId}`);
+            }
         }
     
-        disconnectedCallback() {
+        nodeWillDisconnect() {
     
             super.disconnectedCallback?.();
     

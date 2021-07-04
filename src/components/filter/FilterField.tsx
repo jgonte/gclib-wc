@@ -31,6 +31,8 @@ const getText = operator => {
     return text;
 };
 
+export const filterChanged = 'filterChanged';
+
 /**
  * Component to filter data requests of the target view
  */
@@ -56,10 +58,25 @@ export class FilterField extends
         }
     }
 
+    /**
+     * The name of the field in the filter
+     */
+    fieldName: string;
+
+    /**
+     * The selected operator
+     */
+    operator: string;
+
+    /**
+     * The selected value
+     */
+    value: any;
+
     constructor() {
 
         super();
-        
+
         this.operatorChanged = this.operatorChanged.bind(this);
 
         this.valueChanged = this.valueChanged.bind(this);
@@ -86,6 +103,8 @@ export class FilterField extends
             </gcl-select >
         );
 
+        this.fieldName = field.props['name'];
+
         field.props['input'] = this.valueChanged;
 
         (field as VirtualNode).children.push(select);
@@ -104,14 +123,54 @@ export class FilterField extends
         });
     }
 
-    operatorChanged(event) {
+    operatorChanged(operator: string) {
 
-        alert('operator');
+        this.operator = operator;
+
+        const {
+            fieldName,
+            value
+        } = this;
+
+        if (value === undefined) {
+
+            return; // Ignore when the operator has changed if there is no value to filter
+        }
+
+        this.dispatchEvent(new CustomEvent(filterChanged, {
+            detail: {
+                fieldName,
+                operator,
+                value
+            },
+            bubbles: true,
+            composed: true
+        }));
     }
 
-    valueChanged(event) {
+    valueChanged(value) {
 
-        alert('value');
+        this.value = value;
+
+        const {
+            fieldName,
+            operator
+        } = this;
+
+        if (operator === undefined) {
+
+            return; // Ignore when the value has changed if there is no operator to filter
+        }
+
+        this.dispatchEvent(new CustomEvent(filterChanged, {
+            detail: {
+                fieldName,
+                operator,
+                value
+            },
+            bubbles: true,
+            composed: true
+        }));
     }
 }
 

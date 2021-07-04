@@ -25,9 +25,24 @@ const VirtualDomMixin = Base =>
 
             super(props, children);
 
+            if (this.nodeDidConnect !== undefined) {
+
+                this.nodeDidConnect = this.nodeDidConnect.bind(this);
+            }
+
+            if (this.nodeWillConnect !== undefined) {
+
+                this.nodeWillConnect = this.nodeWillConnect.bind(this);
+            }
+
             if (this.nodeDidUpdate !== undefined) {
 
                 this.nodeDidUpdate = this.nodeDidUpdate.bind(this);
+            }
+
+            if (this.nodeWillDisconnect !== undefined) {
+
+                this.nodeWillDisconnect = this.nodeWillDisconnect.bind(this);
             }
         }
 

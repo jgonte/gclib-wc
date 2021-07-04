@@ -4,8 +4,6 @@ const LoadableMixin = Base =>
 
     class Loadable extends Base {
 
-        loadsCollection = true; // Internal configuration
-
         static properties = {
 
             /**

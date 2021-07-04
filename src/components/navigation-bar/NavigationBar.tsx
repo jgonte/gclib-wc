@@ -139,13 +139,13 @@ export class NavigationBar extends
 
         if (!this.setActiveLinkFromRoute(route)) {
 
-            this.route = route; // Save the route to retry on didMount;
+            this.route = route; // Save the route to retry on nodeDidConnect;
         }
     }
 
-    didMount() {
+    nodeDidConnect() {
 
-        super.didMount();
+        super.nodeDidConnect?.();
 
         if (this.route !== undefined) {
 
