@@ -2,6 +2,7 @@ import { CollectionLoader } from "gclib-utils";
 import FilterableMixin from "./FilterableMixin";
 import LoadableMixin from "./LoadableMixin";
 import PageableMixin from "./PageableMixin";
+import SortableMixin from "./SortableMixin";
 
 /**
  * Implements a mixin that loads a collection of records 
@@ -10,9 +11,11 @@ const CollectionLoadableMixin = Base =>
 
     class CollectionLoadable extends
         PageableMixin(
-            FilterableMixin(
-                LoadableMixin(Base)
-            )           
+            SortableMixin(
+                FilterableMixin(
+                    LoadableMixin(Base)
+                ) 
+            )                  
         ) {
 
         load() {
@@ -23,7 +26,9 @@ const CollectionLoadableMixin = Base =>
 
             const {
                 pageIndex,
-                pageSize
+                pageSize,
+                filter,
+                sorters
             } = this.state;
 
             this.setError(undefined);
@@ -34,6 +39,8 @@ const CollectionLoadableMixin = Base =>
                 url: loadUrl,
                 top: pageSize,
                 skip: pageSize * (pageIndex - 1),
+                filter,
+                orderBy: sorters
             });
         }
 

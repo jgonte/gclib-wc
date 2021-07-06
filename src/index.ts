@@ -11,8 +11,6 @@ export { Icon } from './components/icon/Icon';
 
 export { Text } from './components/text/Text';
 
-export { CloseTool } from './components/tool/close-tool/CloseTool';
-
 export { Alert } from './components/alert/Alert';
 
 export { Button } from './components/button/Button';
@@ -63,9 +61,18 @@ export { Content } from './components/content/Content';
 
 export { CurrentYear } from './components/current-year/CurrentYear';
 
+// Layout
 export { Row } from './components/layout/row/Row';
+
+// Tools
+export { CloseTool } from './components/tool/close-tool/CloseTool';
+
+export { SorterTool } from './components/tool/sorter/SorterTool';
 
 // examples
 export { MyTable } from '../examples/my-table';
 
 export { MyCounter } from '../examples/my-counter';
+
+// experimental
+export { XList } from './components/x-list/XList';

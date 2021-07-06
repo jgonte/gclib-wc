@@ -52,10 +52,18 @@ export class List extends
 
         const children = fds.map(f => {
 
+            const sorter = f.sortable !== false ?
+                (
+                    <gcl-sorter-tool field={f.name}></gcl-sorter-tool>
+                ) : 
+                null;
+
             return (
                 <span class="list-cell" style={{
                     width: f.width || '100px'
-                }}>{f.display}
+                }}>
+                    {f.display}
+                    {sorter}
                 </span>
             );
         });

@@ -1,3 +1,5 @@
+import { createFilter } from 'gclib-utils';
+
 const FilterableMixin = Base =>
 
     class Filterable extends Base {
@@ -9,7 +11,9 @@ const FilterableMixin = Base =>
 
         updateFilter(filter: any) {
 
-            this.setFilter(filter);
+            const f = createFilter(filter);
+
+            this.setFilter(f);
 
             this.load();
         }

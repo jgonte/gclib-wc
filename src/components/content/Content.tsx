@@ -1,4 +1,4 @@
-import { h, Fragment } from 'gclib-vdom';
+import { h, Fragment, notifyNodeWillDisconnect } from 'gclib-vdom';
 import CustomElement from '../../core/customElement/CustomElement';
 import { config } from '../../components/config';
 import { resourceLoader, Route, Router } from 'gclib-utils';
@@ -74,6 +74,8 @@ export class Content extends CustomElement {
             // Clear any previous content
             while (this.document.firstChild) {
 
+                notifyNodeWillDisconnect(this.document.firstChild);
+                
                 this.document.firstChild.remove();
             }
 

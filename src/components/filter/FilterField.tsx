@@ -139,7 +139,7 @@ export class FilterField extends
 
         this.dispatchEvent(new CustomEvent(filterChanged, {
             detail: {
-                fieldName,
+                field: fieldName,
                 operator,
                 value
             },
@@ -164,7 +164,7 @@ export class FilterField extends
 
         this.dispatchEvent(new CustomEvent(filterChanged, {
             detail: {
-                fieldName,
+                field: fieldName,
                 operator,
                 value
             },

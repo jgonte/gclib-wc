@@ -1,4 +1,4 @@
-import { SingleItemLoader } from "gclib-utils";
+import { SingleRecordLoader } from "gclib-utils";
 import LoadableMixin from "./LoadableMixin";
 
 /**
@@ -33,7 +33,7 @@ const SingleLoadableMixin = Base =>
 
             if (loadUrl !== undefined) {
 
-                this._loader = new SingleItemLoader({
+                this._loader = new SingleRecordLoader({
                     onData: this.onLoadData,
                     onError: this.onLoadError
                 });

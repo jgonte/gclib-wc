@@ -45,7 +45,7 @@ export class FilterPanel extends TargetViewHolderMixin(CustomElement) {
     handleFilterChanged(event: CustomEvent) {
 
         const {
-            fieldName,
+            field,
             operator,
             value
         } = event.detail;
@@ -54,7 +54,7 @@ export class FilterPanel extends TargetViewHolderMixin(CustomElement) {
 
         this.timeout = setTimeout(() => {
 
-            const filter = this.getFilter(fieldName, operator, value);
+            const filter = this.getFilter(field, operator, value);
 
             this.targetView.updateFilter(filter);
 
@@ -63,9 +63,9 @@ export class FilterPanel extends TargetViewHolderMixin(CustomElement) {
         event.stopPropagation();
     }
 
-    getFilter(fieldName: string, operator: string, value: any) {
+    getFilter(field: string, operator: string, value: any) {
 
-        if (fieldName === undefined) {
+        if (field === undefined) {
 
             throw new Error('Field name is required.');
         }
@@ -76,26 +76,27 @@ export class FilterPanel extends TargetViewHolderMixin(CustomElement) {
         }
 
         // Unique filters by field name for this component
-        let selectedFilters = this.filters.filter(f => f.fieldName === fieldName);
+        let selectedFilters = this.filters.filter(f => f.field === field);
 
         switch (selectedFilters.length) {
+
             case 0: { // Filter does not exist
 
                 if (value) {
 
                     this.filters.push({
-                        fieldName: fieldName,
-                        operator: operator,
-                        value: value
+                        field,
+                        operator,
+                        value
                     });
                 }
             }
                 break;
-            case 1: { 
+            case 1: {
 
-                if (!value) { // Remove the filter by field name when the value is empty
+                if (operator === undefined || value === undefined) { // Remove the filter by field name when the operator or the value are empty
 
-                    const item = this.filters.find(f => f.fieldName === fieldName);
+                    const item = this.filters.find(f => f.field === field);
 
                     const index = this.filters.indexOf(item);
 
@@ -112,14 +113,15 @@ export class FilterPanel extends TargetViewHolderMixin(CustomElement) {
             }
                 break;
             default: // Duplicate filter
-                throw new Error(`Duplicate filters for field: '${fieldName}'`);
+
+                throw new Error(`Duplicate filters for field: '${field}'`);
         }
 
         // Update the filter to send to the server
         switch (this.filters.length) {
             case 0: return null;
             case 1: return this.filters[0];
-            default: 
+            default:
                 return {
                     operator: 'and',
                     filters: this.filters

@@ -1129,14 +1129,14 @@ var SelectUrlBuilder = (function () {
     return SelectUrlBuilder;
 }());
 
-var SingleItemLoader = (function (_super) {
-    __extends(SingleItemLoader, _super);
-    function SingleItemLoader(cfg) {
+var SingleRecordLoader = (function (_super) {
+    __extends(SingleRecordLoader, _super);
+    function SingleRecordLoader(cfg) {
         var _this = _super.call(this, cfg) || this;
         _this.urlBuilder = new SelectUrlBuilder(cfg.urlBuilder);
         return _this;
     }
-    SingleItemLoader.prototype.load = function (request) {
+    SingleRecordLoader.prototype.load = function (request) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -1148,7 +1148,7 @@ var SingleItemLoader = (function (_super) {
             });
         });
     };
-    return SingleItemLoader;
+    return SingleRecordLoader;
 }(Fetcher));
 
 var CollectionUrlBuilder = (function (_super) {
@@ -1210,6 +1210,287 @@ var CollectionLoader = (function (_super) {
     };
     return CollectionLoader;
 }(Fetcher));
+
+var ComparisonOperators = {
+    IsEqual: 'eq',
+    IsNotEqual: 'ne',
+    IsGreaterThan: 'gt',
+    IsGreaterThanOrEqual: 'ge',
+    IsLessThan: 'lt',
+    IsLessThanOrEqual: 'le'
+};
+
+var LogicalOperators = {
+    Not: 'not',
+    And: 'and',
+    Or: 'or'
+};
+
+var MultiValueOperators = {
+    In: 'in',
+    NotIn: 'not in'
+};
+
+var StringFunctions = {
+    Contains: 'contains',
+    StartsWith: 'startswith',
+    EndsWith: 'endswith'
+};
+
+var ComparisonFilter = (function () {
+    function ComparisonFilter(field, operator, value) {
+        this.field = field;
+        this.operator = operator;
+        this.value = value;
+    }
+    ComparisonFilter.prototype.build = function () {
+        if (this.field === undefined) {
+            throw Error("Comparison filter with operator: '" + this.operator + "' requires a field.");
+        }
+        if (this.value === undefined) {
+            throw new Error("Comparison filter for field: '" + this.field + "' requires a value.");
+        }
+        var value = typeof this.value === 'number' ? this.value : "'" + this.value + "'";
+        return this.field + " " + this.operator + " " + value;
+    };
+    return ComparisonFilter;
+}());
+var IsEqualFilter = (function (_super) {
+    __extends(IsEqualFilter, _super);
+    function IsEqualFilter(field, value) {
+        var _this = _super.call(this, field, 'eq', value) || this;
+        _this.field = field;
+        _this.value = value;
+        return _this;
+    }
+    return IsEqualFilter;
+}(ComparisonFilter));
+var IsNotEqualFilter = (function (_super) {
+    __extends(IsNotEqualFilter, _super);
+    function IsNotEqualFilter(field, value) {
+        var _this = _super.call(this, field, 'ne', value) || this;
+        _this.field = field;
+        _this.value = value;
+        return _this;
+    }
+    return IsNotEqualFilter;
+}(ComparisonFilter));
+var IsGreaterThanFilter = (function (_super) {
+    __extends(IsGreaterThanFilter, _super);
+    function IsGreaterThanFilter(field, value) {
+        var _this = _super.call(this, field, 'gt', value) || this;
+        _this.field = field;
+        _this.value = value;
+        return _this;
+    }
+    return IsGreaterThanFilter;
+}(ComparisonFilter));
+var IsGreaterOrEqualFilter = (function (_super) {
+    __extends(IsGreaterOrEqualFilter, _super);
+    function IsGreaterOrEqualFilter(field, value) {
+        var _this = _super.call(this, field, 'ge', value) || this;
+        _this.field = field;
+        _this.value = value;
+        return _this;
+    }
+    return IsGreaterOrEqualFilter;
+}(ComparisonFilter));
+var IsLessThanFilter = (function (_super) {
+    __extends(IsLessThanFilter, _super);
+    function IsLessThanFilter(field, value) {
+        var _this = _super.call(this, field, 'lt', value) || this;
+        _this.field = field;
+        _this.value = value;
+        return _this;
+    }
+    return IsLessThanFilter;
+}(ComparisonFilter));
+var IsLessOrEqualFilter = (function (_super) {
+    __extends(IsLessOrEqualFilter, _super);
+    function IsLessOrEqualFilter(field, value) {
+        var _this = _super.call(this, field, 'le', value) || this;
+        _this.field = field;
+        _this.value = value;
+        return _this;
+    }
+    return IsLessOrEqualFilter;
+}(ComparisonFilter));
+
+var LogicalFilter = (function () {
+    function LogicalFilter(operator, filters) {
+        this.operator = operator;
+        this.filters = filters;
+    }
+    LogicalFilter.prototype.build = function () {
+        var filters = this.filters;
+        if (!filters.length) {
+            throw new Error("Operator: '" + this.operator + "' requires at least one child filter.");
+        }
+        return this.filters.map(function (item) { return item.build(); }).join(" " + this.operator + " ");
+    };
+    return LogicalFilter;
+}());
+var AndFilter = (function (_super) {
+    __extends(AndFilter, _super);
+    function AndFilter(filters) {
+        var _this = _super.call(this, 'and', filters) || this;
+        _this.filters = filters;
+        return _this;
+    }
+    return AndFilter;
+}(LogicalFilter));
+var OrFilter = (function (_super) {
+    __extends(OrFilter, _super);
+    function OrFilter(filters) {
+        var _this = _super.call(this, 'or', filters) || this;
+        _this.filters = filters;
+        return _this;
+    }
+    return OrFilter;
+}(LogicalFilter));
+
+var MultiValueFilter = (function () {
+    function MultiValueFilter(field, operator, values) {
+        this.field = field;
+        this.operator = operator;
+        this.values = values;
+    }
+    MultiValueFilter.prototype.build = function () {
+        if (this.field === undefined) {
+            throw Error('Multivalue filter requires a field name.');
+        }
+        var values = this.values.map(function (v) { return (typeof v === 'number' ? v : "'" + v + "'"); }).join(', ');
+        return this.field + " " + this.operator + " (" + values + ")";
+    };
+    return MultiValueFilter;
+}());
+var InFilter = (function (_super) {
+    __extends(InFilter, _super);
+    function InFilter(field, values) {
+        var _this = _super.call(this, field, 'in', values) || this;
+        _this.field = field;
+        _this.values = values;
+        return _this;
+    }
+    return InFilter;
+}(MultiValueFilter));
+var NotInFilter = (function (_super) {
+    __extends(NotInFilter, _super);
+    function NotInFilter(field, values) {
+        var _this = _super.call(this, field, 'not in', values) || this;
+        _this.field = field;
+        _this.values = values;
+        return _this;
+    }
+    return NotInFilter;
+}(MultiValueFilter));
+
+var NotFilter = (function () {
+    function NotFilter(filter) {
+        this.filter = filter;
+    }
+    NotFilter.prototype.build = function () {
+        if (this.filter === undefined) {
+            throw Error("'Not' filter requires one child filter.");
+        }
+        var childFilter = this.filter.build();
+        return "not " + childFilter;
+    };
+    return NotFilter;
+}());
+
+var StringFilter = (function () {
+    function StringFilter(field, fcn, value) {
+        this.field = field;
+        this.fcn = fcn;
+        this.value = value;
+    }
+    StringFilter.prototype.build = function () {
+        if (!this.field) {
+            throw new Error("String filter with function: '" + this.fcn + "' requires a field.");
+        }
+        if (!this.value) {
+            throw new Error("String filter for field: '" + this.field + "' requires a value.");
+        }
+        return this.fcn + "(" + this.field + ", " + ("'" + this.value + "'") + ")";
+    };
+    return StringFilter;
+}());
+var ContainsStringFilter = (function (_super) {
+    __extends(ContainsStringFilter, _super);
+    function ContainsStringFilter(field, value) {
+        var _this = _super.call(this, field, 'contains', value) || this;
+        _this.field = field;
+        _this.value = value;
+        return _this;
+    }
+    return ContainsStringFilter;
+}(StringFilter));
+var StartsWithStringFilter = (function (_super) {
+    __extends(StartsWithStringFilter, _super);
+    function StartsWithStringFilter(field, value) {
+        var _this = _super.call(this, field, 'startswith', value) || this;
+        _this.field = field;
+        _this.value = value;
+        return _this;
+    }
+    return StartsWithStringFilter;
+}(StringFilter));
+var EndsWithStringFilter = (function (_super) {
+    __extends(EndsWithStringFilter, _super);
+    function EndsWithStringFilter(field, value) {
+        var _this = _super.call(this, field, 'endswith', value) || this;
+        _this.field = field;
+        _this.value = value;
+        return _this;
+    }
+    return EndsWithStringFilter;
+}(StringFilter));
+
+function createFilter(filter) {
+    var operator = filter.operator.trim().toLowerCase();
+    switch (operator) {
+        case LogicalOperators.And:
+            return new AndFilter(filter.filters.map(function (f) { return createFilter(f); }));
+        case LogicalOperators.Or:
+            return new OrFilter(filter.filters.map(function (f) { return createFilter(f); }));
+        case LogicalOperators.Not:
+            return new NotFilter(createFilter(filter.filter));
+        case MultiValueOperators.In:
+            {
+                var values = typeof filter.values === 'function' ?
+                    filter.values() :
+                    filter.values;
+                return new InFilter(filter.field, values);
+            }
+        case MultiValueOperators.NotIn:
+            {
+                var values = typeof filter.values === 'function' ?
+                    filter.values() :
+                    filter.values;
+                return new NotInFilter(filter.field, values);
+            }
+        case ComparisonOperators.IsEqual:
+            return new IsEqualFilter(filter.field, filter.value);
+        case ComparisonOperators.IsNotEqual:
+            return new IsNotEqualFilter(filter.field, filter.value);
+        case ComparisonOperators.IsGreaterThan:
+            return new IsGreaterThanFilter(filter.field, filter.value);
+        case ComparisonOperators.IsGreaterThanOrEqual:
+            return new IsGreaterOrEqualFilter(filter.field, filter.value);
+        case ComparisonOperators.IsLessThan:
+            return new IsLessThanFilter(filter.field, filter.value);
+        case ComparisonOperators.IsLessThanOrEqual:
+            return new IsLessOrEqualFilter(filter.field, filter.value);
+        case StringFunctions.Contains:
+            return new ContainsStringFilter(filter.field, filter.value);
+        case StringFunctions.StartsWith:
+            return new StartsWithStringFilter(filter.field, filter.value);
+        case StringFunctions.EndsWith:
+            return new EndsWithStringFilter(filter.field, filter.value);
+        default: throw new Error("Unknown operator: '" + filter.operator + "' in filter.");
+    }
+}
 
 var cache = {};
 var resourceLoader = {
@@ -1527,10 +1808,19 @@ var VirtualNode = (function () {
     VirtualNode.prototype.render = function () {
         var _a = this, name = _a.name, props = _a.props, children = _a.children;
         var element = createDOMElement(name, props);
+        element.component = this.component;
         for (var _i = 0, children_1 = children; _i < children_1.length; _i++) {
             var child = children_1[_i];
             if (child) {
-                element.appendChild(child.render());
+                var fc = child.component;
+                var node = child.render();
+                if (fc !== undefined && fc.nodeWillConnect !== undefined) {
+                    fc.nodeWillConnect(node);
+                }
+                element.appendChild(node);
+                if (fc !== undefined && fc.nodeDidConnect !== undefined) {
+                    fc.nodeDidConnect(node);
+                }
             }
         }
         this.element = element;
@@ -1611,7 +1901,14 @@ function h(name, attributes) {
             child.forEach(function (ch) { return childrenNodes.push(ch); });
         }
         else if (typeof child === 'object') {
-            throw new Error('Invalid object');
+            if (child.render !== undefined) {
+                var vNode = child.render();
+                vNode.component = child;
+                childrenNodes.push(vNode);
+            }
+            else {
+                throw new Error('Invalid object. It must define a render function');
+            }
         }
         else {
             childrenNodes.push(new VirtualText(child));
@@ -2664,6 +2961,22 @@ function markupToVDom(markup, type, options) {
     return toVDom(node, options);
 }
 
+function notifyNodeWillDisconnect(node) {
+    var c = node.component !== undefined ?
+        node.component :
+        node;
+    if (c.nodeWillDisconnect !== undefined) {
+        c.nodeWillDisconnect(node);
+    }
+    var root = node.shadowRoot;
+    var n = root !== undefined && root !== null ?
+        root :
+        node;
+    if (n.childNodes !== undefined) {
+        n.childNodes.forEach(function (child) { return notifyNodeWillDisconnect(child); });
+    }
+}
+
 function createVirtualNode(o) {
     if (typeof o === 'string') {
         return markupToVDom(o.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
@@ -3325,41 +3638,6 @@ Text.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-text`, Text);
 
-//@ts-ignore
-class CloseTool extends SizableMixin(VariantMixin(CustomElement)) {
-    connectedCallback() {
-        var _a;
-        (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
-        const { close } = this.props;
-        this.addEventListener('click', close);
-    }
-    disconnectedCallback() {
-        var _a;
-        (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
-        const { close } = this.props;
-        this.removeEventListener('click', close);
-    }
-    render() {
-        const { variant, size } = this.props;
-        return (h(Fragment, { variant: variant, size: size }, "\u00D7"));
-    }
-}
-CloseTool.component = {
-    styleUrls: [
-        `${config.assetsFolder}/tool/close-tool/CloseTool.css`
-    ]
-};
-CloseTool.properties = {
-    /**
-     * What action to execute when the tool has been closed
-     */
-    close: {
-        type: Function
-    }
-};
-//@ts-ignore
-customElements.define(`${config.tagPrefix}-close-tool`, CloseTool);
-
 function getChildren(node) {
     if (node instanceof HTMLElement) {
         const slot = node.querySelector('slot');
@@ -3992,7 +4270,8 @@ const DataMixin = Base => { var _a; return _a = class Data extends Base {
 
 const FilterableMixin = Base => { var _a; return _a = class Filterable extends Base {
         updateFilter(filter) {
-            this.setFilter(filter);
+            const f = createFilter(filter);
+            this.setFilter(f);
             this.load();
         }
     },
@@ -4068,19 +4347,117 @@ const PageableMixin = Base => { var _a; return _a = class Pageable extends Base 
     },
     _a; };
 
+//@ts-ignore
+class Tool extends SizableMixin(VariantMixin(CustomElement)) {
+    render() {
+        const { variant, size } = this.props;
+        const { iconName, click } = this;
+        const icon = typeof iconName === 'function' ?
+            iconName() :
+            iconName;
+        return (h("gcl-button", { variant: variant, size: size, click: click },
+            h("gcl-icon", { name: icon })));
+    }
+}
+
+const sorterChanged = 'sorterChanged';
+//@ts-ignore
+class SorterTool extends Tool {
+    constructor() {
+        super(...arguments);
+        this.iconName = () => {
+            const { ascending } = this.state;
+            if (ascending === undefined) {
+                return 'arrow-down-up';
+            }
+            return ascending === true ?
+                'arrow-up' :
+                'arrow-down';
+        };
+        this.click = () => {
+            let { ascending } = this.state;
+            ascending = !ascending;
+            this.setAscending(ascending);
+            const { field } = this.props;
+            this.dispatchEvent(new CustomEvent(sorterChanged, {
+                detail: {
+                    field,
+                    ascending,
+                    sorterElement: this // Send this element to track the current sorter
+                },
+                bubbles: true,
+                composed: true
+            }));
+        };
+    }
+}
+SorterTool.properties = {
+    /**
+     * The name of the field to sort
+     */
+    field: {
+        type: String,
+        required: true
+    }
+};
+SorterTool.state = {
+    ascending: {}
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-sorter-tool`, SorterTool);
+
+const SortableMixin = Base => { var _a; return _a = class Sortable extends Base {
+        connectedCallback() {
+            var _a;
+            (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+            this.addEventListener(sorterChanged, this.handleSorterChanged);
+        }
+        disconnectedCallback() {
+            var _a;
+            (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+            this.removeEventListener(sorterChanged, this.handleSorterChanged);
+        }
+        handleSorterChanged(event) {
+            const { field, ascending, sorterElement } = event.detail;
+            if (this.sorterElement === undefined) {
+                this.sorterElement = sorterElement;
+            }
+            else if (this.sorterElement !== sorterElement) {
+                this.sorterElement.setAscending(undefined);
+                this.sorterElement = sorterElement;
+            }
+            this.setSorters([
+                {
+                    field,
+                    order: ascending === true ?
+                        'asc' :
+                        'desc'
+                }
+            ]);
+            this.load();
+            event.stopPropagation();
+        }
+    },
+    _a.state = {
+        sorters: []
+    },
+    _a; };
+
 /**
  * Implements a mixin that loads a collection of records
  */
-const CollectionLoadableMixin = Base => class CollectionLoadable extends PageableMixin(FilterableMixin(LoadableMixin(Base))) {
+const CollectionLoadableMixin = Base => class CollectionLoadable extends PageableMixin(SortableMixin(FilterableMixin(LoadableMixin(Base)))) {
     load() {
         const { loadUrl } = this.props;
-        const { pageIndex, pageSize } = this.state;
+        const { pageIndex, pageSize, filter, sorters } = this.state;
         this.setError(undefined);
         this.setLoading(true);
         this._loader.load({
             url: loadUrl,
             top: pageSize,
             skip: pageSize * (pageIndex - 1),
+            filter,
+            orderBy: sorters
         });
     }
     initLoader() {
@@ -4421,9 +4798,14 @@ class List extends SelectionContainerMixin(SizableMixin(DataCollectionLoadableMi
         }
         const fds = typeof fields === 'function' ? fields() : fields;
         const children = fds.map(f => {
+            const sorter = f.sortable !== false ?
+                (h("gcl-sorter-tool", { field: f.name })) :
+                null;
             return (h("span", { class: "list-cell", style: {
                     width: f.width || '100px'
-                } }, f.display));
+                } },
+                f.display,
+                sorter));
         });
         return (h("gcl-list-item", { selectable: "false" }, children));
     }
@@ -4669,7 +5051,7 @@ class FilterField extends CustomElement {
         }
         this.dispatchEvent(new CustomEvent(filterChanged, {
             detail: {
-                fieldName,
+                field: fieldName,
                 operator,
                 value
             },
@@ -4685,7 +5067,7 @@ class FilterField extends CustomElement {
         }
         this.dispatchEvent(new CustomEvent(filterChanged, {
             detail: {
-                fieldName,
+                field: fieldName,
                 operator,
                 value
             },
@@ -4739,39 +5121,39 @@ class FilterPanel extends TargetViewHolderMixin(CustomElement) {
         this.removeEventListener(filterChanged, this.handleFilterChanged);
     }
     handleFilterChanged(event) {
-        const { fieldName, operator, value } = event.detail;
+        const { field, operator, value } = event.detail;
         clearTimeout(this.timeout);
         this.timeout = setTimeout(() => {
-            const filter = this.getFilter(fieldName, operator, value);
+            const filter = this.getFilter(field, operator, value);
             this.targetView.updateFilter(filter);
         }, 1000);
         event.stopPropagation();
     }
-    getFilter(fieldName, operator, value) {
-        if (fieldName === undefined) {
+    getFilter(field, operator, value) {
+        if (field === undefined) {
             throw new Error('Field name is required.');
         }
         if (operator === undefined) {
             throw new Error('Operator is required.');
         }
         // Unique filters by field name for this component
-        let selectedFilters = this.filters.filter(f => f.fieldName === fieldName);
+        let selectedFilters = this.filters.filter(f => f.field === field);
         switch (selectedFilters.length) {
             case 0:
                 { // Filter does not exist
                     if (value) {
                         this.filters.push({
-                            fieldName: fieldName,
-                            operator: operator,
-                            value: value
+                            field,
+                            operator,
+                            value
                         });
                     }
                 }
                 break;
             case 1:
                 {
-                    if (!value) { // Remove the filter by field name when the value is empty
-                        const item = this.filters.find(f => f.fieldName === fieldName);
+                    if (operator === undefined || value === undefined) { // Remove the filter by field name when the operator or the value are empty
+                        const item = this.filters.find(f => f.field === field);
                         const index = this.filters.indexOf(item);
                         this.filters.splice(index, 1);
                     }
@@ -4783,7 +5165,7 @@ class FilterPanel extends TargetViewHolderMixin(CustomElement) {
                 }
                 break;
             default: // Duplicate filter
-                throw new Error(`Duplicate filters for field: '${fieldName}'`);
+                throw new Error(`Duplicate filters for field: '${field}'`);
         }
         // Update the filter to send to the server
         switch (this.filters.length) {
@@ -5687,7 +6069,7 @@ const SingleLoadableMixin = Base => class SingleLoadable extends LoadableMixin(B
     initLoader() {
         const { loadUrl, autoLoad } = this.props;
         if (loadUrl !== undefined) {
-            this._loader = new SingleItemLoader({
+            this._loader = new SingleRecordLoader({
                 onData: this.onLoadData,
                 onError: this.onLoadError
             });
@@ -6162,6 +6544,7 @@ class Content extends CustomElement {
             const { head, body } = parser.parseFromString(content, "text/html");
             // Clear any previous content
             while (this.document.firstChild) {
+                notifyNodeWillDisconnect(this.document.firstChild);
                 this.document.firstChild.remove();
             }
             // Remove any scripts with the data-view attributes set
@@ -6260,6 +6643,41 @@ Row.properties = {
 };
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-row`, Row);
+
+//@ts-ignore
+class CloseTool extends SizableMixin(VariantMixin(CustomElement)) {
+    connectedCallback() {
+        var _a;
+        (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        const { close } = this.props;
+        this.addEventListener('click', close);
+    }
+    disconnectedCallback() {
+        var _a;
+        (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        const { close } = this.props;
+        this.removeEventListener('click', close);
+    }
+    render() {
+        const { variant, size } = this.props;
+        return (h(Fragment, { variant: variant, size: size }, "\u00D7"));
+    }
+}
+CloseTool.component = {
+    styleUrls: [
+        `${config.assetsFolder}/tool/close-tool/CloseTool.css`
+    ]
+};
+CloseTool.properties = {
+    /**
+     * What action to execute when the tool has been closed
+     */
+    close: {
+        type: Function
+    }
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-close-tool`, CloseTool);
 
 class MyTable extends CustomElement {
     render() {
@@ -6381,4 +6799,55 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
-export { Alert, App, Button, CloseTool, Content, CurrentYear, DateField, FileField, FilterField, FilterPanel, Form, Header, HiddenField, Icon, List, ListItem, LoginSection, MyCounter, MyTable, NavigationBar, NavigationLink, NumberField, OidcProvider, Overlay, Pager, Panel, Router, Row, Select, Table, Text, TextArea, TextField, ValidationSummary, appCtrl };
+// import SelectionContainerMixin from '../mixins/selection-container/SelectionContainerMixin';
+// import SizableMixin from '../mixins/sizable/SizableMixin';
+// import DataCollectionLoadableMixin from '../mixins/data/DataCollectionLoadableMixin';
+// import DataFieldDefinition from '../mixins/data/DataFieldDefinition';
+class XListItem extends Component {
+    constructor(props, children) {
+        super(props, children);
+    }
+    nodeDidConnect(node) {
+        console.log('XListItem did connect');
+        node.addEventListener('click', this.handleClick);
+    }
+    nodeWillDisconnect(node) {
+        console.log('XListItem will disconnect');
+        node.removeEventListener('click', this.handleClick);
+    }
+    handleClick() {
+        alert('clicked');
+    }
+    render() {
+        const { value } = this.props;
+        return (h("li", { class: "hoverable", value: value }, this.children));
+    }
+}
+
+// import SelectionContainerMixin from '../mixins/selection-container/SelectionContainerMixin';
+// import SizableMixin from '../mixins/sizable/SizableMixin';
+// import DataCollectionLoadableMixin from '../mixins/data/DataCollectionLoadableMixin';
+// import DataFieldDefinition from '../mixins/data/DataFieldDefinition';
+class XList extends CustomElement {
+    render() {
+        return (h("ul", null, this.renderChildren()));
+    }
+    renderChildren() {
+        return [10, 20, 30, 40].map(item => new XListItem({ value: item }, (h("div", { style: { backgroundColor: 'red' } }, item))));
+    }
+    nodeDidConnect(node) {
+        alert('connected list');
+    }
+    nodeWillDisconnect(node) {
+        alert('list will disconnect');
+    }
+}
+XList.component = {
+    styleUrls: [
+        `${config.assetsFolder}/x-list/XList.css`
+    ]
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-x-list`, XList);
+
+export { Alert, App, Button, CloseTool, Content, CurrentYear, DateField, FileField, FilterField, FilterPanel, Form, Header, HiddenField, Icon, List, ListItem, LoginSection, MyCounter, MyTable, NavigationBar, NavigationLink, NumberField, OidcProvider, Overlay, Pager, Panel, Router, Row, Select, SorterTool, Table, Text, TextArea, TextField, ValidationSummary, XList, appCtrl };
