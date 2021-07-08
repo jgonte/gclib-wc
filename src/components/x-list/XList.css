@@ -2,6 +2,14 @@
     background-color: darkturquoise;
 }
 
+[selectable='true'] {  
+    cursor: pointer;
+}
+
+[selected='true'] { 
+    background-color: var(--gcl-color-tertiary);
+}
+
 li {
     list-style: none;
     display: flex;

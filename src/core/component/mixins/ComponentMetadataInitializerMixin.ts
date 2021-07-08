@@ -34,8 +34,6 @@ function getComponentMetadata(ctor) {
 
 /**
  * Mixin that initializes the properties for the component
- * @param Base 
- * @returns 
  */
 const ComponentMetadataInitializerMixin = Base =>
 
@@ -86,8 +84,7 @@ const ComponentMetadataInitializerMixin = Base =>
             const {
                 attribute,     //  The name of the JSX attribute mapped to the property       
                 value, // The default value of the property if no attribute is set in the JSX
-                mutable,
-                //options
+                mutable
             } = propertyDescriptor;
 
             if (this.props[name] === undefined) { // Property is not initialized

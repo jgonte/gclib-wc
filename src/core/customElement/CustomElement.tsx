@@ -120,31 +120,31 @@ export default abstract class CustomElement extends
         this.requestUpdate();
     }
 
-    onBeforeMount(node) {
+    onBeforeMount(vnode) {
 
-        if (node === null) {
+        if (vnode === null) {
 
-            return node; // No style added to a null node
+            return vnode; // No style added to a null node
         }
 
         const style = (this.constructor as any).style;
 
         if (style === undefined) {
 
-            return node; // No style to add
+            return vnode; // No style to add
         }
 
         // We need to append a style
-        if (node.isVirtualNode ||
-            node.isVirtualText) {
+        if (vnode.isElement ||
+            vnode.isText) {
 
             // Create a fragment with the original node as a child so we can append the style
-            node = new FragmentNode(null, [node]);
+            vnode = new FragmentNode(null, [vnode]);
         }
 
-        node.appendChildNode(<style>{style}</style>);
+        vnode.appendChildNode(<style>{style}</style>);
 
-        return node;
+        return vnode;
     }
 
 }

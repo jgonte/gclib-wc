@@ -1,29 +1,29 @@
-import { VirtualNode, FragmentNode, VirtualText, markupToVDom } from 'gclib-vdom';
+import { ElementNode, FragmentNode, TextNode, markupToVDom } from 'gclib-vdom';
 
-export default function createVirtualNode(o: any) {
+export default function createElementNode(o: any) {
 
     if (typeof o === 'string') {
 
         return markupToVDom(o.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
     }
 
-    if (o.isVirtualNode === true) {
+    if (o.isElementNode === true) {
 
-        return new VirtualNode(
+        return new ElementNode(
             o.name,
             o.props,
-            o.children.map(c => createVirtualNode(c))
+            o.children.map(c => createElementNode(c))
         );
     }
     else if (o.IsFragmentNode) {
 
         return new FragmentNode(
             o.props,
-            o.children.map(c => createVirtualNode(c))
+            o.children.map(c => createElementNode(c))
         )
     }
     else {
 
-        return new VirtualText(o.text);
+        return new TextNode(o.text);
     }
 }

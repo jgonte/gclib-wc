@@ -1,11 +1,11 @@
-import { h, VirtualNode } from 'gclib-vdom';
+import { h, ElementNode } from 'gclib-vdom';
 import { config } from '../../config';
 import { Field } from '../Field';
 
 //@ts-ignore
 export class HiddenField extends Field {
 
-    render(): VirtualNode {
+    render(): ElementNode {
 
         const {
             name,

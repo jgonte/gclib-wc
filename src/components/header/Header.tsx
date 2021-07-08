@@ -1,4 +1,4 @@
-import { Fragment, h, VirtualNode } from 'gclib-vdom';
+import { Fragment, h, ElementNode } from 'gclib-vdom';
 import CustomElement from '../../core/customElement/CustomElement';
 import { config } from '../config';
 import SizableMixin from '../mixins/sizable/SizableMixin';
@@ -18,14 +18,14 @@ export class Header extends SizableMixin(CustomElement) {
          * The title of the header
          */
         title: {
-            type: VirtualNode
+            type: ElementNode
         },
 
         /** 
          * The tools of the header
          */
         tools: {
-            type: VirtualNode
+            type: ElementNode
         }
     };
 
@@ -39,7 +39,7 @@ export class Header extends SizableMixin(CustomElement) {
         );
     }
 
-    renderTitle(): VirtualNode | null {
+    renderTitle(): ElementNode | null {
 
         const {
             title,
@@ -55,7 +55,7 @@ export class Header extends SizableMixin(CustomElement) {
             );
     }
 
-    renderTools(): VirtualNode | null {
+    renderTools(): ElementNode | null {
 
         const {
             tool,

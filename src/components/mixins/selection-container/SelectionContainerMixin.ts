@@ -41,6 +41,15 @@ const SelectionContainerMixin = Base =>
             selectionChanged: {
                 attribute: 'selection-changed',
                 type: Function
+            },
+
+            /**
+             * The name of the property that identifies the record id
+             */
+             recordId: {
+                attribute: 'record-id',
+                type: String,
+                value: 'id'
             }
         };
 
@@ -117,7 +126,7 @@ const SelectionContainerMixin = Base =>
 
                 if (selectedChild !== undefined) {
 
-                    selectedChild.setAttribute("selected", "false");
+                    selectedChild.setSelected(false);
                 }
 
                 if (added != undefined) {
@@ -147,10 +156,15 @@ const SelectionContainerMixin = Base =>
             // If any of the values of the selection match the value of the child, then set the child as selected
             const {
                 multiple,
-                selection
+                selection,
+                recordId
             } = this.props;
 
-            if (selection.indexOf((child as any).props?.value) > -1 &&
+            const childProps = (child as any).props || {};
+
+            const recId = childProps[recordId];
+
+            if (selection.indexOf(recId) > -1 &&
                 (child as any).setSelected !== undefined) {
 
                 (child as any).setSelected(true);

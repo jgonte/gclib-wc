@@ -1,4 +1,4 @@
-import { VirtualText, VirtualNode, diff } from 'gclib-vdom';
+import { TextNode, ElementNode, diff } from 'gclib-vdom';
 
 /**
  * Connects the CustomElement or the FunctionalComponent to the virtual dom rendering cycle
@@ -12,7 +12,7 @@ const VirtualDomMixin = Base =>
         /**
          * Keep the virtual node to diff it for the next change
          */
-        private _mountedNode: VirtualNode | VirtualText;
+        mountedNode: ElementNode | TextNode;
 
         /**
          * Flag to avoid re-requesting update if it is alaready requested
@@ -51,17 +51,24 @@ const VirtualDomMixin = Base =>
          */
         get rootElement() {
 
-            const element = (this._mountedNode || {}).element;
+            if (this.isComponent) {
 
-            if (element === undefined) {
-
-                return element;
+                return this.mountedNode;
             }
+            else { // Custom element
 
-            // Once the document fragment is appended to its parent element. It looses all its children, so we need its parent element to apply the diff
-            if (element instanceof DocumentFragment) {
+                const element = (this.mountedNode || {}).element;
 
-                return element.parentElement || this.document;
+                if (element === undefined) {
+
+                    return element;
+                }
+
+                // Once the document fragment is appended to its parent element. It looses all its children, so we need its parent element to apply the diff
+                if (element instanceof DocumentFragment) {
+
+                    return element.parentElement || this.document;
+                }
             }
         }
 
@@ -98,14 +105,17 @@ const VirtualDomMixin = Base =>
                 nodeType === 'number' ||
                 nodeType === 'boolean') {
 
-                node = new VirtualText(node);
+                node = new TextNode(node);
             }
 
             // Modify the virtual node if necessary (i.e. add style) before diffing it, to keep it consistent with the mounted one
-            node = this.onBeforeMount(node);
+            if (this.onBeforeMount !== undefined) {
+
+                node = this.onBeforeMount(node);
+            }
 
             // Do the diffing
-            const previousNode = this._mountedNode;
+            const previousNode = this.mountedNode;
 
             const patches = diff(previousNode, node);
 
@@ -152,7 +162,7 @@ const VirtualDomMixin = Base =>
             }
 
             // Set the new mounted node
-            this._mountedNode = node;
+            this.mountedNode = node;
         }
     };
 

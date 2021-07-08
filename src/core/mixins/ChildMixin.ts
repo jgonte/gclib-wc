@@ -9,12 +9,17 @@ const ChildMixin = Base =>
 
     class Child extends Base {
 
-        connectedCallback() {
+        constructor(props, children) {
 
-            super.connectedCallback?.();
+            super(props, children);   
+        }
+        
+        nodeDidConnect(node: Node) {
+
+            super.connectedCallback?.(node);
 
             // Emit an event for the container to register this child
-            this.dispatchEvent(new CustomEvent(childConnected, {
+            node.dispatchEvent(new CustomEvent(childConnected, {
                 detail: { 
                     child: this
                 },
@@ -23,12 +28,12 @@ const ChildMixin = Base =>
             }));
         }
     
-        disconnectedCallback() {
+        nodeWillDisconnect(node: Node) {
     
-            super.disconnectedCallback?.();
+            super.nodeWillDisconnect?.(node);
 
             // Emit an event for the container to unregister this child
-            this.dispatchEvent(new CustomEvent(childDisconnected, {
+            node.dispatchEvent(new CustomEvent(childDisconnected, {
                 detail: { 
                     child: this
                 },

@@ -1791,55 +1791,55 @@ function createDOMElement(name, props) {
     }
 }
 
-var VirtualNode = (function () {
-    function VirtualNode(name, props, children) {
+var ElementNode = (function () {
+    function ElementNode(name, props, children) {
         this.name = name;
         this.props = props;
         this.children = children;
-        this.isVirtualNode = true;
+        this.isElement = true;
     }
-    Object.defineProperty(VirtualNode.prototype, "key", {
+    Object.defineProperty(ElementNode.prototype, "key", {
         get: function () {
             return this.props ? this.props.key : undefined;
         },
         enumerable: false,
         configurable: true
     });
-    VirtualNode.prototype.render = function () {
+    ElementNode.prototype.renderDom = function () {
         var _a = this, name = _a.name, props = _a.props, children = _a.children;
-        var element = createDOMElement(name, props);
-        element.component = this.component;
+        var dom = createDOMElement(name, props);
+        dom.component = this.component;
         for (var _i = 0, children_1 = children; _i < children_1.length; _i++) {
             var child = children_1[_i];
             if (child) {
-                var fc = child.component;
-                var node = child.render();
-                if (fc !== undefined && fc.nodeWillConnect !== undefined) {
-                    fc.nodeWillConnect(node);
+                var c = child.component;
+                var node = child.renderDom();
+                if (c !== undefined && c.nodeWillConnect !== undefined) {
+                    c.nodeWillConnect(node);
                 }
-                element.appendChild(node);
-                if (fc !== undefined && fc.nodeDidConnect !== undefined) {
-                    fc.nodeDidConnect(node);
+                dom.appendChild(node);
+                if (c !== undefined && c.nodeDidConnect !== undefined) {
+                    c.nodeDidConnect(node);
                 }
             }
         }
-        this.element = element;
-        return element;
+        this.element = dom;
+        return dom;
     };
-    return VirtualNode;
+    return ElementNode;
 }());
 
-var VirtualText = (function () {
-    function VirtualText(text) {
+var TextNode = (function () {
+    function TextNode(text) {
         this.text = text;
-        this.isVirtualText = true;
+        this.isText = true;
     }
-    VirtualText.prototype.render = function () {
-        var element = document.createTextNode(this.text.toString());
-        this.element = element;
-        return element;
+    TextNode.prototype.renderDom = function () {
+        var dom = document.createTextNode(this.text.toString());
+        this.element = dom;
+        return dom;
     };
-    return VirtualText;
+    return TextNode;
 }());
 
 var Fragment = (function () {
@@ -1851,19 +1851,19 @@ var FragmentNode = (function () {
     function FragmentNode(props, children) {
         this.props = props;
         this.children = children;
-        this.isFragmentNode = true;
+        this.isFragment = true;
     }
-    FragmentNode.prototype.render = function () {
+    FragmentNode.prototype.renderDom = function () {
         var children = this.children;
-        var documentFragment = document.createDocumentFragment();
+        var dom = document.createDocumentFragment();
         for (var _i = 0, children_1 = children; _i < children_1.length; _i++) {
             var child = children_1[_i];
             if (child) {
-                documentFragment.appendChild(child.render());
+                dom.appendChild(child.renderDom());
             }
         }
-        this.element = documentFragment;
-        return documentFragment;
+        this.element = dom;
+        return dom;
     };
     FragmentNode.prototype.prependChildNode = function (vNode) {
         this.children.unshift(vNode);
@@ -1873,6 +1873,29 @@ var FragmentNode = (function () {
     };
     return FragmentNode;
 }());
+
+((function () {
+    function ComponentNode(props, children) {
+        this.props = props;
+        this.children = children;
+        this.isComponent = true;
+    }
+    Object.defineProperty(ComponentNode.prototype, "mountedVNode", {
+        get: function () {
+            return this._mountedVNode;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    ComponentNode.prototype.renderDom = function () {
+        var vNode = this.render();
+        var dom = vNode.renderDom();
+        this._mountedVNode = vNode;
+        dom.component = this;
+        return dom;
+    };
+    return ComponentNode;
+})());
 
 function h(name, attributes) {
     if (attributes === void 0) { attributes = {}; }
@@ -1888,13 +1911,13 @@ function h(name, attributes) {
         if (child === null) {
             return;
         }
-        if (child.isVirtualNode) {
+        if (child.isElement) {
             childrenNodes.push(child);
         }
-        else if (child.isVirtualText) {
+        else if (child.isText) {
             childrenNodes.push(child);
         }
-        else if (child.isFragmentNode) {
+        else if (child.isFragment) {
             childrenNodes.push(child);
         }
         else if (Array.isArray(child)) {
@@ -1911,11 +1934,11 @@ function h(name, attributes) {
             }
         }
         else {
-            childrenNodes.push(new VirtualText(child));
+            childrenNodes.push(new TextNode(child));
         }
     });
     if (typeof name === 'string') {
-        return new VirtualNode(name, attributes, childrenNodes);
+        return new ElementNode(name, attributes, childrenNodes);
     }
     else {
         if (name.name === 'Fragment') {
@@ -2248,15 +2271,24 @@ var SetTextPatch = (function () {
     return SetTextPatch;
 }());
 
+function callHook(node, name, hooks) {
+    if (hooks === void 0) { hooks = {}; }
+    var component = node.component;
+    if (component !== undefined &&
+        component[name] !== undefined) {
+        component[name](node);
+    }
+    else if (hooks[name] !== undefined) {
+        hooks[name](node);
+    }
+}
+
 var RemoveElementPatch = (function () {
     function RemoveElementPatch() {
     }
     RemoveElementPatch.prototype.applyPatch = function (options) {
         var parentNode = options.parentNode, node = options.node, context = options.context, hooks = options.hooks;
-        var nodeWillDisconnect = (hooks || {}).nodeWillDisconnect;
-        if (nodeWillDisconnect) {
-            nodeWillDisconnect(node);
-        }
+        callHook(node, 'nodeWillDisconnect', hooks);
         parentNode.removeChild(node);
         context.setNodeChanges(parentNode, new NodeChanges({
             removed: [node]
@@ -2290,6 +2322,19 @@ var RemoveChildrenPatch = (function () {
     return RemoveChildrenPatch;
 }());
 
+function renderNode(vnode) {
+    if (vnode.isComponent) {
+        var node = vnode.renderDom();
+        node = node.render();
+        vnode.mountedNode = node;
+        node.component = vnode;
+        return node;
+    }
+    else {
+        return vnode.renderDom();
+    }
+}
+
 var SetChildPatch = (function () {
     function SetChildPatch(index, newNode) {
         this.index = index;
@@ -2297,38 +2342,27 @@ var SetChildPatch = (function () {
     }
     SetChildPatch.prototype.applyPatch = function (options) {
         var node = options.node, parentNode = options.parentNode, context = options.context, hooks = options.hooks;
-        var _a = hooks || {}, nodeWillDisconnect = _a.nodeWillDisconnect, nodeWillConnect = _a.nodeWillConnect, nodeDidConnect = _a.nodeDidConnect;
         var insertedChildrenElements = [];
         var removedChildrenElements = [];
-        var index = this.index;
-        var newChild = this.newNode.render();
+        var _a = this, index = _a.index, newNode = _a.newNode;
+        var newChild = renderNode(newNode);
         var n = node instanceof DocumentFragment ?
             parentNode :
             node;
         var oldChild = n.children[index];
         if (oldChild) {
             context.setOriginalElement(oldChild, index);
-            if (nodeWillDisconnect) {
-                nodeWillDisconnect(oldChild);
-            }
-            if (nodeWillConnect) {
-                nodeWillConnect(newChild);
-            }
+            callHook(oldChild, 'nodeWillDisconnect', hooks);
+            callHook(newChild, 'nodeWillConnect', hooks);
             n.replaceChild(newChild, oldChild);
-            if (nodeDidConnect) {
-                nodeDidConnect(newChild);
-            }
+            callHook(newChild, 'nodeDidConnect', hooks);
             removedChildrenElements.push(oldChild);
             insertedChildrenElements.push(newChild);
         }
         else {
-            if (nodeWillConnect) {
-                nodeWillConnect(newChild);
-            }
+            callHook(newChild, 'nodeWillConnect', hooks);
             n.appendChild(newChild);
-            if (nodeDidConnect) {
-                nodeDidConnect(newChild);
-            }
+            callHook(newChild, 'nodeDidConnect', hooks);
             insertedChildrenElements.push(newChild);
         }
         context.setNodeChanges(n, new NodeChanges({
@@ -2345,21 +2379,19 @@ var AddChildrenPatch = (function () {
     }
     AddChildrenPatch.prototype.applyPatch = function (options) {
         var node = options.node, context = options.context, hooks = options.hooks;
-        var _a = hooks || {}, nodeWillConnect = _a.nodeWillConnect, nodeDidConnect = _a.nodeDidConnect;
         var insertedChildrenElements = [];
         var fragment = document.createDocumentFragment();
         this.children.forEach(function (child) {
-            var childElement = child.render();
-            insertedChildrenElements.push(childElement);
-            if (nodeWillConnect) {
-                nodeWillConnect(childElement);
+            if (child === null) {
+                return;
             }
+            var childElement = renderNode(child);
+            insertedChildrenElements.push(childElement);
+            callHook(childElement, 'nodeWillConnect', hooks);
             fragment.appendChild(childElement);
         });
         insertedChildrenElements.forEach(function (childElement) {
-            if (nodeDidConnect) {
-                nodeDidConnect(childElement);
-            }
+            callHook(childElement, 'nodeDidConnect', hooks);
         });
         node.appendChild(fragment);
         context.setNodeChanges(node, new NodeChanges({
@@ -2377,9 +2409,8 @@ var MoveChildPatch = (function () {
     }
     MoveChildPatch.prototype.applyPatch = function (options) {
         var node = options.node, parentNode = options.parentNode, context = options.context, hooks = options.hooks;
-        var _a = hooks || {}, nodeWillDisconnect = _a.nodeWillDisconnect, nodeWillConnect = _a.nodeWillConnect, nodeDidConnect = _a.nodeDidConnect;
         var movedChildrenElements = [];
-        var _b = this, from = _b.from, to = _b.to, offset = _b.offset;
+        var _a = this, from = _a.from, to = _a.to, offset = _a.offset;
         var n = node instanceof DocumentFragment ?
             parentNode :
             node;
@@ -2390,26 +2421,16 @@ var MoveChildPatch = (function () {
         var originalElement = n.children[to];
         if (originalElement) {
             context.setOriginalElement(originalElement, to);
-            if (nodeWillDisconnect) {
-                nodeWillDisconnect(originalElement);
-            }
-            if (nodeWillConnect) {
-                nodeWillConnect(movingChild);
-            }
+            callHook(originalElement, 'nodeWillDisconnect', hooks);
+            callHook(movingChild, 'nodeWillConnect', hooks);
             n.replaceChild(movingChild, originalElement);
-            if (nodeDidConnect) {
-                nodeDidConnect(movingChild);
-            }
+            callHook(movingChild, 'nodeDidConnect', hooks);
             movedChildrenElements.push(movingChild);
         }
         else {
-            if (nodeWillConnect) {
-                nodeWillConnect(movingChild);
-            }
+            callHook(movingChild, 'nodeWillConnect', hooks);
             n.appendChild(movingChild);
-            if (nodeDidConnect) {
-                nodeDidConnect(movingChild);
-            }
+            callHook(movingChild, 'nodeDidConnect', hooks);
             movedChildrenElements.push(movingChild);
         }
         context.setNodeChanges(n, new NodeChanges({
@@ -2469,18 +2490,11 @@ var ReplaceElementPatch = (function () {
     }
     ReplaceElementPatch.prototype.applyPatch = function (options) {
         var parentNode = options.parentNode, node = options.node, parentContext = options.parentContext, context = options.context, hooks = options.hooks;
-        var _a = hooks || {}, nodeWillDisconnect = _a.nodeWillDisconnect, nodeWillConnect = _a.nodeWillConnect, nodeDidConnect = _a.nodeDidConnect;
-        var newNode = this.newNode.render();
-        if (nodeWillDisconnect) {
-            nodeWillDisconnect(node);
-        }
-        if (nodeWillConnect) {
-            nodeWillConnect(newNode);
-        }
+        var newNode = renderNode(this.newNode);
+        callHook(node, 'nodeWillDisconnect', hooks);
+        callHook(newNode, 'nodeWillConnect', hooks);
         node.replaceWith(newNode);
-        if (nodeDidConnect) {
-            nodeDidConnect(newNode);
-        }
+        callHook(newNode, 'nodeDidConnect', hooks);
         (parentContext || context).setNodeChanges(parentNode, new NodeChanges({
             inserted: [newNode],
             removed: [node]
@@ -2495,9 +2509,8 @@ var SetElementPatch = (function () {
     }
     SetElementPatch.prototype.applyPatch = function (options) {
         var parentNode = options.parentNode, context = options.context, hooks = options.hooks;
-        var _a = hooks || {}, nodeWillConnect = _a.nodeWillConnect, nodeDidConnect = _a.nodeDidConnect;
         var props = this.newNode.props;
-        var newNode = this.newNode.render();
+        var newNode = renderNode(this.newNode);
         if (newNode instanceof DocumentFragment) {
             if (props !== undefined && props !== null) {
                 if (parentNode instanceof ShadowRoot) {
@@ -2512,16 +2525,12 @@ var SetElementPatch = (function () {
             }
             var childNodes = Array.from(newNode.childNodes);
             if (childNodes.length > 0) {
-                if (nodeWillConnect) {
-                    for (var i = 0; i < childNodes.length; ++i) {
-                        nodeWillConnect(childNodes[i]);
-                    }
+                for (var i = 0; i < childNodes.length; ++i) {
+                    callHook(childNodes[i], 'nodeWillConnect', hooks);
                 }
                 parentNode.appendChild(newNode);
-                if (nodeDidConnect) {
-                    for (var i = 0; i < childNodes.length; ++i) {
-                        nodeDidConnect(childNodes[i]);
-                    }
+                for (var i = 0; i < childNodes.length; ++i) {
+                    callHook(childNodes[i], 'nodeDidConnect', hooks);
                 }
                 context.setNodeChanges(parentNode, new NodeChanges({
                     inserted: childNodes
@@ -2529,13 +2538,9 @@ var SetElementPatch = (function () {
             }
         }
         else {
-            if (nodeWillConnect) {
-                nodeWillConnect(newNode);
-            }
+            callHook(newNode, 'nodeWillConnect', hooks);
             parentNode.appendChild(newNode);
-            if (nodeDidConnect) {
-                nodeDidConnect(newNode);
-            }
+            callHook(newNode, 'nodeDidConnect', hooks);
             context.setNodeChanges(parentNode, new NodeChanges({
                 inserted: [newNode]
             }));
@@ -2583,10 +2588,10 @@ function isUndefinedOrNull(o) {
     return typeof o === 'undefined' || o === null;
 }
 function isVirtualNode(node) {
-    return node.isVirtualNode;
+    return node.isElement;
 }
 function isFragmentNode(node) {
-    return node.isFragmentNode;
+    return node.isFragment;
 }
 function hasKeys(children) {
     if (children === void 0) { children = []; }
@@ -2594,6 +2599,9 @@ function hasKeys(children) {
     var missingFirstKey = false;
     for (var i = 0; i < children.length; ++i) {
         var child = children[i];
+        if (child === null) {
+            return false;
+        }
         if (isVirtualNode(child)) {
             var key = child.key;
             if (key) {
@@ -2715,7 +2723,7 @@ function diff(oldNode, newNode) {
             return new ElementPatches([], []);
         }
         else {
-            if (oldNode.isFragmentNode) {
+            if (oldNode.isFragment) {
                 if (oldNode.children.length === 0) {
                     return new ElementPatches([], []);
                 }
@@ -2892,7 +2900,7 @@ function parseFromString(markup, type) {
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xml>" + markup + "</xml>";
     var doc = new DOMParser().parseFromString(wrappedMarkup, mime);
     var tag = type === 'html' ? 'body' : 'xml';
-    return doc.getElementsByTagName(tag)[0].firstChild;
+    return doc.getElementsByTagName(tag)[0].childNodes;
 }
 
 function toVDom(node, options) {
@@ -2910,7 +2918,7 @@ function toVDom(node, options) {
                 }
                 var props = getProps(element.attributes);
                 var children = getChildren$1(element.childNodes, options);
-                return new VirtualNode(nodeName, props, children);
+                return new ElementNode(nodeName, props, children);
             }
         case 3:
             {
@@ -2920,7 +2928,7 @@ function toVDom(node, options) {
                     /^\s*$/g.test(content)) {
                     return null;
                 }
-                return new VirtualText(content);
+                return new TextNode(content);
             }
         default: return null;
     }
@@ -2954,11 +2962,15 @@ function getChildren$1(childNodes, options) {
 function markupToVDom(markup, type, options) {
     if (type === void 0) { type = 'xml'; }
     if (options === void 0) { options = {}; }
-    var node = parseFromString(markup, type);
-    if (node === null) {
+    var nodes = parseFromString(markup, type);
+    if (nodes === null) {
         return null;
     }
-    return toVDom(node, options);
+    return nodes.length > 1 ?
+        new FragmentNode(null, Array.from(nodes)
+            .map(function (n) { return toVDom(n, options); })
+            .filter(function (n) { return n !== null; })) :
+        toVDom(nodes[0], options);
 }
 
 function notifyNodeWillDisconnect(node) {
@@ -2977,18 +2989,18 @@ function notifyNodeWillDisconnect(node) {
     }
 }
 
-function createVirtualNode(o) {
+function createElementNode(o) {
     if (typeof o === 'string') {
         return markupToVDom(o.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
     }
-    if (o.isVirtualNode === true) {
-        return new VirtualNode(o.name, o.props, o.children.map(c => createVirtualNode(c)));
+    if (o.isElementNode === true) {
+        return new ElementNode(o.name, o.props, o.children.map(c => createElementNode(c)));
     }
     else if (o.IsFragmentNode) {
-        return new FragmentNode(o.props, o.children.map(c => createVirtualNode(c)));
+        return new FragmentNode(o.props, o.children.map(c => createElementNode(c)));
     }
     else {
-        return new VirtualText(o.text);
+        return new TextNode(o.text);
     }
 }
 
@@ -3015,8 +3027,8 @@ const defaultPropertyValueConverter = {
                         return getGlobalFunction(value);
                     }
                 }
-            case VirtualNode: {
-                return createVirtualNode(value);
+            case ElementNode: {
+                return createElementNode(value);
             }
             case Function: { // Extract the string and return the global function
                 return getGlobalFunction(value);
@@ -3306,13 +3318,18 @@ const VirtualDomMixin = Base => class VirtualDom extends Base {
      * The root element of this component
      */
     get rootElement() {
-        const element = (this._mountedNode || {}).element;
-        if (element === undefined) {
-            return element;
+        if (this.isComponent) {
+            return this.mountedNode;
         }
-        // Once the document fragment is appended to its parent element. It looses all its children, so we need its parent element to apply the diff
-        if (element instanceof DocumentFragment) {
-            return element.parentElement || this.document;
+        else { // Custom element
+            const element = (this.mountedNode || {}).element;
+            if (element === undefined) {
+                return element;
+            }
+            // Once the document fragment is appended to its parent element. It looses all its children, so we need its parent element to apply the diff
+            if (element instanceof DocumentFragment) {
+                return element.parentElement || this.document;
+            }
         }
     }
     requestUpdate() {
@@ -3336,12 +3353,14 @@ const VirtualDomMixin = Base => class VirtualDom extends Base {
         if (nodeType === 'string' ||
             nodeType === 'number' ||
             nodeType === 'boolean') {
-            node = new VirtualText(node);
+            node = new TextNode(node);
         }
         // Modify the virtual node if necessary (i.e. add style) before diffing it, to keep it consistent with the mounted one
-        node = this.onBeforeMount(node);
+        if (this.onBeforeMount !== undefined) {
+            node = this.onBeforeMount(node);
+        }
         // Do the diffing
-        const previousNode = this._mountedNode;
+        const previousNode = this.mountedNode;
         const patches = diff(previousNode, node);
         if (!patches.hasPatches()) {
             return false; // Nothing to mount   
@@ -3372,7 +3391,7 @@ const VirtualDomMixin = Base => class VirtualDom extends Base {
             }
         }
         // Set the new mounted node
-        this._mountedNode = node;
+        this.mountedNode = node;
     }
 };
 
@@ -3441,22 +3460,22 @@ class CustomElement extends VirtualDomMixin(CustomElementMetadataInitializerMixi
         }
         this.requestUpdate();
     }
-    onBeforeMount(node) {
-        if (node === null) {
-            return node; // No style added to a null node
+    onBeforeMount(vnode) {
+        if (vnode === null) {
+            return vnode; // No style added to a null node
         }
         const style = this.constructor.style;
         if (style === undefined) {
-            return node; // No style to add
+            return vnode; // No style to add
         }
         // We need to append a style
-        if (node.isVirtualNode ||
-            node.isVirtualText) {
+        if (vnode.isElement ||
+            vnode.isText) {
             // Create a fragment with the original node as a child so we can append the style
-            node = new FragmentNode(null, [node]);
+            vnode = new FragmentNode(null, [vnode]);
         }
-        node.appendChildNode(h("style", null, style));
-        return node;
+        vnode.appendChildNode(h("style", null, style));
+        return vnode;
     }
 }
 
@@ -3665,11 +3684,14 @@ const childDisconnected = 'childDisconnected';
  * Fires an event to register/unregister a child item within a parent container
  */
 const ChildMixin = Base => class Child extends Base {
-    connectedCallback() {
+    constructor(props, children) {
+        super(props, children);
+    }
+    nodeDidConnect(node) {
         var _a;
-        (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this, node);
         // Emit an event for the container to register this child
-        this.dispatchEvent(new CustomEvent(childConnected, {
+        node.dispatchEvent(new CustomEvent(childConnected, {
             detail: {
                 child: this
             },
@@ -3677,11 +3699,11 @@ const ChildMixin = Base => class Child extends Base {
             composed: true
         }));
     }
-    disconnectedCallback() {
+    nodeWillDisconnect(node) {
         var _a;
-        (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        (_a = super.nodeWillDisconnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
         // Emit an event for the container to unregister this child
-        this.dispatchEvent(new CustomEvent(childDisconnected, {
+        node.dispatchEvent(new CustomEvent(childDisconnected, {
             detail: {
                 child: this
             },
@@ -3809,7 +3831,12 @@ const ContainerMixin = Base => { var _a; return _a = class Container extends Bas
                 // Pass the property to the child
                 if ((_a = child.props) === null || _a === void 0 ? void 0 : _a.hasOwnProperty(propertyName)) {
                     if (child.props[propertyName] === p.value) { // A value different from the default one has not been set
-                        child.setAttribute(attributeName, this.props[propertyName]);
+                        if (child.setAttribute !== undefined) { // Custom element
+                            child.setAttribute(attributeName, this.props[propertyName]);
+                        }
+                        else { // Component
+                            child.props[propertyName] = this.props[propertyName];
+                        }
                     }
                 }
             });
@@ -3885,7 +3912,7 @@ class Alert extends SizableMixin(ContainerMixin(CustomElement)) {
         if (message.isVirtualText) {
             return (h("gcl-text", { variant: this.getVariant(), size: size, style: "max-width: 80%;" }, message));
         }
-        else { // VirtualNode
+        else { // ElementNode
             return message;
         }
     }
@@ -3939,7 +3966,7 @@ Alert.properties = {
      * The message of the alert
      */
     message: {
-        type: VirtualNode
+        type: ElementNode
     },
     /**
      * Whether the alert has a close button
@@ -4042,13 +4069,13 @@ Header.properties = {
      * The title of the header
      */
     title: {
-        type: VirtualNode
+        type: ElementNode
     },
     /**
      * The tools of the header
      */
     tools: {
-        type: VirtualNode
+        type: ElementNode
     }
 };
 //@ts-ignore
@@ -4094,19 +4121,19 @@ Panel.properties = {
      * The header of the panel
      */
     header: {
-        type: VirtualNode
+        type: ElementNode
     },
     /**
      * The body of the panel
      */
     body: {
-        type: VirtualNode
+        type: ElementNode
     },
     /**
      * The footer of the panel
      */
     footer: {
-        type: VirtualNode
+        type: ElementNode
     },
 };
 //@ts-ignore
@@ -4183,17 +4210,19 @@ const ErrorableMixin = Base => { var _a; return _a = class Errorable extends Bas
 
 /**
  * Enables rendering data for a component
- * @param Base
- * @returns
  */
 const DataMixin = Base => { var _a; return _a = class Data extends Base {
         constructor(props, children) {
             super(props, children);
         }
         renderData() {
-            const { data, fields } = this.props;
+            let { data } = this.props;
+            const { fields } = this.props;
             if (data === undefined) {
                 return this.renderNoData();
+            }
+            if (typeof data === 'function') {
+                data = data();
             }
             if (data.length === 0) { // The data was provided but it was empty
                 return this.renderEmptyData();
@@ -4203,7 +4232,13 @@ const DataMixin = Base => { var _a; return _a = class Data extends Base {
                 return data.map((record, index) => {
                     const markup = renderRecord(record, index);
                     if (typeof markup === 'string') {
-                        return markupToVDom(markup.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
+                        const vNode = markupToVDom(markup.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
+                        if (this.wrapRecordVNode !== undefined) {
+                            return this.wrapRecordVNode(record, vNode);
+                        }
+                        else {
+                            return vNode;
+                        }
                     }
                     else {
                         return markup;
@@ -4218,7 +4253,7 @@ const DataMixin = Base => { var _a; return _a = class Data extends Base {
                 return JSON.stringify(data);
             }
         }
-        // renderField(field: DataFieldDefinition, data: any) : VirtualNode {
+        // renderField(field: DataFieldDefinition, data: any) : ElementNode {
         //     const value = data[field.name];
         //     return (<gcl-text>{value}</gcl-text>);
         // }
@@ -4227,6 +4262,11 @@ const DataMixin = Base => { var _a; return _a = class Data extends Base {
         }
         renderEmptyData() {
             return 'There is no data to display';
+        }
+        connectedCallback() {
+            var _a;
+            (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+            this.bindRenderRecord();
         }
         bindRenderRecord() {
             // This method is optional since the component might not use the data but have hardcoded children
@@ -4255,15 +4295,15 @@ const DataMixin = Base => { var _a; return _a = class Data extends Base {
          */
         renderRecord: {
             attribute: 'render-record',
-            type: Function
-        },
-        /**
-         * The name of the property that identifies the record id
-         */
-        recordId: {
-            attribute: 'record-id',
-            type: String,
-            value: 'id'
+            type: Function,
+            // change: (host, value) => {
+            //     if (value !== undefined) {
+            //         host.renderRecord = value.bind(host);
+            //     }
+            //     else {
+            //         host.renderRecord = null;
+            //     }
+            // }
         }
     },
     _a; };
@@ -4303,6 +4343,11 @@ const LoadableMixin = Base => { var _a; return _a = class Loadable extends Base 
         onLoadError(error) {
             this.setLoading(false);
             this.setError(error);
+        }
+        connectedCallback() {
+            var _a;
+            (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+            this.initLoader();
         }
     },
     _a.properties = {
@@ -4537,25 +4582,25 @@ Table.properties = {
      * The caption of the table
      */
     caption: {
-        type: VirtualNode
+        type: ElementNode
     },
     /**
      * The header of the table
      */
     header: {
-        type: VirtualNode
+        type: ElementNode
     },
     /**
      * The body of the table
      */
     body: {
-        type: VirtualNode
+        type: ElementNode
     },
     /**
      * The footer of the table
      */
     footer: {
-        type: VirtualNode
+        type: ElementNode
     },
     /**
      * The definition of the columns of the table
@@ -4570,15 +4615,24 @@ Table.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-table`, Table);
 
+//import ContainerMixin from '../../../core/mixins/ContainerMixin';
 const selectionChanged = 'selectionChanged';
 /**
  * Allows a component to be selectable
  * @param Base
  */
-const SelectableMixin = Base => { var _a; return _a = class Selectable extends ContainerMixin(Base) {
-        constructor() {
-            super();
+const SelectableMixin = Base => { var _a; return _a = class Selectable extends Base {
+        constructor(props, children) {
+            super(props, children);
             this.toggleSelect = this.toggleSelect.bind(this);
+        }
+        nodeDidConnect(node) {
+            var _a;
+            (_a = super.nodeDidConnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
+            const { selectable } = this.props;
+            if (selectable === true) {
+                node.addEventListener('click', this.toggleSelect);
+            }
         }
         attributeChangedCallback(attributeName, oldValue, newValue) {
             if (super.attributeChangedCallback) {
@@ -4610,7 +4664,7 @@ const SelectableMixin = Base => { var _a; return _a = class Selectable extends C
                 return;
             }
             this.setSelected(!selected);
-            this.dispatchEvent(new CustomEvent('selectionChanged', {
+            this.rootElement.dispatchEvent(new CustomEvent(selectionChanged, {
                 detail: this.props.selected ? // Need to read again since the property was updated
                     {
                         child: this,
@@ -4709,7 +4763,7 @@ class SelectionContainer extends ContainerMixin(Base) {
                 const { selectedChild } = this.state;
                 // Deselect previous selected attribute
                 if (selectedChild !== undefined) {
-                    selectedChild.setAttribute("selected", "false");
+                    selectedChild.setSelected(false);
                 }
                 if (added != undefined) {
                     this.setSelection([added]);
@@ -4725,11 +4779,13 @@ class SelectionContainer extends ContainerMixin(Base) {
             }
         }
         onChildAdded(child) {
-            var _a, _b;
+            var _a;
             (_a = super.onChildAdded) === null || _a === void 0 ? void 0 : _a.call(this, child);
             // If any of the values of the selection match the value of the child, then set the child as selected
-            const { multiple, selection } = this.props;
-            if (selection.indexOf((_b = child.props) === null || _b === void 0 ? void 0 : _b.value) > -1 &&
+            const { multiple, selection, recordId } = this.props;
+            const childProps = child.props || {};
+            const recId = childProps[recordId];
+            if (selection.indexOf(recId) > -1 &&
                 child.setSelected !== undefined) {
                 child.setSelected(true);
                 if (multiple === undefined) { // Set the selected child for single selection model
@@ -4770,6 +4826,14 @@ class SelectionContainer extends ContainerMixin(Base) {
         selectionChanged: {
             attribute: 'selection-changed',
             type: Function
+        },
+        /**
+         * The name of the property that identifies the record id
+         */
+        recordId: {
+            attribute: 'record-id',
+            type: String,
+            value: 'id'
         }
     },
     _a.state = {
@@ -4827,11 +4891,6 @@ class List extends SelectionContainerMixin(SizableMixin(DataCollectionLoadableMi
     renderNoData() {
         return (h("ul", null,
             h("slot", null)));
-    }
-    connectedCallback() {
-        super.connectedCallback();
-        this.bindRenderRecord();
-        this.initLoader();
     }
 }
 List.component = {
@@ -5081,7 +5140,7 @@ FilterField.properties = {
      * The field to render
      */
     field: {
-        type: VirtualNode,
+        type: ElementNode,
         required: true
     },
     /**
@@ -5249,7 +5308,7 @@ class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(Custom
         if (label.isVirtualText) {
             return (h("label", { for: name, size: size, required: required }, label));
         }
-        else { // VirtualNode
+        else { // ElementNode
             return label;
         }
     }
@@ -5422,7 +5481,7 @@ Field.properties = {
         type: Function
     },
     label: {
-        type: VirtualNode
+        type: ElementNode
     },
     disabled: {
         type: Boolean,
@@ -5519,6 +5578,7 @@ class FunctionalComponent {
     constructor(props, children) {
         this.props = props;
         this.children = children;
+        this.isComponent = true;
     }
 }
 
@@ -5540,8 +5600,6 @@ function getComponentMetadata(ctor) {
 }
 /**
  * Mixin that initializes the properties for the component
- * @param Base
- * @returns
  */
 const ComponentMetadataInitializerMixin = Base => { var _a; return _a = class ComponentMetadataInitializer extends Base {
         constructor(props, children) {
@@ -5568,9 +5626,7 @@ const ComponentMetadataInitializerMixin = Base => { var _a; return _a = class Co
         initializeProperty(name, propertyDescriptor) {
             const { attribute, //  The name of the JSX attribute mapped to the property       
             value, // The default value of the property if no attribute is set in the JSX
-            mutable,
-            //options
-             } = propertyDescriptor;
+            mutable } = propertyDescriptor;
             if (this.props[name] === undefined) { // Property is not initialized
                 if (attribute !== undefined && attribute !== name) {
                     const val = this.props[attribute]; // See if that attribute has a value set
@@ -5760,7 +5816,7 @@ Select.properties = {
         type: Object
     },
     options: {
-        type: VirtualNode
+        type: ElementNode
     },
     style: {
         type: String
@@ -6150,6 +6206,11 @@ const SubmitableMixin = Base => { var _a; return _a = class Submitable extends B
             this.setSubmitting(false);
             this.setError(error);
         }
+        connectedCallback() {
+            var _a;
+            (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+            this.initSubmitter();
+        }
     },
     _a.properties = {
         /**
@@ -6247,8 +6308,6 @@ class Form extends SubmitableMixin(DataSingleLoadableMixin(ValidatableMixin(Cont
     connectedCallback() {
         var _a;
         (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
-        this.initLoader();
-        this.initSubmitter();
         this.addEventListener(valueChanged, this.onValueChanged);
         // Pass the properties to the data record
     }
@@ -6799,19 +6858,19 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
-// import SelectionContainerMixin from '../mixins/selection-container/SelectionContainerMixin';
-// import SizableMixin from '../mixins/sizable/SizableMixin';
-// import DataCollectionLoadableMixin from '../mixins/data/DataCollectionLoadableMixin';
-// import DataFieldDefinition from '../mixins/data/DataFieldDefinition';
-class XListItem extends Component {
+class XListItem extends SelectableMixin(ChildMixin(Component)) {
     constructor(props, children) {
         super(props, children);
     }
     nodeDidConnect(node) {
+        var _a;
+        (_a = super.nodeDidConnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
         console.log('XListItem did connect');
         node.addEventListener('click', this.handleClick);
     }
     nodeWillDisconnect(node) {
+        var _a;
+        (_a = super.nodeWillDisconnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
         console.log('XListItem will disconnect');
         node.removeEventListener('click', this.handleClick);
     }
@@ -6819,27 +6878,48 @@ class XListItem extends Component {
         alert('clicked');
     }
     render() {
-        const { value } = this.props;
-        return (h("li", { class: "hoverable", value: value }, this.children));
+        const { size, selected } = this.props;
+        return (h("li", { class: "hoverable", size: size, selected: selected }, this.children));
     }
 }
 
-// import SelectionContainerMixin from '../mixins/selection-container/SelectionContainerMixin';
-// import SizableMixin from '../mixins/sizable/SizableMixin';
-// import DataCollectionLoadableMixin from '../mixins/data/DataCollectionLoadableMixin';
-// import DataFieldDefinition from '../mixins/data/DataFieldDefinition';
-class XList extends CustomElement {
+class XList extends DataCollectionLoadableMixin(SelectionContainerMixin(SizableMixin(CustomElement))) {
     render() {
-        return (h("ul", null, this.renderChildren()));
+        return (h("ul", null,
+            this.renderLoading(),
+            this.renderError(),
+            this.renderData()));
     }
-    renderChildren() {
-        return [10, 20, 30, 40].map(item => new XListItem({ value: item }, (h("div", { style: { backgroundColor: 'red' } }, item))));
+    wrapRecordVNode(record, children) {
+        const { recordId, size } = this.props;
+        return new XListItem({
+            parent: this,
+            [recordId]: record[recordId],
+            size
+        }, children);
+    }
+    renderFields(fields, data) {
+        return data.map(record => {
+            const children = fields.map(f => {
+                return (h("span", { class: "list-cell", style: {
+                        width: f.width || '100px'
+                    } }, record[f.name]));
+            });
+            return this.wrapRecordVNode(record, children);
+        });
+    }
+    /**
+     * When there is no data provided to the component, render its children
+     */
+    renderNoData() {
+        return (h("ul", null,
+            h("slot", null)));
     }
     nodeDidConnect(node) {
-        alert('connected list');
+        console.log('connected list');
     }
     nodeWillDisconnect(node) {
-        alert('list will disconnect');
+        console.log('list will disconnect');
     }
 }
 XList.component = {

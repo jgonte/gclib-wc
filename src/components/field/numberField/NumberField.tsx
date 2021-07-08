@@ -1,4 +1,4 @@
-import { h, VirtualNode } from 'gclib-vdom';
+import { h, ElementNode } from 'gclib-vdom';
 import { config } from '../../config';
 import MinMaxMixin from '../../mixins/minMax/MinMaxMixin';
 import { renderField } from '../Field';
@@ -14,7 +14,7 @@ export class NumberField extends MinMaxMixin(Field) {
     //     ]
     // };
 
-    [renderField](): VirtualNode {
+    [renderField](): ElementNode {
 
         const {
             name,

@@ -1,4 +1,4 @@
-import { VirtualNode } from "gclib-vdom";
+import { ElementNode } from "gclib-vdom";
 import MetadataInitializerMixin from "../../../src/core/mixins/MetadataInitializerMixin";
 
 class ElementWithMetadata1 extends MetadataInitializerMixin(HTMLElement) {
@@ -29,7 +29,7 @@ class ElementWithMetadata1 extends MetadataInitializerMixin(HTMLElement) {
         },
 
         virtualNodeProp: {
-            type: VirtualNode
+            type: ElementNode
         }
     }
 }

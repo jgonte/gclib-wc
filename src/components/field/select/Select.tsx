@@ -1,4 +1,4 @@
-import { h, VirtualNode, FragmentNode } from 'gclib-vdom';
+import { h, ElementNode, FragmentNode } from 'gclib-vdom';
 import { config } from '../../config';
 import CollectionLoadableMixin from '../../mixins/data/CollectionLoadableMixin';
 import ErrorableMixin from '../../mixins/errorable/ErrorableMixin';
@@ -22,7 +22,7 @@ export class Select extends
         },
 
         options: {
-            type: VirtualNode
+            type: ElementNode
         },
 
         style: {
@@ -56,7 +56,7 @@ export class Select extends
         }
     };
 
-    [renderField](): VirtualNode {
+    [renderField](): ElementNode {
 
         const {
             name,

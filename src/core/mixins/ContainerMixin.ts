@@ -15,7 +15,7 @@ const ContainerMixin = Base =>
                 value: []
             }
         };
-
+        
         constructor() {
 
             super();
@@ -202,7 +202,14 @@ const ContainerMixin = Base =>
 
                     if ((child as any).props[propertyName] === p.value) { // A value different from the default one has not been set
 
-                        child.setAttribute(attributeName, this.props[propertyName]);
+                        if ((child as any).setAttribute !== undefined) { // Custom element
+
+                            child.setAttribute(attributeName, this.props[propertyName]);
+                        }
+                        else { // Component
+
+                            (child as any).props[propertyName] = this.props[propertyName];
+                        }
                     }
                 }
             });

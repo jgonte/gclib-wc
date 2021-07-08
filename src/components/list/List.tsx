@@ -114,15 +114,6 @@ export class List extends
             </ul>
         );
     }
-
-    connectedCallback() {
-
-        super.connectedCallback();
-
-        this.bindRenderRecord();
-
-        this.initLoader();
-    }
 }
 
 //@ts-ignore

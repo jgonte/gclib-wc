@@ -81,6 +81,12 @@ const LoadableMixin = Base =>
             this.setError(error);
         }
 
+        connectedCallback() {
+
+            super.connectedCallback?.();
+
+            this.initLoader();
+        }
     };
 
 export default LoadableMixin;

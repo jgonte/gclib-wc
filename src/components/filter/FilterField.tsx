@@ -1,4 +1,4 @@
-import { h, VirtualNode } from 'gclib-vdom';
+import { h, ElementNode } from 'gclib-vdom';
 import CustomElement from '../../core/customElement/CustomElement';
 import { config } from '../config';
 
@@ -45,7 +45,7 @@ export class FilterField extends
          * The field to render 
          */
         field: {
-            type: VirtualNode,
+            type: ElementNode,
             required: true
         },
 
@@ -107,7 +107,7 @@ export class FilterField extends
 
         field.props['input'] = this.valueChanged;
 
-        (field as VirtualNode).children.push(select);
+        (field as ElementNode).children.push(select);
 
         return field;
     }

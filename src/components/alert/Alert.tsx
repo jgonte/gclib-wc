@@ -1,4 +1,4 @@
-import { Fragment, h, VirtualNode } from 'gclib-vdom';
+import { Fragment, h, ElementNode } from 'gclib-vdom';
 import { config } from '../config';
 import CustomElement from '../../core/customElement/CustomElement';
 import { Icon } from '../../components/icon/Icon';
@@ -49,7 +49,7 @@ export class Alert extends
          * The message of the alert
          */
         message: {
-            type: VirtualNode
+            type: ElementNode
         },
 
         /**
@@ -128,7 +128,7 @@ export class Alert extends
                 </gcl-text>
             );
         }
-        else { // VirtualNode
+        else { // ElementNode
 
             return message;
         }

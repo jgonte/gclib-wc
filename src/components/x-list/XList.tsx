@@ -1,13 +1,18 @@
-import { h } from 'gclib-vdom';
+import { h, ElementNode } from 'gclib-vdom';
 import CustomElement from '../../core/customElement/CustomElement';
 import { config } from '../config';
+import SizableMixin from '../mixins/sizable/SizableMixin';
+import DataCollectionLoadableMixin from '../mixins/data/DataCollectionLoadableMixin';
+import DataFieldDefinition from '../mixins/data/DataFieldDefinition';
+import SelectionContainerMixin from '../mixins/selection-container/SelectionContainerMixin';
 import XListItem from './XListItem';
-// import SelectionContainerMixin from '../mixins/selection-container/SelectionContainerMixin';
-// import SizableMixin from '../mixins/sizable/SizableMixin';
-// import DataCollectionLoadableMixin from '../mixins/data/DataCollectionLoadableMixin';
-// import DataFieldDefinition from '../mixins/data/DataFieldDefinition';
 
-export class XList extends CustomElement {
+export class XList extends
+    DataCollectionLoadableMixin(
+        SelectionContainerMixin(
+            SizableMixin(CustomElement)
+        )
+    ) {
 
     static component = {
 
@@ -20,29 +25,66 @@ export class XList extends CustomElement {
 
         return (
             <ul>
-                {this.renderChildren()}
+                {this.renderLoading()}
+                {this.renderError()}
+                {this.renderData()}
             </ul>
         );
     }
 
-    renderChildren() {
+    wrapRecordVNode(record: any, children: ElementNode | ElementNode[]) {
 
-        return [10, 20, 30, 40].map(item =>
-            new XListItem(
-                { value: item },
-                (<div style={{ backgroundColor: 'red' }}>{item}</div>)
-            )
+        const {
+            recordId,
+            size
+        } = this.props;
+
+        return new XListItem({
+            parent: this,
+            [recordId]: record[recordId],
+            size
+        }, children);
+    }
+
+    renderFields(fields: DataFieldDefinition[], data: []) {
+
+        return data.map(record => {
+
+            const children = fields.map(f => {
+
+                return (
+                    <span class="list-cell" style={{
+                        width: f.width || '100px'
+                    }}>
+                        {record[f.name]}
+                    </span>
+                );
+            });
+
+            return this.wrapRecordVNode(record, children);
+        });
+    }
+
+    /**
+     * When there is no data provided to the component, render its children
+     */
+    renderNoData() {
+
+        return (
+            <ul>
+                <slot />
+            </ul>
         );
     }
 
     nodeDidConnect(node: Node) {
 
-        alert('connected list');
+        console.log('connected list');
     }
 
     nodeWillDisconnect(node: Node) {
 
-        alert('list will disconnect');
+        console.log('list will disconnect');
     }
 }
 

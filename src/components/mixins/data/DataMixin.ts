@@ -1,9 +1,7 @@
-import { markupToVDom, VirtualNode, VirtualText } from "gclib-vdom";
+import { markupToVDom, ElementNode, TextNode } from "gclib-vdom";
 
 /**
  * Enables rendering data for a component
- * @param Base 
- * @returns 
  */
 const DataMixin = Base =>
 
@@ -31,34 +29,44 @@ const DataMixin = Base =>
              */
             renderRecord: {
                 attribute: 'render-record',
-                type: Function
-            },
+                type: Function,
+                // change: (host, value) => {
 
-            /**
-             * The name of the property that identifies the record id
-             */
-            recordId: {
-                attribute: 'record-id',
-                type: String,
-                value: 'id'
+                //     if (value !== undefined) {
+
+                //         host.renderRecord = value.bind(host);
+                //     }
+                //     else {
+
+                //         host.renderRecord = null;
+                //     }
+                // }
             }
         };
 
         constructor(props?, children?) {
 
-            super(props, children);           
+            super(props, children); 
         }
 
-        renderData() : VirtualNode | VirtualText | string {
+        renderData() : ElementNode | TextNode | string {
+
+            let {
+                data
+            } = this.props;
 
             const {
-                data,
                 fields
             } = this.props;
 
             if (data === undefined) {
 
                 return this.renderNoData();
+            }
+
+            if (typeof data === 'function') {
+
+                data = data();
             }
 
             if (data.length === 0) { // The data was provided but it was empty
@@ -78,7 +86,16 @@ const DataMixin = Base =>
 
                     if (typeof markup === 'string') {
 
-                        return markupToVDom(markup.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
+                        const vNode = markupToVDom(markup.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
+
+                        if (this.wrapRecordVNode !== undefined) {
+
+                            return this.wrapRecordVNode(record, vNode);
+                        }
+                        else {
+
+                            return vNode;
+                        }
                     }
                     else {
 
@@ -98,7 +115,7 @@ const DataMixin = Base =>
             }
         }
 
-        // renderField(field: DataFieldDefinition, data: any) : VirtualNode {
+        // renderField(field: DataFieldDefinition, data: any) : ElementNode {
 
         //     const value = data[field.name];
 
@@ -113,6 +130,13 @@ const DataMixin = Base =>
         renderEmptyData() {
 
             return 'There is no data to display';
+        }
+
+        connectedCallback() {
+
+            super.connectedCallback?.();
+
+            this.bindRenderRecord();
         }
 
         bindRenderRecord() {

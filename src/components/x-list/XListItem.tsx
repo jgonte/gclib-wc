@@ -1,18 +1,22 @@
 import { h } from 'gclib-vdom';
 import Component from '../../core/component/Component';
-// import SelectionContainerMixin from '../mixins/selection-container/SelectionContainerMixin';
-// import SizableMixin from '../mixins/sizable/SizableMixin';
-// import DataCollectionLoadableMixin from '../mixins/data/DataCollectionLoadableMixin';
-// import DataFieldDefinition from '../mixins/data/DataFieldDefinition';
+import ChildMixin from '../../core/mixins/ChildMixin';
+import SelectableMixin from '../mixins/selectable/SelectableMixin';
 
-export default class XListItem extends Component {
+
+export default class XListItem extends
+    SelectableMixin(
+        ChildMixin(Component)
+    ) {
 
     constructor(props, children) {
 
-        super(props, children);   
+        super(props, children);
     }
 
     nodeDidConnect(node: Node) {
+
+        super.nodeDidConnect?.(node);
 
         console.log('XListItem did connect');
 
@@ -20,6 +24,8 @@ export default class XListItem extends Component {
     }
 
     nodeWillDisconnect(node: Node) {
+
+        super.nodeWillDisconnect?.(node);
 
         console.log('XListItem will disconnect');
 
@@ -34,11 +40,12 @@ export default class XListItem extends Component {
     render() {
 
         const {
-            value
+            size,
+            selected
         } = this.props;
 
         return (
-            <li class="hoverable" value={value}>
+            <li class="hoverable" size={size} selected={selected}>
                 {this.children}
             </li>
         );

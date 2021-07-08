@@ -1,4 +1,4 @@
-import { h, VirtualNode } from 'gclib-vdom';
+import { h, ElementNode } from 'gclib-vdom';
 import { config } from '../../config';
 import { renderField } from '../Field';
 import { Field } from '../Field';
@@ -13,7 +13,7 @@ export class TextField extends Field {
     //     ]
     // };
 
-    [renderField](): VirtualNode {
+    [renderField](): ElementNode {
 
         const {
             name,

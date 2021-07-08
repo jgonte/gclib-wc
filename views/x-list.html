@@ -1,1 +1,75 @@
-<gcl-x-list></gcl-x-list>
+<head>
+    <script>
+
+        function getData() {
+
+            return [
+                {
+                    "value": "a",
+                    "iconName": "cart-fill",
+                    "textKey": "goodMorning",
+                    "lang": "en"
+                },
+                {
+                    "value": "b",
+                    "iconName": "alarm-fill",
+                    "textKey": "goodMorning",
+                    "lang": "fr"
+                },
+                {
+                    "value": "c",
+                    "iconName": "alarm-fill",
+                    "textKey": "goodMorning",
+                    "lang": "de"
+                }
+            ];
+        }
+
+        function renderListItem(record) {
+
+            const {
+                iconName,
+                textKey,
+                lang
+            } = record;
+
+            return `
+                <gcl-icon name="${iconName}" style="width: 50px;"></gcl-icon>
+                <gcl-text intl-key="${textKey}" lang="${lang}"></gcl-text>
+            `;
+        }
+
+        function getFields() {
+            return [
+                {
+                    name: "name",
+                    display: "Name",
+                    width: '40%'
+                },
+                {
+                    name: "reputation",
+                    display: "Reputation",
+                    width: '20%'
+                },
+                {
+                    name: "description",
+                    display: "Description",
+                    width: '40%'
+                }
+            ];
+        }
+
+    </script>
+
+</head>
+
+<body>
+
+    <!-- <gcl-x-list data="getData()" render-record="renderListItem()" record-id="value">
+    </gcl-x-list> -->
+
+    <gcl-x-list id="contactsListWithFields" load-url="http://localhost:60314/api/contacts" fields="getFields()"
+        size="medium" selection='[2]' selectable selection-changed="showSelection()">
+    </gcl-x-list>
+
+</body>

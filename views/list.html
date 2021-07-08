@@ -215,8 +215,13 @@
 
     </gcl-filter-panel>
 
-    <gcl-list id="contactsListWithFields" load-url="http://localhost:60314/api/contacts" size="medium" selection='[2]'
-        selectable selection-changed="showSelection()" fields="getFields()">
+    <gcl-list id="contactsListWithFields" 
+        load-url="http://localhost:60314/api/contacts" 
+        size="medium" 
+        selection='[2]'
+        selectable 
+        selection-changed="showSelection()" 
+        fields="getFields()">
     </gcl-list>
 
     <gcl-pager target-view-id="contactsListWithFields" total-pages="5"></gcl-pager>

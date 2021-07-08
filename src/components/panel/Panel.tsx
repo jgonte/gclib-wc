@@ -1,4 +1,4 @@
-import { Fragment, h, VirtualNode } from 'gclib-vdom';
+import { Fragment, h, ElementNode } from 'gclib-vdom';
 import { config } from '../config';
 import CustomElement from '../../core/customElement/CustomElement';
 import SizableMixin from '../mixins/sizable/SizableMixin';
@@ -24,21 +24,21 @@ export class Panel extends
          * The header of the panel
          */
         header: {
-            type: VirtualNode
+            type: ElementNode
         },
 
         /** 
          * The body of the panel
          */
         body: {
-            type: VirtualNode
+            type: ElementNode
         },
 
         /** 
          * The footer of the panel
          */
         footer: {
-            type: VirtualNode
+            type: ElementNode
         },
     };
 
@@ -53,7 +53,7 @@ export class Panel extends
         );
     }
 
-    renderHeader(): VirtualNode | null {
+    renderHeader(): ElementNode | null {
 
         const {
             header,
@@ -70,7 +70,7 @@ export class Panel extends
             );
     }
 
-    renderBody(): VirtualNode | null {
+    renderBody(): ElementNode | null {
 
         const {
             body,
@@ -87,7 +87,7 @@ export class Panel extends
             );
     }
 
-    renderFooter(): VirtualNode | null {
+    renderFooter(): ElementNode | null {
 
         const {
             footer,

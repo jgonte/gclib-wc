@@ -1,4 +1,4 @@
-import { VirtualNode, Fragment, h } from 'gclib-vdom';
+import { ElementNode, Fragment, h } from 'gclib-vdom';
 import CustomElement from '../../core/customElement/CustomElement';
 import { config } from '../config';
 import ChildMixin from '../../core/mixins/ChildMixin';
@@ -48,7 +48,7 @@ export abstract class Field extends
         },
 
         label: {
-            type: VirtualNode
+            type: ElementNode
         },
 
         disabled: {
@@ -147,7 +147,7 @@ export abstract class Field extends
                 </label>
             );
         }
-        else { // VirtualNode
+        else { // ElementNode
 
             return label;
         }

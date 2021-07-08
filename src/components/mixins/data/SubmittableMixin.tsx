@@ -152,6 +152,13 @@ const SubmitableMixin = Base =>
             this.setError(error);
         }
 
+        connectedCallback() {
+
+            super.connectedCallback?.();
+    
+            this.initSubmitter();
+        }
+
     };
 
 export default SubmitableMixin;

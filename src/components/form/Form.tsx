@@ -184,11 +184,6 @@ export class Form extends
 
         super.connectedCallback?.();
 
-
-        this.initLoader();
-
-        this.initSubmitter();
-
         this.addEventListener(valueChanged, this.onValueChanged);
 
         // Pass the properties to the data record

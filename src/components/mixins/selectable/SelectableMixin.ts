@@ -1,4 +1,4 @@
-import ContainerMixin from '../../../core/mixins/ContainerMixin';
+//import ContainerMixin from '../../../core/mixins/ContainerMixin';
 import { config } from '../../config';
 
 export const selectionChanged = 'selectionChanged';
@@ -9,7 +9,7 @@ export const selectionChanged = 'selectionChanged';
  */
 const SelectableMixin = Base =>
 
-    class Selectable extends ContainerMixin(Base) {
+    class Selectable extends Base {
 
         static component = {
 
@@ -35,7 +35,7 @@ const SelectableMixin = Base =>
              * Whether the item is selected
              */
             selected: {
-                type: Boolean,       
+                type: Boolean,
                 mutable: true,
                 reflect: true,
                 //passToChildren: true // Maybe the children want to show some UI that they were selected
@@ -49,11 +49,25 @@ const SelectableMixin = Base =>
             }
         };
 
-        constructor() {
+        constructor(props, children) {
 
-            super();
+            super(props, children);
 
             this.toggleSelect = this.toggleSelect.bind(this);
+        }
+
+        nodeDidConnect(node: Node) {
+
+            super.nodeDidConnect?.(node);
+
+            const {
+                selectable
+            } = this.props;
+
+            if (selectable === true) {
+
+                node.addEventListener('click', this.toggleSelect);
+            }
         }
 
         attributeChangedCallback(attributeName: string, oldValue: string, newValue: string) {
@@ -76,9 +90,9 @@ const SelectableMixin = Base =>
                         this.setSelected(false);
 
                         this.dispatchEvent(new CustomEvent(selectionChanged, {
-                            detail: { 
+                            detail: {
                                 child: this,
-                                removed: this.props.value 
+                                removed: this.props.value
                             },
                             bubbles: true,
                             composed: true
@@ -105,15 +119,15 @@ const SelectableMixin = Base =>
 
             this.setSelected(!selected);
 
-            this.dispatchEvent(new CustomEvent('selectionChanged', {
+            this.rootElement.dispatchEvent(new CustomEvent(selectionChanged, {
                 detail: this.props.selected ? // Need to read again since the property was updated
-                    { 
+                    {
                         child: this,
-                        added: value 
+                        added: value
                     } :
-                    { 
+                    {
                         child: this,
-                        removed: value 
+                        removed: value
                     },
                 bubbles: true,
                 composed: true

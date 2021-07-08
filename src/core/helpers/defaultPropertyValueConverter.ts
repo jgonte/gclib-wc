@@ -1,4 +1,4 @@
-import { VirtualNode } from 'gclib-vdom';
+import { ElementNode } from 'gclib-vdom';
 import createVirtualNode from './createVirtualNode';
 
 function getGlobalFunction(value: string) : Function {
@@ -37,7 +37,7 @@ const defaultPropertyValueConverter = {
                     }
                 }
 
-            case VirtualNode: {
+            case ElementNode: {
 
                 return createVirtualNode(value);
             }
