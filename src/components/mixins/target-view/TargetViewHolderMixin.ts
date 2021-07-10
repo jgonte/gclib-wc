@@ -7,9 +7,9 @@ const TargetViewHolderMixin = Base =>
             /**
              * The id of the target view to act upon
              */
-            targetViewId: {
-                attribute: 'target-view-id',
-                type: String,
+            targetView: {
+                attribute: 'target-view',
+                type: Object,
                 required: true
             }
         };
@@ -24,14 +24,25 @@ const TargetViewHolderMixin = Base =>
             super.nodeDidConnect?.();
     
             const {
-                targetViewId
+                targetView
             } = this.props;
-    
-            this.targetView = document.getElementById(targetViewId);
+
+            if (typeof targetView === 'string') {
+
+                this.targetView = document.getElementById(targetView);
+            }
+            else if (typeof targetView === 'function') {
+
+                this.targetView = targetView();
+            }
+            else {
+
+                this.targetView = targetView;
+            }
 
             if (this.targetView === null) {
 
-                throw Error(`Could not find target view with id: ${targetViewId}`);
+                throw Error(`Could not find target view with : ${targetView.toString()}`);
             }
         }
     

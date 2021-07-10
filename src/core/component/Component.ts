@@ -1,12 +1,12 @@
 import VirtualDomMixin from '../mixins/VirtualDomMixin';
-import FunctionalComponent from './FunctionalComponent';
+import {ComponentNode} from 'gclib-vdom';
 
 import ComponentMetadataInitializerMixin from './mixins/ComponentMetadataInitializerMixin';
 
 export default class Component extends
     VirtualDomMixin(
         ComponentMetadataInitializerMixin(
-            FunctionalComponent
+            ComponentNode
         )
     ) {
 

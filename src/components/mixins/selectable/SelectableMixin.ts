@@ -1,11 +1,9 @@
-//import ContainerMixin from '../../../core/mixins/ContainerMixin';
 import { config } from '../../config';
 
 export const selectionChanged = 'selectionChanged';
 
 /**
  * Allows a component to be selectable
- * @param Base
  */
 const SelectableMixin = Base =>
 
@@ -70,46 +68,45 @@ const SelectableMixin = Base =>
             }
         }
 
-        attributeChangedCallback(attributeName: string, oldValue: string, newValue: string) {
+        // attributeChangedCallback(attributeName: string, oldValue: string, newValue: string) {
 
-            if (super.attributeChangedCallback) {
+        //     if (super.attributeChangedCallback) {
 
-                super.attributeChangedCallback(attributeName, oldValue, newValue);
-            }
+        //         super.attributeChangedCallback(attributeName, oldValue, newValue);
+        //     }
 
-            if (attributeName === "selectable") {
+        //     if (attributeName === "selectable") {
 
-                if (newValue === "true" || newValue === "") {
+        //         if (newValue === "true" || newValue === "") {
 
-                    this.addEventListener('click', this.toggleSelect);
-                }
-                else { // newValue === "false"
+        //             this.addEventListener('click', this.toggleSelect);
+        //         }
+        //         else { // newValue === "false"
 
-                    if (this.props.selected) { // Unselect if selected
+        //             if (this.props.selected) { // Unselect if selected
 
-                        this.setSelected(false);
+        //                 this.setSelected(false);
 
-                        this.dispatchEvent(new CustomEvent(selectionChanged, {
-                            detail: {
-                                child: this,
-                                removed: this.props.value
-                            },
-                            bubbles: true,
-                            composed: true
-                        }));
-                    }
+        //                 this.dispatchEvent(new CustomEvent(selectionChanged, {
+        //                     detail: {
+        //                         child: this,
+        //                         removed: this.props.value
+        //                     },
+        //                     bubbles: true,
+        //                     composed: true
+        //                 }));
+        //             }
 
-                    this.removeEventListener('click', this.toggleSelect);
-                }
-            }
-        }
+        //             this.removeEventListener('click', this.toggleSelect);
+        //         }
+        //     }
+        // }
 
         toggleSelect() {
 
             const {
                 selectable,
-                selected,
-                value
+                selected
             } = this.props;
 
             if (!selectable) {
@@ -120,15 +117,10 @@ const SelectableMixin = Base =>
             this.setSelected(!selected);
 
             this.rootElement.dispatchEvent(new CustomEvent(selectionChanged, {
-                detail: this.props.selected ? // Need to read again since the property was updated
-                    {
-                        child: this,
-                        added: value
-                    } :
-                    {
-                        child: this,
-                        removed: value
-                    },
+                detail: {
+                    child: this,
+                    selected: this.props.selected// Need to read again since the property was updated
+                },
                 bubbles: true,
                 composed: true
             }));
@@ -136,4 +128,3 @@ const SelectableMixin = Base =>
     };
 
 export default SelectableMixin;
-

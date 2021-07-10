@@ -1,4 +1,4 @@
-import { TextNode, ElementNode, diff } from 'gclib-vdom';
+import { TextNode, diff } from 'gclib-vdom';
 
 /**
  * Connects the CustomElement or the FunctionalComponent to the virtual dom rendering cycle
@@ -8,11 +8,6 @@ import { TextNode, ElementNode, diff } from 'gclib-vdom';
 const VirtualDomMixin = Base =>
 
     class VirtualDom extends Base {
-
-        /**
-         * Keep the virtual node to diff it for the next change
-         */
-        mountedNode: ElementNode | TextNode;
 
         /**
          * Flag to avoid re-requesting update if it is alaready requested
@@ -51,25 +46,20 @@ const VirtualDomMixin = Base =>
          */
         get rootElement() {
 
-            if (this.isComponent) {
+            const dom = (this.mountedVNode || {}).dom;
 
-                return this.mountedNode;
+            if (dom === undefined) {
+
+                return dom;
             }
-            else { // Custom element
 
-                const element = (this.mountedNode || {}).element;
+            // Once the document fragment is appended to its parent element. It looses all its children, so we need its parent element to apply the diff
+            if (dom instanceof DocumentFragment) {
 
-                if (element === undefined) {
-
-                    return element;
-                }
-
-                // Once the document fragment is appended to its parent element. It looses all its children, so we need its parent element to apply the diff
-                if (element instanceof DocumentFragment) {
-
-                    return element.parentElement || this.document;
-                }
+                return dom.parentElement || this.document;
             }
+
+            return dom;
         }
 
         requestUpdate() {
@@ -115,7 +105,7 @@ const VirtualDomMixin = Base =>
             }
 
             // Do the diffing
-            const previousNode = this.mountedNode;
+            const previousNode = this.mountedVNode;
 
             const patches = diff(previousNode, node);
 
@@ -162,7 +152,7 @@ const VirtualDomMixin = Base =>
             }
 
             // Set the new mounted node
-            this.mountedNode = node;
+            this.mountedVNode = node;
         }
     };
 

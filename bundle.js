@@ -44,15 +44,15 @@ PERFORMANCE OF THIS SOFTWARE.
 ***************************************************************************** */
 /* global Reflect, Promise */
 
-var extendStatics = function(d, b) {
-    extendStatics = Object.setPrototypeOf ||
+var extendStatics$1 = function(d, b) {
+    extendStatics$1 = Object.setPrototypeOf ||
         ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
         function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-    return extendStatics(d, b);
+    return extendStatics$1(d, b);
 };
 
-function __extends(d, b) {
-    extendStatics(d, b);
+function __extends$1(d, b) {
+    extendStatics$1(d, b);
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 }
@@ -115,7 +115,7 @@ function __spreadArrays$1() {
 }
 
 var IntlProvider = (function (_super) {
-    __extends(IntlProvider, _super);
+    __extends$1(IntlProvider, _super);
     function IntlProvider(lang, data) {
         var _this = _super.call(this, 'onLanguageChanged') || this;
         _this.lang = lang;
@@ -722,7 +722,7 @@ var Validator = (function () {
 }());
 
 var SingleValueFieldValidator = (function (_super) {
-    __extends(SingleValueFieldValidator, _super);
+    __extends$1(SingleValueFieldValidator, _super);
     function SingleValueFieldValidator() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
@@ -730,7 +730,7 @@ var SingleValueFieldValidator = (function (_super) {
 }(Validator));
 
 var RequiredValidator = (function (_super) {
-    __extends(RequiredValidator, _super);
+    __extends$1(RequiredValidator, _super);
     function RequiredValidator(options) {
         if (options === void 0) { options = {}; }
         var _this = this;
@@ -756,7 +756,7 @@ var RequiredValidator = (function (_super) {
 }(SingleValueFieldValidator));
 
 var RegexValidator = (function (_super) {
-    __extends(RegexValidator, _super);
+    __extends$1(RegexValidator, _super);
     function RegexValidator(options) {
         var _this = _super.call(this, options) || this;
         _this._regex = options.regex;
@@ -777,7 +777,7 @@ var RegexValidator = (function (_super) {
 }(SingleValueFieldValidator));
 
 ((function (_super) {
-    __extends(EmailValidator, _super);
+    __extends$1(EmailValidator, _super);
     function EmailValidator(options) {
         if (options === void 0) { options = {
             regex: /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/,
@@ -789,7 +789,7 @@ var RegexValidator = (function (_super) {
 })(RegexValidator));
 
 ((function (_super) {
-    __extends(RangeValidator, _super);
+    __extends$1(RangeValidator, _super);
     function RangeValidator(options) {
         if (options === void 0) { options = {}; }
         var _this = this;
@@ -814,7 +814,7 @@ var RegexValidator = (function (_super) {
 })(SingleValueFieldValidator));
 
 ((function (_super) {
-    __extends(CustomSingleValueFieldValidator, _super);
+    __extends$1(CustomSingleValueFieldValidator, _super);
     function CustomSingleValueFieldValidator(options) {
         var _this = _super.call(this, options) || this;
         _this.validateFcn = options.validateFcn;
@@ -832,7 +832,7 @@ var RegexValidator = (function (_super) {
 })(SingleValueFieldValidator));
 
 var RecordValidator = (function (_super) {
-    __extends(RecordValidator, _super);
+    __extends$1(RecordValidator, _super);
     function RecordValidator() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
@@ -844,7 +844,7 @@ var RecordValidator = (function (_super) {
 }(Validator));
 
 ((function (_super) {
-    __extends(CompareValidator, _super);
+    __extends$1(CompareValidator, _super);
     function CompareValidator(options) {
         var _this = _super.call(this, options) || this;
         _this._propertyToValidate = options.propertyToValidate;
@@ -884,7 +884,7 @@ var RecordValidator = (function (_super) {
 })(RecordValidator));
 
 ((function (_super) {
-    __extends(CustomRecordValidator, _super);
+    __extends$1(CustomRecordValidator, _super);
     function CustomRecordValidator(options) {
         var _this = _super.call(this, options) || this;
         _this.validateFcn = options.validateFcn;
@@ -1130,7 +1130,7 @@ var SelectUrlBuilder = (function () {
 }());
 
 var SingleRecordLoader = (function (_super) {
-    __extends(SingleRecordLoader, _super);
+    __extends$1(SingleRecordLoader, _super);
     function SingleRecordLoader(cfg) {
         var _this = _super.call(this, cfg) || this;
         _this.urlBuilder = new SelectUrlBuilder(cfg.urlBuilder);
@@ -1152,7 +1152,7 @@ var SingleRecordLoader = (function (_super) {
 }(Fetcher));
 
 var CollectionUrlBuilder = (function (_super) {
-    __extends(CollectionUrlBuilder, _super);
+    __extends$1(CollectionUrlBuilder, _super);
     function CollectionUrlBuilder(cfg) {
         if (cfg === void 0) { cfg = {}; }
         var _this = _super.call(this, cfg) || this;
@@ -1190,7 +1190,7 @@ var CollectionUrlBuilder = (function (_super) {
 }(SelectUrlBuilder));
 
 var CollectionLoader = (function (_super) {
-    __extends(CollectionLoader, _super);
+    __extends$1(CollectionLoader, _super);
     function CollectionLoader(cfg) {
         var _this = _super.call(this, cfg) || this;
         _this.urlBuilder = new CollectionUrlBuilder(cfg.urlBuilder);
@@ -1256,7 +1256,7 @@ var ComparisonFilter = (function () {
     return ComparisonFilter;
 }());
 var IsEqualFilter = (function (_super) {
-    __extends(IsEqualFilter, _super);
+    __extends$1(IsEqualFilter, _super);
     function IsEqualFilter(field, value) {
         var _this = _super.call(this, field, 'eq', value) || this;
         _this.field = field;
@@ -1266,7 +1266,7 @@ var IsEqualFilter = (function (_super) {
     return IsEqualFilter;
 }(ComparisonFilter));
 var IsNotEqualFilter = (function (_super) {
-    __extends(IsNotEqualFilter, _super);
+    __extends$1(IsNotEqualFilter, _super);
     function IsNotEqualFilter(field, value) {
         var _this = _super.call(this, field, 'ne', value) || this;
         _this.field = field;
@@ -1276,7 +1276,7 @@ var IsNotEqualFilter = (function (_super) {
     return IsNotEqualFilter;
 }(ComparisonFilter));
 var IsGreaterThanFilter = (function (_super) {
-    __extends(IsGreaterThanFilter, _super);
+    __extends$1(IsGreaterThanFilter, _super);
     function IsGreaterThanFilter(field, value) {
         var _this = _super.call(this, field, 'gt', value) || this;
         _this.field = field;
@@ -1286,7 +1286,7 @@ var IsGreaterThanFilter = (function (_super) {
     return IsGreaterThanFilter;
 }(ComparisonFilter));
 var IsGreaterOrEqualFilter = (function (_super) {
-    __extends(IsGreaterOrEqualFilter, _super);
+    __extends$1(IsGreaterOrEqualFilter, _super);
     function IsGreaterOrEqualFilter(field, value) {
         var _this = _super.call(this, field, 'ge', value) || this;
         _this.field = field;
@@ -1296,7 +1296,7 @@ var IsGreaterOrEqualFilter = (function (_super) {
     return IsGreaterOrEqualFilter;
 }(ComparisonFilter));
 var IsLessThanFilter = (function (_super) {
-    __extends(IsLessThanFilter, _super);
+    __extends$1(IsLessThanFilter, _super);
     function IsLessThanFilter(field, value) {
         var _this = _super.call(this, field, 'lt', value) || this;
         _this.field = field;
@@ -1306,7 +1306,7 @@ var IsLessThanFilter = (function (_super) {
     return IsLessThanFilter;
 }(ComparisonFilter));
 var IsLessOrEqualFilter = (function (_super) {
-    __extends(IsLessOrEqualFilter, _super);
+    __extends$1(IsLessOrEqualFilter, _super);
     function IsLessOrEqualFilter(field, value) {
         var _this = _super.call(this, field, 'le', value) || this;
         _this.field = field;
@@ -1331,7 +1331,7 @@ var LogicalFilter = (function () {
     return LogicalFilter;
 }());
 var AndFilter = (function (_super) {
-    __extends(AndFilter, _super);
+    __extends$1(AndFilter, _super);
     function AndFilter(filters) {
         var _this = _super.call(this, 'and', filters) || this;
         _this.filters = filters;
@@ -1340,7 +1340,7 @@ var AndFilter = (function (_super) {
     return AndFilter;
 }(LogicalFilter));
 var OrFilter = (function (_super) {
-    __extends(OrFilter, _super);
+    __extends$1(OrFilter, _super);
     function OrFilter(filters) {
         var _this = _super.call(this, 'or', filters) || this;
         _this.filters = filters;
@@ -1365,7 +1365,7 @@ var MultiValueFilter = (function () {
     return MultiValueFilter;
 }());
 var InFilter = (function (_super) {
-    __extends(InFilter, _super);
+    __extends$1(InFilter, _super);
     function InFilter(field, values) {
         var _this = _super.call(this, field, 'in', values) || this;
         _this.field = field;
@@ -1375,7 +1375,7 @@ var InFilter = (function (_super) {
     return InFilter;
 }(MultiValueFilter));
 var NotInFilter = (function (_super) {
-    __extends(NotInFilter, _super);
+    __extends$1(NotInFilter, _super);
     function NotInFilter(field, values) {
         var _this = _super.call(this, field, 'not in', values) || this;
         _this.field = field;
@@ -1417,7 +1417,7 @@ var StringFilter = (function () {
     return StringFilter;
 }());
 var ContainsStringFilter = (function (_super) {
-    __extends(ContainsStringFilter, _super);
+    __extends$1(ContainsStringFilter, _super);
     function ContainsStringFilter(field, value) {
         var _this = _super.call(this, field, 'contains', value) || this;
         _this.field = field;
@@ -1427,7 +1427,7 @@ var ContainsStringFilter = (function (_super) {
     return ContainsStringFilter;
 }(StringFilter));
 var StartsWithStringFilter = (function (_super) {
-    __extends(StartsWithStringFilter, _super);
+    __extends$1(StartsWithStringFilter, _super);
     function StartsWithStringFilter(field, value) {
         var _this = _super.call(this, field, 'startswith', value) || this;
         _this.field = field;
@@ -1437,7 +1437,7 @@ var StartsWithStringFilter = (function (_super) {
     return StartsWithStringFilter;
 }(StringFilter));
 var EndsWithStringFilter = (function (_super) {
-    __extends(EndsWithStringFilter, _super);
+    __extends$1(EndsWithStringFilter, _super);
     function EndsWithStringFilter(field, value) {
         var _this = _super.call(this, field, 'endswith', value) || this;
         _this.field = field;
@@ -1519,7 +1519,7 @@ var resourceLoader = {
 };
 
 var Router = (function (_super) {
-    __extends(Router, _super);
+    __extends$1(Router, _super);
     function Router(routes) {
         var _this = _super.call(this, 'onRouteChanged') || this;
         _this.routes = [];
@@ -1673,6 +1673,43 @@ var OidcProvider = (function () {
     return OidcProvider;
 }());
 
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+***************************************************************************** */
+/* global Reflect, Promise */
+
+var extendStatics = function(d, b) {
+    extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+    return extendStatics(d, b);
+};
+
+function __extends(d, b) {
+    extendStatics(d, b);
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+}
+
+function __spreadArrays() {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+}
+
 function isStandardEvent(name) {
     return [
         'onkeydown',
@@ -1791,12 +1828,21 @@ function createDOMElement(name, props) {
     }
 }
 
-var ElementNode = (function () {
+var VirtualNode = (function () {
+    function VirtualNode() {
+    }
+    return VirtualNode;
+}());
+
+var ElementNode = (function (_super) {
+    __extends(ElementNode, _super);
     function ElementNode(name, props, children) {
-        this.name = name;
-        this.props = props;
-        this.children = children;
-        this.isElement = true;
+        var _this = _super.call(this) || this;
+        _this.name = name;
+        _this.props = props;
+        _this.children = children;
+        _this.isElement = true;
+        return _this;
     }
     Object.defineProperty(ElementNode.prototype, "key", {
         get: function () {
@@ -1811,7 +1857,7 @@ var ElementNode = (function () {
         dom.component = this.component;
         for (var _i = 0, children_1 = children; _i < children_1.length; _i++) {
             var child = children_1[_i];
-            if (child) {
+            if (child !== null) {
                 var c = child.component;
                 var node = child.renderDom();
                 if (c !== undefined && c.nodeWillConnect !== undefined) {
@@ -1823,46 +1869,52 @@ var ElementNode = (function () {
                 }
             }
         }
-        this.element = dom;
+        this.dom = dom;
         return dom;
     };
     return ElementNode;
-}());
+}(VirtualNode));
 
-var TextNode = (function () {
+var TextNode = (function (_super) {
+    __extends(TextNode, _super);
     function TextNode(text) {
-        this.text = text;
-        this.isText = true;
+        var _this = _super.call(this) || this;
+        _this.text = text;
+        _this.isText = true;
+        return _this;
     }
     TextNode.prototype.renderDom = function () {
         var dom = document.createTextNode(this.text.toString());
-        this.element = dom;
+        this.dom = dom;
         return dom;
     };
     return TextNode;
-}());
+}(VirtualNode));
 
 var Fragment = (function () {
     function Fragment() {
     }
     return Fragment;
 }());
-var FragmentNode = (function () {
+var FragmentNode = (function (_super) {
+    __extends(FragmentNode, _super);
     function FragmentNode(props, children) {
-        this.props = props;
-        this.children = children;
-        this.isFragment = true;
+        var _this = _super.call(this) || this;
+        _this.props = props;
+        _this.children = children;
+        _this.isFragment = true;
+        return _this;
     }
     FragmentNode.prototype.renderDom = function () {
         var children = this.children;
         var dom = document.createDocumentFragment();
         for (var _i = 0, children_1 = children; _i < children_1.length; _i++) {
             var child = children_1[_i];
-            if (child) {
+            if (child !== null) {
                 dom.appendChild(child.renderDom());
             }
         }
-        this.element = dom;
+        this.dom = dom;
         return dom;
     };
     FragmentNode.prototype.prependChildNode = function (vNode) {
@@ -1872,30 +1924,30 @@ var FragmentNode = (function () {
         this.children.push(vNode);
     };
     return FragmentNode;
-}());
+}(VirtualNode));
 
-((function () {
+var ComponentNode = (function (_super) {
+    __extends(ComponentNode, _super);
     function ComponentNode(props, children) {
-        this.props = props;
-        this.children = children;
-        this.isComponent = true;
+        var _this = _super.call(this) || this;
+        _this.props = props;
+        _this.children = children;
+        _this.isComponent = true;
+        return _this;
     }
-    Object.defineProperty(ComponentNode.prototype, "mountedVNode", {
-        get: function () {
-            return this._mountedVNode;
-        },
-        enumerable: false,
-        configurable: true
-    });
     ComponentNode.prototype.renderDom = function () {
         var vNode = this.render();
+        if (vNode === null) {
+            return null;
+        }
         var dom = vNode.renderDom();
-        this._mountedVNode = vNode;
+        vNode.dom = dom;
+        this.mountedVNode = vNode;
         dom.component = this;
         return dom;
     };
     return ComponentNode;
-})());
+}(VirtualNode));
 
 function h(name, attributes) {
     if (attributes === void 0) { attributes = {}; }
@@ -1924,13 +1976,15 @@ function h(name, attributes) {
             child.forEach(function (ch) { return childrenNodes.push(ch); });
         }
         else if (typeof child === 'object') {
-            if (child.render !== undefined) {
+            if (child.isComponent) {
                 var vNode = child.render();
-                vNode.component = child;
+                if (vNode !== null) {
+                    vNode.component = child;
+                }
                 childrenNodes.push(vNode);
             }
             else {
-                throw new Error('Invalid object. It must define a render function');
+                throw new Error('Invalid object. It must extend ComponentNode');
             }
         }
         else {
@@ -1948,29 +2002,6 @@ function h(name, attributes) {
             return new name(attributes, childrenNodes).render();
         }
     }
-}
-
-/*! *****************************************************************************
-Copyright (c) Microsoft Corporation.
-
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-PERFORMANCE OF THIS SOFTWARE.
-***************************************************************************** */
-
-function __spreadArrays() {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
 }
 
 var NodeChanges = (function () {
@@ -2276,9 +2307,11 @@ function callHook(node, name, hooks) {
     var component = node.component;
     if (component !== undefined &&
         component[name] !== undefined) {
+        console.log("Calling hook: '" + name + "' of component: '" + component.constructor.name + "'");
         component[name](node);
     }
     else if (hooks[name] !== undefined) {
+        console.log("Calling hook: '" + name + "' of element: '" + hooks.constructor.name + "'");
         hooks[name](node);
     }
 }
@@ -2322,19 +2355,6 @@ var RemoveChildrenPatch = (function () {
     return RemoveChildrenPatch;
 }());
 
-function renderNode(vnode) {
-    if (vnode.isComponent) {
-        var node = vnode.renderDom();
-        node = node.render();
-        vnode.mountedNode = node;
-        node.component = vnode;
-        return node;
-    }
-    else {
-        return vnode.renderDom();
-    }
-}
-
 var SetChildPatch = (function () {
     function SetChildPatch(index, newNode) {
         this.index = index;
@@ -2345,7 +2365,7 @@ var SetChildPatch = (function () {
         var insertedChildrenElements = [];
         var removedChildrenElements = [];
         var _a = this, index = _a.index, newNode = _a.newNode;
-        var newChild = renderNode(newNode);
+        var newChild = newNode.renderDom();
         var n = node instanceof DocumentFragment ?
             parentNode :
             node;
@@ -2385,7 +2405,7 @@ var AddChildrenPatch = (function () {
             if (child === null) {
                 return;
             }
-            var childElement = renderNode(child);
+            var childElement = child.renderDom();
             insertedChildrenElements.push(childElement);
             callHook(childElement, 'nodeWillConnect', hooks);
             fragment.appendChild(childElement);
@@ -2490,7 +2510,7 @@ var ReplaceElementPatch = (function () {
     }
     ReplaceElementPatch.prototype.applyPatch = function (options) {
         var parentNode = options.parentNode, node = options.node, parentContext = options.parentContext, context = options.context, hooks = options.hooks;
-        var newNode = renderNode(this.newNode);
+        var newNode = this.newNode.renderDom();
         callHook(node, 'nodeWillDisconnect', hooks);
         callHook(newNode, 'nodeWillConnect', hooks);
         node.replaceWith(newNode);
@@ -2510,7 +2530,7 @@ var SetElementPatch = (function () {
     SetElementPatch.prototype.applyPatch = function (options) {
         var parentNode = options.parentNode, context = options.context, hooks = options.hooks;
         var props = this.newNode.props;
-        var newNode = renderNode(this.newNode);
+        var newNode = this.newNode.renderDom();
         if (newNode instanceof DocumentFragment) {
             if (props !== undefined && props !== null) {
                 if (parentNode instanceof ShadowRoot) {
@@ -2745,6 +2765,7 @@ function diff(oldNode, newNode) {
                 return new ElementPatches([new ReplaceElementPatch(newNode)], []);
             }
             else {
+                newNode.dom = oldNode.dom;
                 var oldChildren = oldNode.children;
                 var newChildren = newNode.children;
                 if (newChildren.length === 0) {
@@ -2833,7 +2854,7 @@ function diff(oldNode, newNode) {
                     return new ElementPatches([new SetElementPatch(newNode)], []);
                 }
                 else {
-                    newNode.element = oldNode.element;
+                    newNode.dom = oldNode.dom;
                     var newChildren = newNode.children;
                     var patches = void 0;
                     var childrenPatches = void 0;
@@ -3318,19 +3339,15 @@ const VirtualDomMixin = Base => class VirtualDom extends Base {
      * The root element of this component
      */
     get rootElement() {
-        if (this.isComponent) {
-            return this.mountedNode;
+        const dom = (this.mountedVNode || {}).dom;
+        if (dom === undefined) {
+            return dom;
         }
-        else { // Custom element
-            const element = (this.mountedNode || {}).element;
-            if (element === undefined) {
-                return element;
-            }
-            // Once the document fragment is appended to its parent element. It looses all its children, so we need its parent element to apply the diff
-            if (element instanceof DocumentFragment) {
-                return element.parentElement || this.document;
-            }
+        // Once the document fragment is appended to its parent element. It looses all its children, so we need its parent element to apply the diff
+        if (dom instanceof DocumentFragment) {
+            return dom.parentElement || this.document;
         }
+        return dom;
     }
     requestUpdate() {
         if (this._isUpdating) {
@@ -3360,7 +3377,7 @@ const VirtualDomMixin = Base => class VirtualDom extends Base {
             node = this.onBeforeMount(node);
         }
         // Do the diffing
-        const previousNode = this.mountedNode;
+        const previousNode = this.mountedVNode;
         const patches = diff(previousNode, node);
         if (!patches.hasPatches()) {
             return false; // Nothing to mount   
@@ -3391,7 +3408,7 @@ const VirtualDomMixin = Base => class VirtualDom extends Base {
             }
         }
         // Set the new mounted node
-        this.mountedNode = node;
+        this.mountedVNode = node;
     }
 };
 
@@ -4233,8 +4250,8 @@ const DataMixin = Base => { var _a; return _a = class Data extends Base {
                     const markup = renderRecord(record, index);
                     if (typeof markup === 'string') {
                         const vNode = markupToVDom(markup.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
-                        if (this.wrapRecordVNode !== undefined) {
-                            return this.wrapRecordVNode(record, vNode);
+                        if (this.wrapRecord !== undefined) {
+                            return this.wrapRecord(record, index, vNode);
                         }
                         else {
                             return vNode;
@@ -4375,7 +4392,7 @@ const LoadableMixin = Base => { var _a; return _a = class Loadable extends Base 
     },
     _a; };
 
-const PageableMixin = Base => { var _a; return _a = class Pageable extends Base {
+const PageableMixin$1 = Base => { var _a; return _a = class Pageable extends Base {
         paginate(pageIndex, pageSize) {
             this.setPageIndex(pageIndex);
             this.setPageSize(pageSize);
@@ -4491,7 +4508,7 @@ const SortableMixin = Base => { var _a; return _a = class Sortable extends Base 
 /**
  * Implements a mixin that loads a collection of records
  */
-const CollectionLoadableMixin = Base => class CollectionLoadable extends PageableMixin(SortableMixin(FilterableMixin(LoadableMixin(Base)))) {
+const CollectionLoadableMixin = Base => class CollectionLoadable extends PageableMixin$1(SortableMixin(FilterableMixin(LoadableMixin(Base)))) {
     load() {
         const { loadUrl } = this.props;
         const { pageIndex, pageSize, filter, sorters } = this.state;
@@ -4615,11 +4632,9 @@ Table.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-table`, Table);
 
-//import ContainerMixin from '../../../core/mixins/ContainerMixin';
 const selectionChanged = 'selectionChanged';
 /**
  * Allows a component to be selectable
- * @param Base
  */
 const SelectableMixin = Base => { var _a; return _a = class Selectable extends Base {
         constructor(props, children) {
@@ -4634,46 +4649,41 @@ const SelectableMixin = Base => { var _a; return _a = class Selectable extends B
                 node.addEventListener('click', this.toggleSelect);
             }
         }
-        attributeChangedCallback(attributeName, oldValue, newValue) {
-            if (super.attributeChangedCallback) {
-                super.attributeChangedCallback(attributeName, oldValue, newValue);
-            }
-            if (attributeName === "selectable") {
-                if (newValue === "true" || newValue === "") {
-                    this.addEventListener('click', this.toggleSelect);
-                }
-                else { // newValue === "false"
-                    if (this.props.selected) { // Unselect if selected
-                        this.setSelected(false);
-                        this.dispatchEvent(new CustomEvent(selectionChanged, {
-                            detail: {
-                                child: this,
-                                removed: this.props.value
-                            },
-                            bubbles: true,
-                            composed: true
-                        }));
-                    }
-                    this.removeEventListener('click', this.toggleSelect);
-                }
-            }
-        }
+        // attributeChangedCallback(attributeName: string, oldValue: string, newValue: string) {
+        //     if (super.attributeChangedCallback) {
+        //         super.attributeChangedCallback(attributeName, oldValue, newValue);
+        //     }
+        //     if (attributeName === "selectable") {
+        //         if (newValue === "true" || newValue === "") {
+        //             this.addEventListener('click', this.toggleSelect);
+        //         }
+        //         else { // newValue === "false"
+        //             if (this.props.selected) { // Unselect if selected
+        //                 this.setSelected(false);
+        //                 this.dispatchEvent(new CustomEvent(selectionChanged, {
+        //                     detail: {
+        //                         child: this,
+        //                         removed: this.props.value
+        //                     },
+        //                     bubbles: true,
+        //                     composed: true
+        //                 }));
+        //             }
+        //             this.removeEventListener('click', this.toggleSelect);
+        //         }
+        //     }
+        // }
         toggleSelect() {
-            const { selectable, selected, value } = this.props;
+            const { selectable, selected } = this.props;
             if (!selectable) {
                 return;
             }
             this.setSelected(!selected);
             this.rootElement.dispatchEvent(new CustomEvent(selectionChanged, {
-                detail: this.props.selected ? // Need to read again since the property was updated
-                    {
-                        child: this,
-                        added: value
-                    } :
-                    {
-                        child: this,
-                        removed: value
-                    },
+                detail: {
+                    child: this,
+                    selected: this.props.selected // Need to read again since the property was updated
+                },
                 bubbles: true,
                 composed: true
             }));
@@ -4733,6 +4743,10 @@ class SelectionContainer extends ContainerMixin(Base) {
         connectedCallback() {
             super.connectedCallback();
             this.updateSelection = this.updateSelection.bind(this);
+            const { selectable } = this.props;
+            if (selectable === true) {
+                this.addEventListener('selectionChanged', this.updateSelection);
+            }
         }
         attributeChangedCallback(attributeName, oldValue, newValue) {
             var _a;
@@ -4747,29 +4761,30 @@ class SelectionContainer extends ContainerMixin(Base) {
             }
         }
         updateSelection(e) {
-            const { multiple, selection, selectionChanged } = this.props;
-            const { added, removed, child } = e.detail;
+            const { multiple, selection, recordId, selectionChanged } = this.props;
+            const { child, selected } = e.detail;
+            const recId = child.props[recordId];
             if (multiple !== undefined) { // Add values to the selection
-                if (added != undefined) {
-                    this.setSelection([...selection, added]);
+                if (selected === true) {
+                    this.setSelection([...selection, recId]);
                 }
-                else if (removed != undefined) {
-                    const index = selection.indexOf(removed);
+                else {
+                    const index = selection.indexOf(recId);
                     selection.splice(index, 1);
                     this.setSelection(selection);
                 }
             }
-            else { // Replace the old selected value with the new selected one
+            else { // Replace the old selection with the new one
                 const { selectedChild } = this.state;
-                // Deselect previous selected attribute
+                // Deselect previous selected child
                 if (selectedChild !== undefined) {
                     selectedChild.setSelected(false);
                 }
-                if (added != undefined) {
-                    this.setSelection([added]);
+                if (selected === true) {
+                    this.setSelection([recId]);
                     this.setSelectedChild(child);
                 }
-                else if (removed != undefined) {
+                else {
                     this.setSelection([]);
                     this.setSelectedChild(undefined);
                 }
@@ -4782,7 +4797,10 @@ class SelectionContainer extends ContainerMixin(Base) {
             var _a;
             (_a = super.onChildAdded) === null || _a === void 0 ? void 0 : _a.call(this, child);
             // If any of the values of the selection match the value of the child, then set the child as selected
-            const { multiple, selection, recordId } = this.props;
+            const { multiple, selection, selectable, recordId } = this.props;
+            if (selectable !== true) {
+                return;
+            }
             const childProps = child.props || {};
             const recId = childProps[recordId];
             if (selection.indexOf(recId) > -1 &&
@@ -4851,9 +4869,8 @@ class List extends SelectionContainerMixin(SizableMixin(DataCollectionLoadableMi
         return (h(Fragment, null,
             this.renderLoading(),
             this.renderError(),
-            h("ul", null,
-                this.renderHeader(),
-                this.renderData())));
+            h("ul", null, this.renderHeader()),
+            h("ul", null, this.renderData())));
     }
     renderHeader() {
         const { fields } = this.props;
@@ -4908,10 +4925,18 @@ const TargetViewHolderMixin = Base => { var _a; return _a = class TargetViewHold
         nodeDidConnect() {
             var _a;
             (_a = super.nodeDidConnect) === null || _a === void 0 ? void 0 : _a.call(this);
-            const { targetViewId } = this.props;
-            this.targetView = document.getElementById(targetViewId);
+            const { targetView } = this.props;
+            if (typeof targetView === 'string') {
+                this.targetView = document.getElementById(targetView);
+            }
+            else if (typeof targetView === 'function') {
+                this.targetView = targetView();
+            }
+            else {
+                this.targetView = targetView;
+            }
             if (this.targetView === null) {
-                throw Error(`Could not find target view with id: ${targetViewId}`);
+                throw Error(`Could not find target view with : ${targetView.toString()}`);
             }
         }
         nodeWillDisconnect() {
@@ -4924,9 +4949,9 @@ const TargetViewHolderMixin = Base => { var _a; return _a = class TargetViewHold
         /**
          * The id of the target view to act upon
          */
-        targetViewId: {
-            attribute: 'target-view-id',
-            type: String,
+        targetView: {
+            attribute: 'target-view',
+            type: Object,
             required: true
         }
     },
@@ -4986,7 +5011,7 @@ class Pager extends TargetViewHolderMixin(SizableMixin(CustomElement)) {
     render() {
         const { pageIndex } = this.state;
         const { totalPages } = this.props;
-        return (h("gcl-row", null,
+        return (h("gcl-row", { "justify-content": "center" },
             h("gcl-button", { variant: "primary", onClick: this.goFirst, disabled: pageIndex === 1 },
                 h("gcl-icon", { name: "chevron-double-left" })),
             h("gcl-button", { variant: "primary", onClick: this.goPrevious, disabled: pageIndex === 1 },
@@ -5574,14 +5599,6 @@ TextArea.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-text-area`, TextArea);
 
-class FunctionalComponent {
-    constructor(props, children) {
-        this.props = props;
-        this.children = children;
-        this.isComponent = true;
-    }
-}
-
 function getComponentMetadata(ctor) {
     var _a;
     const metadata = {
@@ -5682,7 +5699,7 @@ const ComponentMetadataInitializerMixin = Base => { var _a; return _a = class Co
     _a.metadata = undefined,
     _a; };
 
-class Component extends VirtualDomMixin(ComponentMetadataInitializerMixin(FunctionalComponent)) {
+class Component extends VirtualDomMixin(ComponentMetadataInitializerMixin(ComponentNode)) {
     constructor(props, children) {
         super(props, children);
     }
@@ -6858,45 +6875,88 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
+/**
+ * Allows a component to be pageable
+ */
+const PageableMixin = Base => { var _a; return _a = class Pageable extends Base {
+        renderPager() {
+            const { pageable } = this.props;
+            if (pageable !== true) {
+                return null;
+            }
+            return (h("gcl-pager", { "target-view": this, "total-pages": "5" }));
+        }
+    },
+    _a.properties = {
+        /**
+         * Whether the element is pageable
+         */
+        pageable: {
+            type: Boolean,
+            value: true
+        }
+    },
+    _a; };
+
 class XListItem extends SelectableMixin(ChildMixin(Component)) {
     constructor(props, children) {
         super(props, children);
     }
-    nodeDidConnect(node) {
-        var _a;
-        (_a = super.nodeDidConnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
-        console.log('XListItem did connect');
-        node.addEventListener('click', this.handleClick);
-    }
-    nodeWillDisconnect(node) {
-        var _a;
-        (_a = super.nodeWillDisconnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
-        console.log('XListItem will disconnect');
-        node.removeEventListener('click', this.handleClick);
-    }
-    handleClick() {
-        alert('clicked');
-    }
+    // nodeDidConnect(node: Node) {
+    //     super.nodeDidConnect?.(node);
+    //     console.log('XListItem did connect');
+    //     node.addEventListener('click', this.handleClick);
+    // }
+    // nodeWillDisconnect(node: Node) {
+    //     super.nodeWillDisconnect?.(node);
+    //     console.log('XListItem will disconnect');
+    //     node.removeEventListener('click', this.handleClick);
+    // }
+    // handleClick() {
+    //     alert('clicked');
+    // }
     render() {
         const { size, selected } = this.props;
         return (h("li", { class: "hoverable", size: size, selected: selected }, this.children));
     }
 }
 
-class XList extends DataCollectionLoadableMixin(SelectionContainerMixin(SizableMixin(CustomElement))) {
+class XList extends PageableMixin(DataCollectionLoadableMixin(SelectionContainerMixin(SizableMixin(CustomElement)))) {
     render() {
-        return (h("ul", null,
-            this.renderLoading(),
-            this.renderError(),
-            this.renderData()));
+        return (h("div", { card: true, style: "background-color: beige; margin: 1rem;" },
+            h("ul", { style: "background-color: lightgreen;" }, this.renderHeader()),
+            h("ul", null,
+                this.renderLoading(),
+                this.renderError(),
+                this.renderData()),
+            h("div", { style: "background-color: lightgreen;" }, this.renderPager())));
     }
     wrapRecordVNode(record, children) {
-        const { recordId, size } = this.props;
+        const { recordId, size, selectable } = this.props;
         return new XListItem({
             parent: this,
             [recordId]: record[recordId],
-            size
+            size,
+            selectable
         }, children);
+    }
+    renderHeader() {
+        const { fields } = this.props;
+        if (fields === undefined) {
+            return null;
+        }
+        const fds = typeof fields === 'function' ? fields() : fields;
+        const children = fds.map(f => {
+            const sorter = f.sortable !== false ?
+                (h("gcl-sorter-tool", { field: f.name })) :
+                null;
+            return (h("span", { class: "list-cell", style: {
+                    width: f.width || '100px'
+                } },
+                f.display,
+                sorter));
+        });
+        return (h("li", null, children));
     }
     renderFields(fields, data) {
         return data.map(record => {
@@ -6914,12 +6974,6 @@ class XList extends DataCollectionLoadableMixin(SelectionContainerMixin(SizableM
     renderNoData() {
         return (h("ul", null,
             h("slot", null)));
-    }
-    nodeDidConnect(node) {
-        console.log('connected list');
-    }
-    nodeWillDisconnect(node) {
-        console.log('list will disconnect');
     }
 }
 XList.component = {

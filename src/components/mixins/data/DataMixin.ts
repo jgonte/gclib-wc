@@ -88,9 +88,9 @@ const DataMixin = Base =>
 
                         const vNode = markupToVDom(markup.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
 
-                        if (this.wrapRecordVNode !== undefined) {
+                        if (this.wrapRecord !== undefined) {
 
-                            return this.wrapRecordVNode(record, vNode);
+                            return this.wrapRecord(record, index, vNode);
                         }
                         else {
 

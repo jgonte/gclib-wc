@@ -162,7 +162,7 @@ export class Pager extends
         } = this.props;
 
         return (
-            <gcl-row>
+            <gcl-row justify-content="center" >
 
                 <gcl-button variant="primary" onClick={this.goFirst} disabled={pageIndex === 1}>
                     <gcl-icon name="chevron-double-left"></gcl-icon>
@@ -224,7 +224,6 @@ export class Pager extends
 
         this.targetView.paginate(pageIndex, pageSize);
     }
-
 
 }
 

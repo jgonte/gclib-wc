@@ -1,17 +1,17 @@
-
-import { Fragment, h } from 'gclib-vdom';
+import { h, ElementNode } from 'gclib-vdom';
 import CustomElement from '../../core/customElement/CustomElement';
 import { config } from '../config';
-import SelectionContainerMixin from '../mixins/selection-container/SelectionContainerMixin';
 import SizableMixin from '../mixins/sizable/SizableMixin';
 import DataCollectionLoadableMixin from '../mixins/data/DataCollectionLoadableMixin';
 import DataFieldDefinition from '../mixins/data/DataFieldDefinition';
+import SelectionContainerMixin from '../mixins/selection-container/SelectionContainerMixin';
+import PageableMixin from '../mixins/pageable/PageableMixin';
 
-export class List extends
-    SelectionContainerMixin(
-        SizableMixin(
-            DataCollectionLoadableMixin(
-                CustomElement
+export class DataGrid extends
+    PageableMixin(
+        DataCollectionLoadableMixin(
+            SelectionContainerMixin(
+                SizableMixin(CustomElement)
             )
         )
     ) {
@@ -19,24 +19,53 @@ export class List extends
     static component = {
 
         styleUrls: [
-            `${config.assetsFolder}/list/List.css`
+            `${config.assetsFolder}/data-grid/DataGrid.css`
         ]
     };
 
     render() {
 
         return (
-            <Fragment>
-                {this.renderLoading()}
-                {this.renderError()}
-                <ul>
+            <div card style="background-color: beige; margin: 1rem;">
+                <div style="background-color: lightgreen;">
                     {this.renderHeader()}
-                </ul>
-                <ul>
+                </div>
+                <div>
+                    {this.renderLoading()}
+                    {this.renderError()}
                     {this.renderData()}
-                </ul>
-            </Fragment>
+                </div>
+                <div style="background-color: lightgreen;">
+                    {this.renderPager()}
+                </div>
+            </div>
         );
+    }
+
+    wrapRecord(record: any, index: number, children: ElementNode | ElementNode[]) {
+
+        const {
+            recordId,
+            size,
+            selectable
+        } = this.props;
+
+        return (
+            <gcl-grid-row
+                size={size}
+                selectable={selectable}
+                record-id={record[recordId]}
+            >
+                {children}
+            </gcl-grid-row>
+        );
+
+        // return new GridItem({
+        //     parent: this,
+        //     [recordId]: ,
+        //     size,
+        //     selectable
+        // }, children);
     }
 
     renderHeader() {
@@ -70,38 +99,25 @@ export class List extends
             );
         });
 
-        return (
-            <gcl-list-item selectable="false">
-                {children}
-            </gcl-list-item>
-        );
+        return children;
     }
 
     renderFields(fields: DataFieldDefinition[], data: []) {
 
-        const {
-            recordId
-        } = this.props;
-
         return data.map(record => {
-
-            const value = record[recordId];
 
             const children = fields.map(f => {
 
                 return (
                     <span class="list-cell" style={{
                         width: f.width || '100px'
-                    }}>{record[f.name]}
+                    }}>
+                        {record[f.name]}
                     </span>
                 );
             });
 
-            return (
-                <gcl-list-item value={value}>
-                    {children}
-                </gcl-list-item>
-            );
+            return this.wrapRecord(record, 0, children);
         });
     }
 
@@ -119,4 +135,5 @@ export class List extends
 }
 
 //@ts-ignore
-customElements.define(`${config.tagPrefix}-list`, List);
+customElements.define(`${config.tagPrefix}-data-grid`, DataGrid);
+

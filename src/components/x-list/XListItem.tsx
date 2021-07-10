@@ -3,7 +3,6 @@ import Component from '../../core/component/Component';
 import ChildMixin from '../../core/mixins/ChildMixin';
 import SelectableMixin from '../mixins/selectable/SelectableMixin';
 
-
 export default class XListItem extends
     SelectableMixin(
         ChildMixin(Component)
@@ -14,28 +13,28 @@ export default class XListItem extends
         super(props, children);
     }
 
-    nodeDidConnect(node: Node) {
+    // nodeDidConnect(node: Node) {
 
-        super.nodeDidConnect?.(node);
+    //     super.nodeDidConnect?.(node);
 
-        console.log('XListItem did connect');
+    //     console.log('XListItem did connect');
 
-        node.addEventListener('click', this.handleClick);
-    }
+    //     node.addEventListener('click', this.handleClick);
+    // }
 
-    nodeWillDisconnect(node: Node) {
+    // nodeWillDisconnect(node: Node) {
 
-        super.nodeWillDisconnect?.(node);
+    //     super.nodeWillDisconnect?.(node);
 
-        console.log('XListItem will disconnect');
+    //     console.log('XListItem will disconnect');
 
-        node.removeEventListener('click', this.handleClick);
-    }
+    //     node.removeEventListener('click', this.handleClick);
+    // }
 
-    handleClick() {
+    // handleClick() {
 
-        alert('clicked');
-    }
+    //     alert('clicked');
+    // }
 
     render() {
 

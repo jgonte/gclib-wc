@@ -18,7 +18,7 @@
                 },
                 {
                     "value": "c",
-                    "iconName": "alarm-fill",
+                    "iconName": "calculator",
                     "textKey": "goodMorning",
                     "lang": "de"
                 }
@@ -59,17 +59,26 @@
             ];
         }
 
+        function showSelection(selection) {
+
+            alert('Selection: ' + JSON.stringify(selection));
+        }
+
     </script>
 
 </head>
 
 <body>
 
-    <!-- <gcl-x-list data="getData()" render-record="renderListItem()" record-id="value">
-    </gcl-x-list> -->
+    <gcl-x-list data="getData()" render-record="renderListItem()" record-id="value" pageable="false">
+    </gcl-x-list>
 
-    <gcl-x-list id="contactsListWithFields" load-url="http://localhost:60314/api/contacts" fields="getFields()"
-        size="medium" selection='[2]' selectable selection-changed="showSelection()">
+    <gcl-x-list id="contactsList" load-url="http://localhost:60314/api/contacts" fields="getFields()"
+        size="medium" selection='[2]' selection-changed="showSelection()">
+    </gcl-x-list>
+
+    <gcl-x-list id="contactsListMultiple" load-url="http://localhost:60314/api/contacts" fields="getFields()"
+        size="medium" selection='[1,3]' multiple selection-changed="showSelection()">
     </gcl-x-list>
 
 </body>

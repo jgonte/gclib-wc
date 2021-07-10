@@ -68,6 +68,15 @@ const SelectionContainerMixin = Base =>
             super.connectedCallback();
 
             this.updateSelection = this.updateSelection.bind(this);
+
+            const {
+                selectable
+            } = this.props;
+
+            if (selectable === true) {
+
+                this.addEventListener('selectionChanged', this.updateSelection);
+            }
         }
 
         attributeChangedCallback(attributeName: string, oldValue: string, newValue: string) {
@@ -92,50 +101,51 @@ const SelectionContainerMixin = Base =>
             const {
                 multiple,
                 selection,
+                recordId,
                 selectionChanged
             } = this.props;
 
             const {
-                added,
-                removed,
-                child
+                child,
+                selected
             } = e.detail;
+
+            const recId = child.props[recordId];
 
             if (multiple !== undefined) { // Add values to the selection
 
-                if (added != undefined) {
+                if (selected === true) {
 
-                    this.setSelection([...selection, added]);
+                    this.setSelection([...selection, recId]);
                 }
-                else if (removed != undefined) {
+                else {
 
-                    const index = selection.indexOf(removed);
+                    const index = selection.indexOf(recId);
 
                     selection.splice(index, 1);
 
                     this.setSelection(selection);
                 }
             }
-            else { // Replace the old selected value with the new selected one
+            else { // Replace the old selection with the new one
 
                 const {
                     selectedChild
                 } = this.state;
 
-                // Deselect previous selected attribute
-
+                // Deselect previous selected child
                 if (selectedChild !== undefined) {
 
                     selectedChild.setSelected(false);
                 }
 
-                if (added != undefined) {
+                if (selected === true) {
 
-                    this.setSelection([added]);
+                    this.setSelection([recId]);
 
                     this.setSelectedChild(child);
                 }
-                else if (removed != undefined) {
+                else {
 
                     this.setSelection([]);
 
@@ -157,8 +167,14 @@ const SelectionContainerMixin = Base =>
             const {
                 multiple,
                 selection,
+                selectable,
                 recordId
             } = this.props;
+
+            if (selectable !== true) {
+
+                return;
+            }
 
             const childProps = (child as any).props || {};
 
