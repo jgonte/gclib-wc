@@ -3,6 +3,9 @@
     flex-wrap: wrap;
     align-items: stretch;
     justify-content: space-between;
-    width: 100%;
+}
+
+:host([hoverable="true"]:hover) {
+    background-color: hotpink;
 }
 
