@@ -46,10 +46,10 @@ const DataMixin = Base =>
 
         constructor(props?, children?) {
 
-            super(props, children); 
+            super(props, children);
         }
 
-        renderData() : ElementNode | TextNode | string {
+        renderData(): ElementNode | TextNode | string {
 
             let {
                 data
@@ -105,7 +105,9 @@ const DataMixin = Base =>
             }
             else if (fields !== undefined) {
 
-                const fds = typeof fields === 'function' ? fields() : fields;
+                const fds = typeof fields === 'function' ?
+                    fields() :
+                    fields;
 
                 return this.renderFields(fds, data);
             }

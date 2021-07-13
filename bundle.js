@@ -3010,6 +3010,11 @@ function notifyNodeWillDisconnect(node) {
     }
 }
 
+function getGlobalFunction(value) {
+    const functionName = value.replace('()', '').trim();
+    return window[functionName];
+}
+
 function createElementNode(o) {
     if (typeof o === 'string') {
         return markupToVDom(o.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
@@ -3025,12 +3030,60 @@ function createElementNode(o) {
     }
 }
 
-function getGlobalFunction(value) {
-    const functionName = value.replace('()', '').trim();
-    return window[functionName];
+class OneOf {
+    constructor(types) {
+        this.types = types;
+    }
+    toProperty(value) {
+        // First try a function since that can create any of the objects below
+        if (this.types.includes(Function)) {
+            var fcn = getGlobalFunction(value);
+            if (fcn !== undefined) {
+                return fcn;
+            }
+        }
+        if (this.types.includes(ElementNode)) {
+            return createElementNode(value);
+        }
+        if (this.types.includes(Object) ||
+            this.types.includes(Array)) {
+            let o;
+            try {
+                o = JSON.parse(value);
+            }
+            catch (error) {
+                // Try the other types below
+            }
+            if (o !== undefined) {
+                if (!Array.isArray(o) &&
+                    !this.types.includes(Object)) {
+                    throw Error(`value: ${value} is not an array but there is no object type expected`);
+                }
+                if (Array.isArray(o) &&
+                    !this.types.includes(Array)) {
+                    throw Error(`value: ${value} is an array but there is no array type expected`);
+                }
+                return o;
+            }
+        }
+        if (this.types.includes(Boolean)) {
+            return value !== null && value !== 'false';
+        }
+        if (this.types.includes(Number)) {
+            return value === null ? null : Number(value);
+        }
+        return value;
+    }
 }
+function oneOf(...types) {
+    return new OneOf(types);
+}
+
 const defaultPropertyValueConverter = {
     toProperty: (value, type) => {
+        if (type instanceof OneOf) {
+            return type.toProperty(value);
+        }
         switch (type) {
             case Boolean:
                 return value !== null && value !== 'false';
@@ -3310,8 +3363,6 @@ const CustomElementMetadataInitializerMixin = Base => class CustomElementMetadat
 
 /**
  * Connects the CustomElement or the FunctionalComponent to the virtual dom rendering cycle
- * @param Base
- * @returns
  */
 const VirtualDomMixin = Base => class VirtualDom extends Base {
     // The props and children are ignored for custom elements but they are needed for Functional Components
@@ -3364,6 +3415,9 @@ const VirtualDomMixin = Base => class VirtualDom extends Base {
         let node = this.render();
         if (node === undefined) {
             console.error('Undefined virtual node. Ensure that you return the node from the render function');
+        }
+        if (Array.isArray(node)) { // Wrap the array of nodes in a fragment
+            node = new FragmentNode(null, node);
         }
         // Create a virtual text node if the type of node is any primitive
         const nodeType = typeof node;
@@ -4263,7 +4317,9 @@ const DataMixin = Base => { var _a; return _a = class Data extends Base {
                 });
             }
             else if (fields !== undefined) {
-                const fds = typeof fields === 'function' ? fields() : fields;
+                const fds = typeof fields === 'function' ?
+                    fields() :
+                    fields;
                 return this.renderFields(fds, data);
             }
             else { // Show the user the data
@@ -6690,14 +6746,39 @@ class CurrentYear extends CustomElement {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-current-year`, CurrentYear);
 
+function parseCssStyle(style) {
+    const s = {};
+    const parts = style.split(';');
+    parts
+        .filter(part => part !== '')
+        .forEach(part => {
+        const kvs = part.split(':');
+        const key = toCamelCase(kvs[0].trim());
+        const value = kvs[1].trim();
+        s[key] = value;
+    });
+    return s;
+}
+function toCamelCase(s) {
+    const exp = /-([a-z])/;
+    while (exp.test(s)) {
+        s = s.replace(exp, RegExp.$1.toUpperCase());
+    }
+    return s;
+}
+
 /**
  * Layout component to encapsulate flexbox row functionality
  */
 //@ts-ignore
 class Row extends CustomElement {
     render() {
-        const { justifyContent } = this.props;
-        return (h(Fragment, { style: { justifyContent } },
+        const { justifyContent, } = this.props;
+        let { style } = this.props;
+        if (typeof style === 'string') {
+            style = parseCssStyle(style);
+        }
+        return (h(Fragment, { style: Object.assign(Object.assign({}, style), { justifyContent }) },
             h("slot", null)));
     }
 }
@@ -6707,6 +6788,9 @@ Row.component = {
     ]
 };
 Row.properties = {
+    style: {
+        type: Object
+    },
     /**
      * The type of the alert
      */
@@ -6754,6 +6838,244 @@ CloseTool.properties = {
 };
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-close-tool`, CloseTool);
+
+const HoverableMixin = Base => { var _a; return _a = class Hoverable extends Base {
+    },
+    _a.component = {
+        styleUrls: [
+            `${config.assetsFolder}/mixins/Hoverable/Hoverable.css`
+        ]
+    },
+    _a.properties = {
+        /**
+         * Whether the element is hoverable
+         */
+        hoverable: {
+            type: Boolean,
+            value: false
+        }
+    },
+    _a; };
+
+//@ts-ignore
+class SelectableRow extends SelectableMixin(HoverableMixin(SizableMixin(ChildMixin(CustomElement)))) {
+    render() {
+        const { value, size, selected, hoverable, children } = this.props;
+        return (h(Fragment, { value: value, hoverable: hoverable, size: size, selected: selected }, children));
+    }
+}
+SelectableRow.component = {
+    styleUrls: [
+        `${config.assetsFolder}/selectable/row/SelectableRow.css`
+    ]
+};
+SelectableRow.properties = {
+    /**
+     * The children nodes
+     */
+    children: {
+        type: ElementNode,
+        required: true
+    }
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-selectable-row`, SelectableRow);
+
+//@ts-ignore
+class DataCell extends 
+// SelectableMixin(
+//     ChildMixin(
+SizableMixin(CustomElement) {
+    render() {
+        let { field, record } = this.props;
+        const { size } = this.props;
+        if (typeof field == 'function') {
+            field = field();
+        }
+        if (typeof record == 'function') {
+            record = record();
+        }
+        const value = record[field.name];
+        if (field.render !== undefined) {
+            const cell = field.render.call(this, record, field);
+            if (typeof cell === 'string') {
+                return markupToVDom(cell.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
+            }
+            else {
+                return cell;
+            }
+        }
+        else {
+            return (h(Fragment, { size: size }, value));
+        }
+    }
+}
+DataCell.component = {
+    styleUrls: [
+        `${config.assetsFolder}/data/cell/DataCell.css`
+    ]
+};
+DataCell.properties = {
+    /**
+     * The record to render the row from
+     */
+    record: {
+        type: oneOf(Object, Function),
+        required: true
+    },
+    /**
+     * The descriptor of the fields to render the row
+     */
+    field: {
+        type: oneOf(Object, Function),
+        required: true
+    }
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-data-cell`, DataCell);
+
+//import SelectableMixin from '../../mixins/selectable/SelectableMixin';
+//@ts-ignore
+class DataRow extends HoverableMixin(ChildMixin(CustomElement)) {
+    render() {
+        const { rowIsHoverable, recordId, size, selectable } = this.props;
+        let { record, fields } = this.props;
+        if (typeof record === 'function') {
+            record = record();
+        }
+        if (fields === undefined) {
+            return null;
+        }
+        if (typeof fields === 'function') {
+            fields = fields();
+        }
+        const children = fields.map(field => {
+            return (h("gcl-data-cell", { style: { width: field.width || '100px' }, field: field, record: record }));
+        });
+        const value = record[recordId];
+        return (h("gcl-selectable-row", { hoverable: rowIsHoverable, children: children, size: size, selectable: selectable, value: value }));
+    }
+}
+DataRow.component = {
+    styleUrls: [
+        `${config.assetsFolder}/data/row/DataRow.css`
+    ]
+};
+DataRow.properties = {
+    /**
+     * The record to render the row from
+     */
+    record: {
+        type: oneOf(Object, Function),
+        required: true
+    },
+    /**
+     * The descriptor of the fields to render the row
+     */
+    fields: {
+        type: oneOf(Array, Function),
+        required: true
+    },
+    /**
+     * The name of the property that identifies the record id
+     */
+    recordId: {
+        attribute: 'record-id',
+        type: String,
+        value: 'id'
+    }
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-data-row`, DataRow);
+
+/**
+ * Allows a component to be pageable
+ */
+const PageableMixin = Base => { var _a; return _a = class Pageable extends Base {
+        renderPager() {
+            const { pageable } = this.props;
+            if (pageable !== true) {
+                return null;
+            }
+            return (h("gcl-pager", { "target-view": this, "total-pages": "5" }));
+        }
+    },
+    _a.properties = {
+        /**
+         * Whether the element is pageable
+         */
+        pageable: {
+            type: Boolean,
+            value: true
+        }
+    },
+    _a; };
+
+//@ts-ignore
+class DataGrid extends PageableMixin(DataCollectionLoadableMixin(SelectionContainerMixin(SizableMixin(CustomElement)))) {
+    render() {
+        return (h("div", { card: true, style: "background-color: beige; margin: 1rem;" },
+            h("div", null,
+                this.renderLoading(),
+                this.renderError()),
+            h("div", { style: "background-color: lightgreen;" }, this.renderHeader()),
+            h("div", { class: "body" }, this.renderData()),
+            h("div", { style: "background-color: lightgreen;" }, this.renderPager())));
+    }
+    wrapRecord(record, index, children) {
+        const { rowIsHoverable, recordId, size, selectable } = this.props;
+        const value = record[recordId];
+        return (h("gcl-selectable-row", { hoverable: rowIsHoverable, children: children, size: size, selectable: selectable, value: value, key: value || index, index: index }));
+    }
+    renderHeader() {
+        const { fields } = this.props;
+        if (fields === undefined) {
+            return null;
+        }
+        const fds = typeof fields === 'function' ? fields() : fields;
+        const children = fds.map(f => {
+            const sorter = f.sortable !== false ?
+                (h("gcl-sorter-tool", { field: f.name })) :
+                null;
+            return (h("span", { class: "list-cell", style: {
+                    width: f.width || '100px'
+                } },
+                f.display,
+                sorter));
+        });
+        return children;
+    }
+    renderFields(fields, data) {
+        const { recordId, rowIsHoverable, size, selectable, } = this.props;
+        return data.map((record, index) => {
+            return (h("gcl-data-row", { hoverable: rowIsHoverable, size: size, selectable: selectable, record: record, "record-id": record[recordId], key: record[recordId] || index, index: index, fields: fields }));
+        });
+    }
+    /**
+     * When there is no data provided to the component, render its children
+     */
+    renderNoData() {
+        return (h("ul", null,
+            h("slot", null)));
+    }
+}
+DataGrid.component = {
+    styleUrls: [
+        `${config.assetsFolder}/data/grid/DataGrid.css`
+    ]
+};
+DataGrid.properties = {
+    /**
+     * The record to render the row from
+     */
+    rowIsHoverable: {
+        attribute: 'row-is-hoverable',
+        type: Boolean,
+        value: true
+    }
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-data-grid`, DataGrid);
 
 class MyTable extends CustomElement {
     render() {
@@ -6875,29 +7197,6 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
-/**
- * Allows a component to be pageable
- */
-const PageableMixin = Base => { var _a; return _a = class Pageable extends Base {
-        renderPager() {
-            const { pageable } = this.props;
-            if (pageable !== true) {
-                return null;
-            }
-            return (h("gcl-pager", { "target-view": this, "total-pages": "5" }));
-        }
-    },
-    _a.properties = {
-        /**
-         * Whether the element is pageable
-         */
-        pageable: {
-            type: Boolean,
-            value: true
-        }
-    },
-    _a; };
-
 class XListItem extends SelectableMixin(ChildMixin(Component)) {
     constructor(props, children) {
         super(props, children);
@@ -6984,4 +7283,4 @@ XList.component = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-x-list`, XList);
 
-export { Alert, App, Button, CloseTool, Content, CurrentYear, DateField, FileField, FilterField, FilterPanel, Form, Header, HiddenField, Icon, List, ListItem, LoginSection, MyCounter, MyTable, NavigationBar, NavigationLink, NumberField, OidcProvider, Overlay, Pager, Panel, Router, Row, Select, SorterTool, Table, Text, TextArea, TextField, ValidationSummary, XList, appCtrl };
+export { Alert, App, Button, CloseTool, Content, CurrentYear, DataCell, DataGrid, DataRow, DateField, FileField, FilterField, FilterPanel, Form, Header, HiddenField, Icon, List, ListItem, LoginSection, MyCounter, MyTable, NavigationBar, NavigationLink, NumberField, OidcProvider, Overlay, Pager, Panel, Router, Row, Select, SelectableRow, SorterTool, Table, Text, TextArea, TextField, ValidationSummary, XList, appCtrl };

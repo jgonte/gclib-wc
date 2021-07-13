@@ -1,12 +1,13 @@
 import { h, ElementNode } from 'gclib-vdom';
-import CustomElement from '../../core/customElement/CustomElement';
-import { config } from '../config';
-import SizableMixin from '../mixins/sizable/SizableMixin';
-import DataCollectionLoadableMixin from '../mixins/data/DataCollectionLoadableMixin';
-import DataFieldDefinition from '../mixins/data/DataFieldDefinition';
-import SelectionContainerMixin from '../mixins/selection-container/SelectionContainerMixin';
-import PageableMixin from '../mixins/pageable/PageableMixin';
+import CustomElement from '../../../core/customElement/CustomElement';
+import { config } from '../../config';
+import SizableMixin from '../../mixins/sizable/SizableMixin';
+import DataCollectionLoadableMixin from '../../mixins/data/DataCollectionLoadableMixin';
+import DataFieldDefinition from '../../mixins/data/DataFieldDefinition';
+import SelectionContainerMixin from '../../mixins/selection-container/SelectionContainerMixin';
+import PageableMixin from '../../mixins/pageable/PageableMixin';
 
+//@ts-ignore
 export class DataGrid extends
     PageableMixin(
         DataCollectionLoadableMixin(
@@ -19,25 +20,44 @@ export class DataGrid extends
     static component = {
 
         styleUrls: [
-            `${config.assetsFolder}/data-grid/DataGrid.css`
+            `${config.assetsFolder}/data/grid/DataGrid.css`
         ]
+    };
+
+    static properties = {
+
+        /**
+         * The record to render the row from
+         */
+        rowIsHoverable: {
+            attribute: 'row-is-hoverable',
+            type: Boolean,
+            value: true
+        }
     };
 
     render() {
 
         return (
             <div card style="background-color: beige; margin: 1rem;">
-                <div style="background-color: lightgreen;">
-                    {this.renderHeader()}
-                </div>
+
                 <div>
                     {this.renderLoading()}
                     {this.renderError()}
+                </div>
+
+                <div style="background-color: lightgreen;">
+                    {this.renderHeader()}
+                </div>
+
+                <div class="body">
                     {this.renderData()}
                 </div>
+
                 <div style="background-color: lightgreen;">
                     {this.renderPager()}
                 </div>
+                
             </div>
         );
     }
@@ -45,27 +65,26 @@ export class DataGrid extends
     wrapRecord(record: any, index: number, children: ElementNode | ElementNode[]) {
 
         const {
+            rowIsHoverable,
             recordId,
             size,
             selectable
         } = this.props;
 
+        const value = record[recordId];
+
         return (
-            <gcl-grid-row
+            <gcl-selectable-row
+                hoverable={rowIsHoverable}
+                children={children}
                 size={size}
                 selectable={selectable}
-                record-id={record[recordId]}
-            >
-                {children}
-            </gcl-grid-row>
+                value={value}
+                key={value || index}
+                index={index}
+            >                
+            </gcl-selectable-row>
         );
-
-        // return new GridItem({
-        //     parent: this,
-        //     [recordId]: ,
-        //     size,
-        //     selectable
-        // }, children);
     }
 
     renderHeader() {
@@ -104,20 +123,27 @@ export class DataGrid extends
 
     renderFields(fields: DataFieldDefinition[], data: []) {
 
-        return data.map(record => {
+        const {
+            recordId,
+            rowIsHoverable,
+            size,
+            selectable,
+        } = this.props;
+        return data.map((record, index) => {
 
-            const children = fields.map(f => {
-
-                return (
-                    <span class="list-cell" style={{
-                        width: f.width || '100px'
-                    }}>
-                        {record[f.name]}
-                    </span>
-                );
-            });
-
-            return this.wrapRecord(record, 0, children);
+            return (
+                <gcl-data-row
+                    hoverable={rowIsHoverable}
+                    size={size}
+                    selectable={selectable}
+                    record={record}
+                    record-id={record[recordId]}
+                    key={record[recordId] || index}
+                    index={index}
+                    fields={fields}
+                >
+                </gcl-data-row>
+            );
         });
     }
 

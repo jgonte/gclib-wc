@@ -19,15 +19,20 @@
     /* Border width */
     --gcl-border-width: 2px;
 
+    /* Heights */
+    --gcl-min-height-large: 1.5rem;
+    --gcl-min-height-medium: 1.25rem;
+    --gcl-min-height-small: 1rem;
+
     /* Font sizes */
     --gcl-font-size-large: 1.25rem;
     --gcl-font-size-medium: 1rem;
     --gcl-font-size-small: .875rem;
 
     /* Padding sizes */
-    --gcl-padding-size-large: .5rem;
-    --gcl-padding-size-medium: .375rem;
-    --gcl-padding-size-small: .25rem;
+    --gcl-padding-size-large: .375rem;
+    --gcl-padding-size-medium: .25rem;
+    --gcl-padding-size-small: .125rem;
 
     /* Radius sizes */
     --gcl-radius-size-large: .3rem;

@@ -1,9 +1,7 @@
-import { TextNode, diff } from 'gclib-vdom';
+import { TextNode, diff, FragmentNode } from 'gclib-vdom';
 
 /**
  * Connects the CustomElement or the FunctionalComponent to the virtual dom rendering cycle
- * @param Base 
- * @returns 
  */
 const VirtualDomMixin = Base =>
 
@@ -86,6 +84,11 @@ const VirtualDomMixin = Base =>
             if (node === undefined) {
 
                 console.error('Undefined virtual node. Ensure that you return the node from the render function');
+            }
+
+            if (Array.isArray(node)) { // Wrap the array of nodes in a fragment
+
+                node = new FragmentNode(null, node);
             }
 
             // Create a virtual text node if the type of node is any primitive

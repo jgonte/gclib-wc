@@ -1,5 +1,6 @@
 import { Fragment, h } from 'gclib-vdom';
 import CustomElement from '../../../core/customElement/CustomElement';
+import parseCssStyle from '../../../core/helpers/parseCssStyle';
 import { config } from '../../config';
 
 /**
@@ -17,6 +18,10 @@ export class Row extends CustomElement {
 
     static properties = {
 
+        style: {
+            type: Object
+        },
+
         /**
          * The type of the alert
          */
@@ -31,11 +36,20 @@ export class Row extends CustomElement {
     render() {
 
         const {
-            justifyContent
+            justifyContent,
         } = this.props;
 
+        let {
+            style
+        } = this.props;
+
+        if (typeof style === 'string') {
+
+            style = parseCssStyle(style);
+        }
+
         return (
-            <Fragment style={{ justifyContent }} >
+            <Fragment style={{ ... style, justifyContent }} >
                 <slot />
             </Fragment>
         );

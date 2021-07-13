@@ -1,0 +1,7 @@
+:host([hoverable="true"]:hover) {
+    background-color:green;
+}
+
+*[hoverable="true"]:hover {
+    background-color:green;
+}

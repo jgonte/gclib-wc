@@ -73,3 +73,21 @@ button.medium {
 button.dark {
   border-color: var(--gcl-color-dark);
 }
+
+/* button[size='large'] {
+    padding: var(--gcl-padding-size-large);
+    font-size: var(--gcl-font-size-large);
+    border-radius: var(--gcl-radius-size-large);
+}
+
+button[size='medium'] {
+    padding: var(--gcl-padding-size-medium);
+    font-size: var(--gcl-font-size-medium);
+    border-radius: var(--gcl-radius-size-medium);
+}
+
+button[size='small'] {
+    padding: var(--gcl-padding-size-small); 
+    font-size: var(--gcl-font-size-small);
+    border-radius: var(--gcl-radius-size-small);
+} */

@@ -1,21 +1,21 @@
-/* host applies to the text component*/
+/* host applies to the text component */
 :host([size='large']),
 *[size='large'] {
-    font-size: var(--gcl-font-size-large);
     padding: var(--gcl-padding-size-large);
-    border-radius: var(--gcl-radius-size-large);
+    font-size: var(--gcl-font-size-large);
+    min-height: var(--gcl-min-height-large);
 }
 
 :host([size='medium']),
 *[size='medium'] {
-    font-size: var(--gcl-font-size-medium);
     padding: var(--gcl-padding-size-medium);
-    border-radius: var(--gcl-radius-size-medium);
+    font-size: var(--gcl-font-size-medium);
+    min-height: var(--gcl-min-height-medium);
 }
 
 :host([size='small']),
 *[size='small'] {
+    padding: var(--gcl-padding-size-small); 
     font-size: var(--gcl-font-size-small);
-    padding: var(--gcl-padding-size-small);
-    border-radius: var(--gcl-radius-size-small);
+    min-height: var(--gcl-min-height-small);
 }

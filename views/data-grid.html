@@ -1,0 +1,122 @@
+<head>
+    
+    <script>
+
+        function getData() {
+
+            return [
+                {
+                    "value": "a",
+                    "iconName": "cart-fill",
+                    "textKey": "goodMorning",
+                    "lang": "en"
+                },
+                {
+                    "value": "b",
+                    "iconName": "alarm-fill",
+                    "textKey": "goodMorning",
+                    "lang": "fr"
+                },
+                {
+                    "value": "c",
+                    "iconName": "calculator",
+                    "textKey": "goodMorning",
+                    "lang": "de"
+                }
+            ];
+        }
+
+        function renderRecord(record) {
+
+            const {
+                iconName,
+                textKey,
+                lang
+            } = record;
+
+            return `
+                <gcl-icon name="${iconName}" style="width: 50px;"></gcl-icon>
+                <gcl-text intl-key="${textKey}" lang="${lang}"></gcl-text>
+            `;
+        }
+
+        function getFields() {
+
+            return [
+                {
+                    name: "name",
+                    display: "Name",
+                    width: '35%'
+                },
+                {
+                    name: "reputation",
+                    display: "Reputation",
+                    width: '20%'
+                },
+                {
+                    name: "description",
+                    display: "Description",
+                    width: '40%'
+                }
+            ];
+        }
+
+        function showSelection(selection) {
+
+            alert('Selection: ' + JSON.stringify(selection));
+        }
+
+        function getRecord() {
+
+            return {
+                name: "Sarah",
+                reputation: 9,
+                description: 'Smart and beautiful'
+            };
+        }
+
+        function getField() {
+
+            return {
+                name: "name",
+                display: "Name",
+                width: '200px',
+                render: (record, field) => {
+                    return `
+                    <gcl-row justify-content="center" style="width:${field.width};">
+                        <gcl-icon name="person" variant="warning" size="large"></gcl-icon>
+                        <span style="background-color: red;">           
+                            ${record[field.name]}
+                        </span>
+                    </gcl-row>`;
+                }
+            };
+        }
+
+    </script>
+
+</head>
+
+<body>
+
+    <gcl-data-cell record="getRecord()" field="getField()"></gcl-data-cell>
+
+    <gcl-data-row record="getRecord()" fields="getFields()"></gcl-data-row>
+
+    <gcl-data-grid 
+        data="getData()" 
+        render-record="renderRecord()" 
+        record-id="value" 
+        pageable="false" 
+        selection-changed="showSelection()">
+    </gcl-data-grid>
+
+    <gcl-data-grid id="contactsList" load-url="http://localhost:60314/api/contacts" fields="getFields()" size="medium"
+        selection='[2]' selection-changed="showSelection()">
+    </gcl-data-grid>
+
+    <gcl-data-grid id="contactsListMultiple" load-url="http://localhost:60314/api/contacts" fields="getFields()"
+        size="medium" selection='[1,3]' multiple selection-changed="showSelection()">
+    </gcl-data-grid>
+
+</body>

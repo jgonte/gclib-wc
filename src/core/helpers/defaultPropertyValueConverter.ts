@@ -1,16 +1,16 @@
 import { ElementNode } from 'gclib-vdom';
+import { OneOf } from './oneOf';
 import createVirtualNode from './createVirtualNode';
-
-function getGlobalFunction(value: string) : Function {
-
-    const functionName = value.replace('()', '').trim();
-
-    return (window as any)[functionName];
-}
+import getGlobalFunction from './getGlobalFunction';
 
 const defaultPropertyValueConverter = {
 
     toProperty: (value: string, type: Function) => {
+
+        if (type instanceof OneOf) {
+
+            return type.toProperty(value);
+        }
 
         switch (type) {
 
@@ -32,7 +32,7 @@ const defaultPropertyValueConverter = {
                         return JSON.parse(value);
                     }
                     catch (error) {// Value is a string but not a JSON one, assume a function
-                        
+
                         return getGlobalFunction(value);
                     }
                 }

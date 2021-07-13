@@ -69,6 +69,15 @@ export { CloseTool } from './components/tool/close-tool/CloseTool';
 
 export { SorterTool } from './components/tool/sorter/SorterTool';
 
+// Data display and editing
+export { SelectableRow } from './components/selectable/row/SelectableRow';
+
+export { DataCell } from './components/data/cell/DataCell';
+
+export { DataRow } from './components/data/row/DataRow';
+
+export { DataGrid } from './components/data/grid/DataGrid';
+
 // examples
 export { MyTable } from '../examples/my-table';
 
