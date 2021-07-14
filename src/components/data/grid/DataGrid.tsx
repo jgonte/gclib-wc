@@ -79,7 +79,7 @@ export class DataGrid extends
                 children={children}
                 size={size}
                 selectable={selectable}
-                value={value}
+                selectable-value={value}
                 key={value || index}
                 index={index}
             >                
@@ -131,14 +131,16 @@ export class DataGrid extends
         } = this.props;
         return data.map((record, index) => {
 
+            const value = record[recordId];
+
             return (
                 <gcl-data-row
                     hoverable={rowIsHoverable}
                     size={size}
                     selectable={selectable}
                     record={record}
-                    record-id={record[recordId]}
-                    key={record[recordId] || index}
+                    selectable-value={value}
+                    key={value || index}
                     index={index}
                     fields={fields}
                 >

@@ -42,7 +42,8 @@ const SelectableMixin = Base =>
             /**
              * The value to select in the event
              */
-            value: {
+            selectableValue: {
+                attribute: 'selectable-value',
                 type: Object
             }
         };
@@ -106,7 +107,8 @@ const SelectableMixin = Base =>
 
             const {
                 selectable,
-                selected
+                selected,
+                selectableValue
             } = this.props;
 
             if (!selectable) {
@@ -119,6 +121,7 @@ const SelectableMixin = Base =>
             this.rootElement.dispatchEvent(new CustomEvent(selectionChanged, {
                 detail: {
                     child: this,
+                    selectableValue,
                     selected: this.props.selected// Need to read again since the property was updated
                 },
                 bubbles: true,

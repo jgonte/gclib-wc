@@ -101,26 +101,24 @@ const SelectionContainerMixin = Base =>
             const {
                 multiple,
                 selection,
-                recordId,
                 selectionChanged
             } = this.props;
 
             const {
                 child,
+                selectableValue,
                 selected
             } = e.detail;
-
-            const recId = child.props[recordId];
 
             if (multiple !== undefined) { // Add values to the selection
 
                 if (selected === true) {
 
-                    this.setSelection([...selection, recId]);
+                    this.setSelection([...selection, selectableValue]);
                 }
                 else {
 
-                    const index = selection.indexOf(recId);
+                    const index = selection.indexOf(selectableValue);
 
                     selection.splice(index, 1);
 
@@ -141,7 +139,7 @@ const SelectionContainerMixin = Base =>
 
                 if (selected === true) {
 
-                    this.setSelection([recId]);
+                    this.setSelection([selectableValue]);
 
                     this.setSelectedChild(child);
                 }

@@ -4731,7 +4731,7 @@ const SelectableMixin = Base => { var _a; return _a = class Selectable extends B
         //     }
         // }
         toggleSelect() {
-            const { selectable, selected } = this.props;
+            const { selectable, selected, selectableValue } = this.props;
             if (!selectable) {
                 return;
             }
@@ -4739,6 +4739,7 @@ const SelectableMixin = Base => { var _a; return _a = class Selectable extends B
             this.rootElement.dispatchEvent(new CustomEvent(selectionChanged, {
                 detail: {
                     child: this,
+                    selectableValue,
                     selected: this.props.selected // Need to read again since the property was updated
                 },
                 bubbles: true,
@@ -4773,7 +4774,8 @@ const SelectableMixin = Base => { var _a; return _a = class Selectable extends B
         /**
          * The value to select in the event
          */
-        value: {
+        selectableValue: {
+            attribute: 'selectable-value',
             type: Object
         }
     },
@@ -4818,15 +4820,14 @@ class SelectionContainer extends ContainerMixin(Base) {
             }
         }
         updateSelection(e) {
-            const { multiple, selection, recordId, selectionChanged } = this.props;
-            const { child, selected } = e.detail;
-            const recId = child.props[recordId];
+            const { multiple, selection, selectionChanged } = this.props;
+            const { child, selectableValue, selected } = e.detail;
             if (multiple !== undefined) { // Add values to the selection
                 if (selected === true) {
-                    this.setSelection([...selection, recId]);
+                    this.setSelection([...selection, selectableValue]);
                 }
                 else {
-                    const index = selection.indexOf(recId);
+                    const index = selection.indexOf(selectableValue);
                     selection.splice(index, 1);
                     this.setSelection(selection);
                 }
@@ -4838,7 +4839,7 @@ class SelectionContainer extends ContainerMixin(Base) {
                     selectedChild.setSelected(false);
                 }
                 if (selected === true) {
-                    this.setSelection([recId]);
+                    this.setSelection([selectableValue]);
                     this.setSelectedChild(child);
                 }
                 else {
@@ -6880,7 +6881,7 @@ SelectableRow.properties = {
      */
     children: {
         type: ElementNode,
-        //required: true
+        //required: true Not used by derived components
     }
 };
 //@ts-ignore
@@ -6939,8 +6940,6 @@ DataCell.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-data-cell`, DataCell);
 
-//import HoverableMixin from '../../mixins/hoverable/HoverableMixin';
-//import SelectableMixin from '../../mixins/selectable/SelectableMixin';
 //@ts-ignore
 class DataRow extends SelectableRow {
     renderFields() {
@@ -6978,14 +6977,6 @@ DataRow.properties = {
     fields: {
         type: oneOf(Array, Function),
         required: true
-    },
-    /**
-     * The name of the property that identifies the record id
-     */
-    recordId: {
-        attribute: 'record-id',
-        type: String,
-        value: 'id'
     }
 };
 //@ts-ignore
@@ -7028,7 +7019,7 @@ class DataGrid extends PageableMixin(DataCollectionLoadableMixin(SelectionContai
     wrapRecord(record, index, children) {
         const { rowIsHoverable, recordId, size, selectable } = this.props;
         const value = record[recordId];
-        return (h("gcl-selectable-row", { hoverable: rowIsHoverable, children: children, size: size, selectable: selectable, value: value, key: value || index, index: index }));
+        return (h("gcl-selectable-row", { hoverable: rowIsHoverable, children: children, size: size, selectable: selectable, "selectable-value": value, key: value || index, index: index }));
     }
     renderHeader() {
         const { fields } = this.props;
@@ -7051,7 +7042,8 @@ class DataGrid extends PageableMixin(DataCollectionLoadableMixin(SelectionContai
     renderFields(fields, data) {
         const { recordId, rowIsHoverable, size, selectable, } = this.props;
         return data.map((record, index) => {
-            return (h("gcl-data-row", { hoverable: rowIsHoverable, size: size, selectable: selectable, record: record, "record-id": record[recordId], key: record[recordId] || index, index: index, fields: fields }));
+            const value = record[recordId];
+            return (h("gcl-data-row", { hoverable: rowIsHoverable, size: size, selectable: selectable, record: record, "selectable-value": value, key: value || index, index: index, fields: fields }));
         });
     }
     /**

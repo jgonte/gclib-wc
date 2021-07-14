@@ -1,11 +1,7 @@
 import { h } from 'gclib-vdom';
 import { SelectableRow } from '../../..';
-//import CustomElement from '../../../core/customElement/CustomElement';
 import oneOf from '../../../core/helpers/oneOf';
-//import ChildMixin from '../../../core/mixins/ChildMixin';
 import { config } from '../../config';
-//import HoverableMixin from '../../mixins/hoverable/HoverableMixin';
-//import SelectableMixin from '../../mixins/selectable/SelectableMixin';
 
 //@ts-ignore
 export class DataRow extends SelectableRow
@@ -33,15 +29,6 @@ export class DataRow extends SelectableRow
         fields: {
             type: oneOf(Array, Function),
             required: true
-        },
-
-        /**
-         * The name of the property that identifies the record id
-         */
-         recordId: {
-            attribute: 'record-id',
-            type: String,
-            value: 'id'
         }
     };
 
