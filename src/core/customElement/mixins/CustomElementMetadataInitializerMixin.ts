@@ -276,7 +276,7 @@ const CustomElementMetadataInitializerMixin = Base =>
 
                 this.styleLoadedObserver.notify();
 
-                delete this.loadedStylesTracker;
+                //delete this.loadedStylesTracker;
             }
         }
 

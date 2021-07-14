@@ -4,14 +4,7 @@ import oneOf from '../../../core/helpers/oneOf';
 import { config } from '../../config';
 
 //@ts-ignore
-export class DataRow extends SelectableRow
-{
-    static component = {
-
-        styleUrls: [
-            `${config.assetsFolder}/data/row/DataRow.css`
-        ]
-    };
+export class DataRow extends SelectableRow {
 
     static properties = {
 

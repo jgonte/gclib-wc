@@ -3351,7 +3351,7 @@ const CustomElementMetadataInitializerMixin = Base => class CustomElementMetadat
         if (pendingUrls.size === 0) {
             this.style = loadedStyles.join('\n');
             this.styleLoadedObserver.notify();
-            delete this.loadedStylesTracker;
+            //delete this.loadedStylesTracker;
         }
     }
     validatePropertyOptions(name, newValue, options) {
@@ -4862,7 +4862,7 @@ class SelectionContainer extends ContainerMixin(Base) {
             }
             const childProps = child.props || {};
             const selectableValue = childProps.selectableValue;
-            if (selection.indexOf(selectableValue) > -1 &&
+            if (selection.includes(selectableValue) &&
                 child.setSelected !== undefined) {
                 child.setSelected(true);
                 if (multiple === undefined) { // Set the selected child for single selection model
@@ -6959,11 +6959,6 @@ class DataRow extends SelectableRow {
         });
     }
 }
-DataRow.component = {
-    styleUrls: [
-        `${config.assetsFolder}/data/row/DataRow.css`
-    ]
-};
 DataRow.properties = {
     /**
      * The record to render the row from

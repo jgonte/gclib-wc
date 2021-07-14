@@ -178,7 +178,7 @@ const SelectionContainerMixin = Base =>
 
             const selectableValue = childProps.selectableValue;
 
-            if (selection.indexOf(selectableValue) > -1 &&
+            if (selection.includes(selectableValue) &&
                 (child as any).setSelected !== undefined) {
 
                 (child as any).setSelected(true);
