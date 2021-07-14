@@ -1,18 +1,15 @@
 import { h } from 'gclib-vdom';
-import CustomElement from '../../../core/customElement/CustomElement';
+import { SelectableRow } from '../../..';
+//import CustomElement from '../../../core/customElement/CustomElement';
 import oneOf from '../../../core/helpers/oneOf';
-import ChildMixin from '../../../core/mixins/ChildMixin';
+//import ChildMixin from '../../../core/mixins/ChildMixin';
 import { config } from '../../config';
-import HoverableMixin from '../../mixins/hoverable/HoverableMixin';
+//import HoverableMixin from '../../mixins/hoverable/HoverableMixin';
 //import SelectableMixin from '../../mixins/selectable/SelectableMixin';
 
 //@ts-ignore
-export class DataRow extends
-    HoverableMixin(
-        ChildMixin(CustomElement)
-    )
+export class DataRow extends SelectableRow
 {
-
     static component = {
 
         styleUrls: [
@@ -48,14 +45,7 @@ export class DataRow extends
         }
     };
 
-    render() {
-
-        const {
-            rowIsHoverable,
-            recordId,
-            size,
-            selectable
-        } = this.props;
+    renderFields() {
 
         let {
             record,
@@ -77,7 +67,7 @@ export class DataRow extends
             fields = fields();
         }
 
-        const children = fields.map(field => {
+        return fields.map(field => {
 
             return (
                 <gcl-data-cell style={{ width: field.width || '100px' }}
@@ -87,23 +77,6 @@ export class DataRow extends
                 </gcl-data-cell>
             );
         });
-
-        const value = record[recordId];
-
-        return (
-            <gcl-selectable-row
-                hoverable={rowIsHoverable}
-                children={children}
-                size={size}
-                selectable={selectable}
-                value={value}
-            // key={value || index}
-            // index={index}
-            >
-            </gcl-selectable-row>
-        );
-
-
     }
 }
 

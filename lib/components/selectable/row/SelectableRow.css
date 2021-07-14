@@ -2,10 +2,6 @@
     display: flex;
     flex-wrap: wrap;
     align-items: stretch;
-    justify-content: space-between;
-}
-
-:host([hoverable="true"]:hover) {
-    background-color: hotpink;
+    justify-content: start;
 }
 

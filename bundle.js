@@ -6860,8 +6860,12 @@ const HoverableMixin = Base => { var _a; return _a = class Hoverable extends Bas
 //@ts-ignore
 class SelectableRow extends SelectableMixin(HoverableMixin(SizableMixin(ChildMixin(CustomElement)))) {
     render() {
-        const { value, size, selected, hoverable, children } = this.props;
+        const { value, size, selected, hoverable, } = this.props;
+        const children = this.renderFields();
         return (h(Fragment, { value: value, hoverable: hoverable, size: size, selected: selected }, children));
+    }
+    renderFields() {
+        return this.props.children;
     }
 }
 SelectableRow.component = {
@@ -6875,7 +6879,7 @@ SelectableRow.properties = {
      */
     children: {
         type: ElementNode,
-        required: true
+        //required: true
     }
 };
 //@ts-ignore
@@ -6934,11 +6938,11 @@ DataCell.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-data-cell`, DataCell);
 
+//import HoverableMixin from '../../mixins/hoverable/HoverableMixin';
 //import SelectableMixin from '../../mixins/selectable/SelectableMixin';
 //@ts-ignore
-class DataRow extends HoverableMixin(ChildMixin(CustomElement)) {
-    render() {
-        const { rowIsHoverable, recordId, size, selectable } = this.props;
+class DataRow extends SelectableRow {
+    renderFields() {
         let { record, fields } = this.props;
         if (typeof record === 'function') {
             record = record();
@@ -6949,11 +6953,9 @@ class DataRow extends HoverableMixin(ChildMixin(CustomElement)) {
         if (typeof fields === 'function') {
             fields = fields();
         }
-        const children = fields.map(field => {
+        return fields.map(field => {
             return (h("gcl-data-cell", { style: { width: field.width || '100px' }, field: field, record: record }));
         });
-        const value = record[recordId];
-        return (h("gcl-selectable-row", { hoverable: rowIsHoverable, children: children, size: size, selectable: selectable, value: value }));
     }
 }
 DataRow.component = {

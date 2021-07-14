@@ -31,7 +31,7 @@ export class SelectableRow extends
          */
         children: {
             type: ElementNode,
-            required: true
+            //required: true
         }
     };
 
@@ -42,14 +42,20 @@ export class SelectableRow extends
             size,
             selected,
             hoverable,
-            children
         } = this.props;
+
+        const children = this.renderFields();
 
         return (
             <Fragment value={value} hoverable={hoverable} size={size} selected={selected}>
                 {children}
             </Fragment>
         );
+    }
+
+    renderFields() {
+
+        return this.props.children;
     }
 }
 
