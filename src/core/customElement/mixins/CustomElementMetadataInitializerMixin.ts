@@ -178,8 +178,8 @@ const CustomElementMetadataInitializerMixin = Base =>
 
                 // console.log(`Loading styles for type: ${this.name}`);
 
-                this.loadedStylesTracker = {
-
+                this.loadedStylesTracker = this.loadedStylesTracker || // Inherited one
+                {
                     loadedStyles: [],
 
                     pendingUrls: new Set<string>()
