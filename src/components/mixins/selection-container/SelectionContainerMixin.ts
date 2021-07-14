@@ -164,10 +164,10 @@ const SelectionContainerMixin = Base =>
             // If any of the values of the selection match the value of the child, then set the child as selected
             const {
                 multiple,
-                selection,
-                selectable,
-                recordId
+                selectable 
             } = this.props;
+
+            const selection = this.props.selection || [];
 
             if (selectable !== true) {
 
@@ -176,9 +176,9 @@ const SelectionContainerMixin = Base =>
 
             const childProps = (child as any).props || {};
 
-            const recId = childProps[recordId];
+            const selectableValue = childProps.selectableValue;
 
-            if (selection.indexOf(recId) > -1 &&
+            if (selection.indexOf(selectableValue) > -1 &&
                 (child as any).setSelected !== undefined) {
 
                 (child as any).setSelected(true);
