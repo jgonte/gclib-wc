@@ -103,7 +103,8 @@
 
     <gcl-data-row record="getRecord()" fields="getFields()"></gcl-data-row>
 
-    <gcl-data-grid 
+    <gcl-data-grid
+        size="small"
         data="getData()" 
         render-record="renderRecord()" 
         record-id="value" 
@@ -112,7 +113,7 @@
         selection-changed="showSelection()">
     </gcl-data-grid>
 
-    <gcl-data-grid id="contactsList" load-url="http://localhost:60314/api/contacts" fields="getFields()" size="medium"
+    <gcl-data-grid id="contactsList" load-url="http://localhost:60314/api/contacts" fields="getFields()" size="small"
         selection='[2]' selection-changed="showSelection()">
     </gcl-data-grid>
 

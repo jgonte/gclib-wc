@@ -3,5 +3,6 @@
 }
 
 :host([selected='true']) > * { 
-    background-color: var(--gcl-color-tertiary);
+    background-color: var(--gcl-selected-background-color);
+    color: var(--gcl-selected-color);
 }

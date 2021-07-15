@@ -18,7 +18,7 @@ const HoverableMixin = Base =>
              */
             hoverable: {
                 type: Boolean,
-                value: false
+                value: true
             }
         };
     };

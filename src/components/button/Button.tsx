@@ -6,20 +6,23 @@ import DirectionMixin from '../mixins/direction/DirectionMixin';
 import ContainerMixin from '../../core/mixins/ContainerMixin';
 import SizableMixin from '../mixins/sizable/SizableMixin';
 import DisableableMixin from '../mixins/disableable/DisableableMixin';
+import HoverableMixin from '../mixins/hoverable/HoverableMixin';
 
 //@ts-ignore
 export class Button extends
-    DisableableMixin(
-        SizableMixin(
-            VariantMixin(
-                DirectionMixin(
-                    ContainerMixin(
-                        CustomElement
+    HoverableMixin(
+        DisableableMixin(
+            SizableMixin(
+                VariantMixin(
+                    DirectionMixin(
+                        ContainerMixin(
+                            CustomElement
+                        )
                     )
                 )
             )
         )
-    )   
+    )
 {
     static component = {
 
@@ -53,15 +56,17 @@ export class Button extends
             click,
             size,
             variant,
+            hoverable,
             disabled
         } = this.props;
 
         return (
-            <button 
-                type={type} 
-                size={size} 
-                variant={variant} 
+            <button
+                type={type}
+                size={size}
+                variant={variant}
                 dir={this.getDir()}
+                hoverable={hoverable}
                 disabled={disabled}
                 // class={this.getCSSClass()}
                 onClick={disabled ? null : click}

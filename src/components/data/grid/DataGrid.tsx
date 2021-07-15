@@ -57,7 +57,7 @@ export class DataGrid extends
                 <div style="background-color: lightgreen;">
                     {this.renderPager()}
                 </div>
-                
+
             </div>
         );
     }
@@ -82,7 +82,7 @@ export class DataGrid extends
                 selectable-value={value}
                 key={value || index}
                 index={index}
-            >                
+            >
             </gcl-selectable-row>
         );
     }
@@ -109,7 +109,7 @@ export class DataGrid extends
                 null;
 
             return (
-                <span class="list-cell" style={{
+                <span style={{
                     width: f.width || '100px'
                 }}>
                     {f.display}
@@ -118,7 +118,9 @@ export class DataGrid extends
             );
         });
 
-        return children;
+        return (
+            <gcl-row>{children}</gcl-row>
+        );
     }
 
     renderFields(fields: DataFieldDefinition[], data: []) {

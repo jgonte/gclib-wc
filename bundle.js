@@ -4076,11 +4076,29 @@ const DisableableMixin = Base => { var _a; return _a = class Disableable extends
     },
     _a; };
 
+const HoverableMixin = Base => { var _a; return _a = class Hoverable extends Base {
+    },
+    _a.component = {
+        styleUrls: [
+            `${config.assetsFolder}/mixins/Hoverable/Hoverable.css`
+        ]
+    },
+    _a.properties = {
+        /**
+         * Whether the element is hoverable
+         */
+        hoverable: {
+            type: Boolean,
+            value: true
+        }
+    },
+    _a; };
+
 //@ts-ignore
-class Button extends DisableableMixin(SizableMixin(VariantMixin(DirectionMixin(ContainerMixin(CustomElement))))) {
+class Button extends HoverableMixin(DisableableMixin(SizableMixin(VariantMixin(DirectionMixin(ContainerMixin(CustomElement)))))) {
     render() {
-        const { type, click, size, variant, disabled } = this.props;
-        return (h("button", { type: type, size: size, variant: variant, dir: this.getDir(), disabled: disabled, 
+        const { type, click, size, variant, hoverable, disabled } = this.props;
+        return (h("button", { type: type, size: size, variant: variant, dir: this.getDir(), hoverable: hoverable, disabled: disabled, 
             // class={this.getCSSClass()}
             onClick: disabled ? null : click },
             h("slot", null)));
@@ -6842,24 +6860,6 @@ CloseTool.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-close-tool`, CloseTool);
 
-const HoverableMixin = Base => { var _a; return _a = class Hoverable extends Base {
-    },
-    _a.component = {
-        styleUrls: [
-            `${config.assetsFolder}/mixins/Hoverable/Hoverable.css`
-        ]
-    },
-    _a.properties = {
-        /**
-         * Whether the element is hoverable
-         */
-        hoverable: {
-            type: Boolean,
-            value: false
-        }
-    },
-    _a; };
-
 //@ts-ignore
 class SelectableRow extends SelectableMixin(HoverableMixin(SizableMixin(ChildMixin(CustomElement)))) {
     render() {
@@ -7027,13 +7027,13 @@ class DataGrid extends PageableMixin(DataCollectionLoadableMixin(SelectionContai
             const sorter = f.sortable !== false ?
                 (h("gcl-sorter-tool", { field: f.name })) :
                 null;
-            return (h("span", { class: "list-cell", style: {
+            return (h("span", { style: {
                     width: f.width || '100px'
                 } },
                 f.display,
                 sorter));
         });
-        return children;
+        return (h("gcl-row", null, children));
     }
     renderFields(fields, data) {
         const { recordId, rowIsHoverable, size, selectable, } = this.props;
