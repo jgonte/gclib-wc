@@ -1,4 +1,4 @@
-import { h } from 'gclib-vdom';
+import { Fragment, h } from 'gclib-vdom';
 import CustomElement from '../../core/customElement/CustomElement';
 import { config } from '../../components/config';
 import SizableMixin from '../mixins/sizable/SizableMixin';
@@ -158,33 +158,54 @@ export class Pager extends
         } = this.state;
 
         const {
-            totalPages
+            totalPages,
+            size
         } = this.props;
 
         return (
-            <gcl-row justify-content="center" >
+            <Fragment justify-content="center" >
 
-                <gcl-button variant="primary" onClick={this.goFirst} disabled={pageIndex === 1}>
+                <gcl-button
+                    variant="primary"
+                    size={size}
+                    onClick={this.goFirst}
+                    disabled={pageIndex === 1}
+                >
                     <gcl-icon name="chevron-double-left"></gcl-icon>
                 </gcl-button>
 
-                <gcl-button variant="primary" onClick={this.goPrevious} disabled={pageIndex === 1}>
+                <gcl-button
+                    variant="primary"
+                    size={size}
+                    onClick={this.goPrevious}
+                    disabled={pageIndex === 1}
+                >
                     <gcl-icon name="chevron-left"></gcl-icon>
                 </gcl-button>
 
                 {pageIndex} of {totalPages}
 
-                <gcl-button variant="primary" onClick={this.goNext} disabled={pageIndex === totalPages}>
+                <gcl-button
+                    variant="primary"
+                    size={size}
+                    onClick={this.goNext}
+                    disabled={pageIndex === totalPages}
+                >
                     <gcl-icon name="chevron-right"></gcl-icon>
                 </gcl-button>
 
-                <gcl-button variant="primary" onClick={this.goLast} disabled={pageIndex === totalPages}>
+                <gcl-button
+                    variant="primary"
+                    size={size}
+                    onClick={this.goLast}
+                    disabled={pageIndex === totalPages}
+                >
                     <gcl-icon name="chevron-double-right"></gcl-icon>
                 </gcl-button>
 
                 {this.renderSizeChanger()}
 
-            </gcl-row>
+            </Fragment>
         );
     }
 

@@ -90,7 +90,8 @@ export class DataGrid extends
     renderHeader() {
 
         const {
-            fields
+            fields,
+            size
         } = this.props;
 
         if (fields === undefined) {
@@ -104,7 +105,11 @@ export class DataGrid extends
 
             const sorter = f.sortable !== false ?
                 (
-                    <gcl-sorter-tool field={f.name}></gcl-sorter-tool>
+                    <gcl-sorter-tool
+                        field={f.name}
+                        size={size}
+                    >
+                    </gcl-sorter-tool>
                 ) :
                 null;
 

@@ -5087,18 +5087,18 @@ class Pager extends TargetViewHolderMixin(SizableMixin(CustomElement)) {
     }
     render() {
         const { pageIndex } = this.state;
-        const { totalPages } = this.props;
-        return (h("gcl-row", { "justify-content": "center" },
-            h("gcl-button", { variant: "primary", onClick: this.goFirst, disabled: pageIndex === 1 },
+        const { totalPages, size } = this.props;
+        return (h(Fragment, { "justify-content": "center" },
+            h("gcl-button", { variant: "primary", size: size, onClick: this.goFirst, disabled: pageIndex === 1 },
                 h("gcl-icon", { name: "chevron-double-left" })),
-            h("gcl-button", { variant: "primary", onClick: this.goPrevious, disabled: pageIndex === 1 },
+            h("gcl-button", { variant: "primary", size: size, onClick: this.goPrevious, disabled: pageIndex === 1 },
                 h("gcl-icon", { name: "chevron-left" })),
             pageIndex,
             " of ",
             totalPages,
-            h("gcl-button", { variant: "primary", onClick: this.goNext, disabled: pageIndex === totalPages },
+            h("gcl-button", { variant: "primary", size: size, onClick: this.goNext, disabled: pageIndex === totalPages },
                 h("gcl-icon", { name: "chevron-right" })),
-            h("gcl-button", { variant: "primary", onClick: this.goLast, disabled: pageIndex === totalPages },
+            h("gcl-button", { variant: "primary", size: size, onClick: this.goLast, disabled: pageIndex === totalPages },
                 h("gcl-icon", { name: "chevron-double-right" })),
             this.renderSizeChanger()));
     }
@@ -6983,11 +6983,11 @@ customElements.define(`${config.tagPrefix}-data-row`, DataRow);
  */
 const PageableMixin = Base => { var _a; return _a = class Pageable extends Base {
         renderPager() {
-            const { pageable } = this.props;
+            const { pageable, size } = this.props;
             if (pageable !== true) {
                 return null;
             }
-            return (h("gcl-pager", { "target-view": this, "total-pages": "5" }));
+            return (h("gcl-pager", { "target-view": this, size: size, "total-pages": "5" }));
         }
     },
     _a.properties = {
@@ -7018,14 +7018,14 @@ class DataGrid extends PageableMixin(DataCollectionLoadableMixin(SelectionContai
         return (h("gcl-selectable-row", { hoverable: rowIsHoverable, children: children, size: size, selectable: selectable, "selectable-value": value, key: value || index, index: index }));
     }
     renderHeader() {
-        const { fields } = this.props;
+        const { fields, size } = this.props;
         if (fields === undefined) {
             return null;
         }
         const fds = typeof fields === 'function' ? fields() : fields;
         const children = fds.map(f => {
             const sorter = f.sortable !== false ?
-                (h("gcl-sorter-tool", { field: f.name })) :
+                (h("gcl-sorter-tool", { field: f.name, size: size })) :
                 null;
             return (h("span", { style: {
                     width: f.width || '100px'

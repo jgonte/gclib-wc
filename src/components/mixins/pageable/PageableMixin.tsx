@@ -21,7 +21,8 @@ const PageableMixin = Base =>
         renderPager() {
 
             const {
-                pageable
+                pageable,
+                size
             } = this.props;
 
             if (pageable !== true) {
@@ -30,7 +31,10 @@ const PageableMixin = Base =>
             }
 
             return (
-                <gcl-pager target-view={this} total-pages="5"></gcl-pager>
+                <gcl-pager 
+                target-view={this} 
+                size={size}
+                total-pages="5"></gcl-pager>
             );
         }
     };
