@@ -3,12 +3,18 @@ import CustomElement from '../../../core/customElement/CustomElement';
 // import { SelectableRow } from '../../selectable/row/SelectableRow';
 // import oneOf from '../../../core/helpers/oneOf';
 import { config } from '../../config';
+import SelectableMixin from '../../mixins/selectable/SelectableMixin';
+import SelectionHandlerMixin from '../../mixins/selection/SelectionHandlerMixin';
 import { dropChanged, DropTool } from '../../tool/drop/DropTool';
-import { valueChanged } from '../Field';
 import dropdownManager from './dropdownManager';
 
-export class Dropdown extends CustomElement {
-
+//@ts-ignore
+export class Dropdown extends SelectableMixin(
+    SelectionHandlerMixin(
+        CustomElement
+    )
+)
+{
     static component = {
 
         styleUrls: [
@@ -40,7 +46,7 @@ export class Dropdown extends CustomElement {
     constructor() {
 
         super();
-        
+
         this.handleSelectionChanged = this.handleSelectionChanged.bind(this);
     }
 
@@ -64,7 +70,7 @@ export class Dropdown extends CustomElement {
             showing
         } = event.detail;
 
-        if (showing === true) {
+        if (showing === true) { // Hide the contents of other showing dropdowns abd set this one as being shown
 
             dropdownManager.hideShown(this);
 
@@ -118,7 +124,6 @@ export class Dropdown extends CustomElement {
         //this.validate(value); // No need to validate again since this happens on input
 
         const {
-            name,
             hideOnSelection
         } = this.props;
 
@@ -132,15 +137,9 @@ export class Dropdown extends CustomElement {
             this.hide();
         }
 
-        this.dispatchEvent(new CustomEvent(valueChanged, {
-            detail: {
-                name,
-                selection
-            },
-            bubbles: true,
-            composed: true
-        }));
+        this.notifySelectionChanged(selection);
 
+        this.callSelectionChanged(selection);
     }
 
     render() {

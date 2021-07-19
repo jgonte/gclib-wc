@@ -4,12 +4,12 @@ import CustomElement from '../../../core/customElement/CustomElement';
 import ChildMixin from '../../../core/mixins/ChildMixin';
 import { config } from '../../config';
 import HoverableMixin from '../../mixins/hoverable/HoverableMixin';
-import SelectableMixin from '../../mixins/selectable/SelectableMixin';
+import SelectableOnClickMixin from '../../mixins/selectable/on-click/SelectableOnClickMixin';
 import SizableMixin from '../../mixins/sizable/SizableMixin';
 
 //@ts-ignore
 export class SelectableRow extends
-    SelectableMixin(
+    SelectableOnClickMixin(
         HoverableMixin(
             SizableMixin(
                 ChildMixin(CustomElement)

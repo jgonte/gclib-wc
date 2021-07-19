@@ -4709,11 +4709,57 @@ customElements.define(`${config.tagPrefix}-table`, Table);
 
 const selectionChanged = 'selectionChanged';
 /**
- * Allows a component to be selectable
+ * Allows a component to be selected when clicked
  */
 const SelectableMixin = Base => { var _a; return _a = class Selectable extends Base {
-        constructor(props, children) {
-            super(props, children);
+        notifySelectionChanged(selection) {
+            const { selectableValue } = this.props;
+            this.dispatchEvent(new CustomEvent(selectionChanged, {
+                detail: {
+                    child: this,
+                    selectableValue,
+                    selected: selection || this.props.selected // Need to read it again since the property was updated
+                },
+                bubbles: true,
+                composed: true
+            }));
+        }
+    },
+    _a.properties = {
+        /**
+         * Whether the component is selectable
+         */
+        selectable: {
+            type: Boolean,
+            value: true,
+            reflect: true,
+            passToChildren: true // Maybe the children are selectable too
+        },
+        /**
+         * Whether the item is selected
+         */
+        selected: {
+            type: Boolean,
+            mutable: true,
+            reflect: true,
+            //passToChildren: true // Maybe the children want to show some UI that they were selected
+        },
+        /**
+         * The value to select in the event
+         */
+        selectableValue: {
+            attribute: 'selectable-value',
+            type: Object
+        }
+    },
+    _a; };
+
+/**
+ * Allows a component to be selected when clicked
+ */
+const SelectableOnClickMixin = Base => { var _a; return _a = class SelectableOnClick extends SelectableMixin(Base) {
+        constructor() {
+            super();
             this.toggleSelect = this.toggleSelect.bind(this);
         }
         nodeDidConnect(node) {
@@ -4749,57 +4795,22 @@ const SelectableMixin = Base => { var _a; return _a = class Selectable extends B
         //     }
         // }
         toggleSelect() {
-            const { selectable, selected, selectableValue } = this.props;
+            const { selectable, selected } = this.props;
             if (!selectable) {
                 return;
             }
             this.setSelected(!selected);
-            this.rootElement.dispatchEvent(new CustomEvent(selectionChanged, {
-                detail: {
-                    child: this,
-                    selectableValue,
-                    selected: this.props.selected // Need to read again since the property was updated
-                },
-                bubbles: true,
-                composed: true
-            }));
+            this.notifySelectionChanged(undefined);
         }
     },
     _a.component = {
         styleUrls: [
-            `${config.assetsFolder}/mixins/selectable/Selectable.css`
+            `${config.assetsFolder}/mixins/selectable/on-click/SelectableOnClick.css`
         ]
-    },
-    _a.properties = {
-        /**
-         * Whether the item is selectable
-         */
-        selectable: {
-            type: Boolean,
-            value: true,
-            reflect: true,
-            passToChildren: true // Maybe the children are selectable too
-        },
-        /**
-         * Whether the item is selected
-         */
-        selected: {
-            type: Boolean,
-            mutable: true,
-            reflect: true,
-            //passToChildren: true // Maybe the children want to show some UI that they were selected
-        },
-        /**
-         * The value to select in the event
-         */
-        selectableValue: {
-            attribute: 'selectable-value',
-            type: Object
-        }
     },
     _a; };
 
-class ListItem extends SelectableMixin(SizableMixin(ChildMixin(CustomElement))) {
+class ListItem extends SelectableOnClickMixin(SizableMixin(ChildMixin(CustomElement))) {
     render() {
         const { size } = this.props;
         return (h("li", { size: size },
@@ -4814,9 +4825,31 @@ ListItem.component = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-list-item`, ListItem);
 
+/**
+ * Allows the component to call a handler when the selection has changed
+ */
+const SelectionHandlerMixin = Base => { var _a; return _a = class SelectionHandler extends Base {
+        callSelectionChanged(selection) {
+            const { selectionChanged } = this.props;
+            if (selectionChanged !== undefined) {
+                selectionChanged(selection || this.props.selection); // Re-read from the updated selection props
+            }
+        }
+    },
+    _a.properties = {
+        /**
+         * The handler to call when the selection has changed
+         */
+        selectionChanged: {
+            attribute: 'selection-changed',
+            type: Function
+        }
+    },
+    _a; };
+
 const SelectionContainerMixin = Base => { var _a; return _a = 
 //@ts-ignore
-class SelectionContainer extends ContainerMixin(Base) {
+class SelectionContainer extends SelectionHandlerMixin(ContainerMixin(Base)) {
         connectedCallback() {
             super.connectedCallback();
             this.updateSelection = this.updateSelection.bind(this);
@@ -4838,7 +4871,7 @@ class SelectionContainer extends ContainerMixin(Base) {
             }
         }
         updateSelection(e) {
-            const { multiple, selection, selectionChanged } = this.props;
+            const { multiple, selection } = this.props;
             const { child, selectableValue, selected } = e.detail;
             if (multiple !== undefined) { // Add values to the selection
                 if (selected === true) {
@@ -4865,9 +4898,7 @@ class SelectionContainer extends ContainerMixin(Base) {
                     this.setSelectedChild(undefined);
                 }
             }
-            if (selectionChanged !== undefined) {
-                selectionChanged(this.props.selection); // Re-read from the updated selection props
-            }
+            this.callSelectionChanged(selection);
         }
         onChildAdded(child) {
             var _a;
@@ -4914,13 +4945,6 @@ class SelectionContainer extends ContainerMixin(Base) {
             value: [],
             mutable: true,
             reflect: true
-        },
-        /**
-         * The callback when the selection is changed
-         */
-        selectionChanged: {
-            attribute: 'selection-changed',
-            type: Function
         },
         /**
          * The name of the property that identifies the record id
@@ -5380,10 +5404,53 @@ const VisibleMixin = Base => { var _a; return _a = class Visible extends Base {
     },
     _a; };
 
-const renderField = Symbol('renderField');
+/**
+ * Allows a component to be named
+ */
+const NamedMixin = Base => { var _a; return _a = class Named extends Base {
+    },
+    _a.properties = {
+        /**
+         * The name of the component
+         */
+        name: {
+            type: String
+        }
+    },
+    _a; };
+
 const valueChanged = 'valueChanged';
+/**
+ * Allows a component to have a value
+ */
+const ValuedMixin = Base => { var _a; return _a = 
 //@ts-ignore
-class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(CustomElement)))) {
+class Valued extends NamedMixin(Base) {
+        updateValue(value) {
+            const { name } = this.props;
+            this.setValue(value); // Update the current value
+            this.dispatchEvent(new CustomEvent(valueChanged, {
+                detail: {
+                    name,
+                    value
+                },
+                bubbles: true,
+                composed: true
+            }));
+        }
+    },
+    _a.properties = {
+        value: {
+            type: oneOf(String, Object),
+            mutable: true,
+            reflect: true
+        },
+    },
+    _a; };
+
+const renderField = Symbol('renderField');
+//@ts-ignore
+class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(ValuedMixin(CustomElement))))) {
     constructor() {
         super();
         this.onBlur = this.onBlur.bind(this);
@@ -5506,7 +5573,7 @@ class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(Custom
         }
     }
     onChange(event) {
-        const { name, change } = this.props;
+        const { change } = this.props;
         // Retrieve the new value
         const target = event.target;
         const value = this.getNewValue(target);
@@ -5514,16 +5581,7 @@ class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(Custom
             change(value);
         }
         else {
-            this.setValue(value, this.onValueSet); // Update the current value
-            //this.validate(value); // No need to validate again since this happens on input
-            this.dispatchEvent(new CustomEvent(valueChanged, {
-                detail: {
-                    name,
-                    value
-                },
-                bubbles: true,
-                composed: true
-            }));
+            this.updateValue(value);
         }
     }
     getNewValue(input) {
@@ -5571,17 +5629,6 @@ Field.component = {
     ]
 };
 Field.properties = {
-    name: {
-        type: String
-    },
-    // isId: {
-    //     attribute: 'is-id',
-    //     type: Boolean,
-    //     value: false
-    // },
-    // type: {
-    //     type: Function
-    // },
     label: {
         type: ElementNode
     },
@@ -5592,11 +5639,6 @@ Field.properties = {
     },
     required: {
         type: Boolean,
-        mutable: true,
-        reflect: true
-    },
-    value: {
-        type: oneOf(String, Object),
         mutable: true,
         reflect: true
     },
@@ -6001,7 +6043,8 @@ window.onclick = function (event) {
     dropdownManager.hideShown(event.target);
 };
 
-class Dropdown extends CustomElement {
+//@ts-ignore
+class Dropdown extends SelectableMixin(SelectionHandlerMixin(CustomElement)) {
     constructor() {
         super();
         this.handleSelectionChanged = this.handleSelectionChanged.bind(this);
@@ -6018,7 +6061,7 @@ class Dropdown extends CustomElement {
     }
     onDropChanged(event) {
         const { showing } = event.detail;
-        if (showing === true) {
+        if (showing === true) { // Hide the contents of other showing dropdowns abd set this one as being shown
             dropdownManager.hideShown(this);
             dropdownManager.setShown(this);
         }
@@ -6049,20 +6092,14 @@ class Dropdown extends CustomElement {
     handleSelectionChanged(selection) {
         //this.setValue(value, this.onValueSet); // Update the current value
         //this.validate(value); // No need to validate again since this happens on input
-        const { name, hideOnSelection } = this.props;
+        const { hideOnSelection } = this.props;
         const { showing } = this.state;
         if (showing === true &&
             hideOnSelection === true) {
             this.hide();
         }
-        this.dispatchEvent(new CustomEvent(valueChanged, {
-            detail: {
-                name,
-                selection
-            },
-            bubbles: true,
-            composed: true
-        }));
+        this.notifySelectionChanged(selection);
+        this.callSelectionChanged(selection);
     }
     render() {
         const { showing } = this.state;
@@ -7016,7 +7053,7 @@ CloseTool.properties = {
 customElements.define(`${config.tagPrefix}-close-tool`, CloseTool);
 
 //@ts-ignore
-class SelectableRow extends SelectableMixin(HoverableMixin(SizableMixin(ChildMixin(CustomElement)))) {
+class SelectableRow extends SelectableOnClickMixin(HoverableMixin(SizableMixin(ChildMixin(CustomElement)))) {
     render() {
         const { value, size, selected, hoverable, } = this.props;
         const children = this.renderFields();
@@ -7343,90 +7380,4 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
-class XListItem extends SelectableMixin(ChildMixin(Component)) {
-    constructor(props, children) {
-        super(props, children);
-    }
-    // nodeDidConnect(node: Node) {
-    //     super.nodeDidConnect?.(node);
-    //     console.log('XListItem did connect');
-    //     node.addEventListener('click', this.handleClick);
-    // }
-    // nodeWillDisconnect(node: Node) {
-    //     super.nodeWillDisconnect?.(node);
-    //     console.log('XListItem will disconnect');
-    //     node.removeEventListener('click', this.handleClick);
-    // }
-    // handleClick() {
-    //     alert('clicked');
-    // }
-    render() {
-        const { size, selected } = this.props;
-        return (h("li", { class: "hoverable", size: size, selected: selected }, this.children));
-    }
-}
-
-class XList extends PageableMixin(DataCollectionLoadableMixin(SelectionContainerMixin(SizableMixin(CustomElement)))) {
-    render() {
-        return (h("div", { card: true, style: "background-color: beige; margin: 1rem;" },
-            h("ul", { style: "background-color: lightgreen;" }, this.renderHeader()),
-            h("ul", null,
-                this.renderLoading(),
-                this.renderError(),
-                this.renderData()),
-            h("div", { style: "background-color: lightgreen;" }, this.renderPager())));
-    }
-    wrapRecordVNode(record, children) {
-        const { recordId, size, selectable } = this.props;
-        return new XListItem({
-            parent: this,
-            [recordId]: record[recordId],
-            size,
-            selectable
-        }, children);
-    }
-    renderHeader() {
-        const { fields } = this.props;
-        if (fields === undefined) {
-            return null;
-        }
-        const fds = typeof fields === 'function' ? fields() : fields;
-        const children = fds.map(f => {
-            const sorter = f.sortable !== false ?
-                (h("gcl-sorter-tool", { field: f.name })) :
-                null;
-            return (h("span", { class: "list-cell", style: {
-                    width: f.width || '100px'
-                } },
-                f.display,
-                sorter));
-        });
-        return (h("li", null, children));
-    }
-    renderFields(fields, data) {
-        return data.map(record => {
-            const children = fields.map(f => {
-                return (h("span", { class: "list-cell", style: {
-                        width: f.width || '100px'
-                    } }, record[f.name]));
-            });
-            return this.wrapRecordVNode(record, children);
-        });
-    }
-    /**
-     * When there is no data provided to the component, render its children
-     */
-    renderNoData() {
-        return (h("ul", null,
-            h("slot", null)));
-    }
-}
-XList.component = {
-    styleUrls: [
-        `${config.assetsFolder}/x-list/XList.css`
-    ]
-};
-//@ts-ignore
-customElements.define(`${config.tagPrefix}-x-list`, XList);
-
-export { Alert, App, Button, CloseTool, Content, CurrentYear, DataCell, DataGrid, DataRow, DateField, DropTool, Dropdown, FileField, FilterField, FilterPanel, Form, Header, HiddenField, Icon, List, ListItem, LoginSection, MyCounter, MyTable, NavigationBar, NavigationLink, NumberField, OidcProvider, Overlay, Pager, Panel, Router, Row, Select, SelectableRow, SorterTool, Table, Text, TextArea, TextField, ValidationSummary, XList, appCtrl };
+export { Alert, App, Button, CloseTool, Content, CurrentYear, DataCell, DataGrid, DataRow, DateField, DropTool, Dropdown, FileField, FilterField, FilterPanel, Form, Header, HiddenField, Icon, List, ListItem, LoginSection, MyCounter, MyTable, NavigationBar, NavigationLink, NumberField, OidcProvider, Overlay, Pager, Panel, Router, Row, Select, SelectableRow, SorterTool, Table, Text, TextArea, TextField, ValidationSummary, appCtrl };

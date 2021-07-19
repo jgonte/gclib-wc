@@ -10,7 +10,7 @@ import DataSingleLoadableMixin from '../mixins/data/DataSingleLoadableMixin';
 import SubmittableMixin from '../mixins/data/SubmittableMixin';
 import ValidatableMixin from '../mixins/validatable/ValidatableMixin';
 import ContainerMixin from '../../core/mixins/ContainerMixin';
-import { valueChanged } from '../field/Field';
+import { valueChanged } from '../mixins/valued/ValuedMixin';
 
 //@ts-ignore
 export class Form extends

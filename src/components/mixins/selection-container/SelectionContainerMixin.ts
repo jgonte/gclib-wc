@@ -1,9 +1,12 @@
 import ContainerMixin from "../../../core/mixins/ContainerMixin";
+import SelectionHandlerMixin from "../selection/SelectionHandlerMixin";
 
 const SelectionContainerMixin = Base =>
 
     //@ts-ignore
-    class SelectionContainer extends ContainerMixin(Base) {
+    class SelectionContainer extends SelectionHandlerMixin(
+        ContainerMixin(Base)
+    ) {
 
         static properties = {
 
@@ -35,18 +38,12 @@ const SelectionContainerMixin = Base =>
                 reflect: true
             },
 
-            /**
-             * The callback when the selection is changed
-             */
-            selectionChanged: {
-                attribute: 'selection-changed',
-                type: Function
-            },
+
 
             /**
              * The name of the property that identifies the record id
              */
-             recordId: {
+            recordId: {
                 attribute: 'record-id',
                 type: String,
                 value: 'id'
@@ -100,8 +97,7 @@ const SelectionContainerMixin = Base =>
 
             const {
                 multiple,
-                selection,
-                selectionChanged
+                selection
             } = this.props;
 
             const {
@@ -151,10 +147,7 @@ const SelectionContainerMixin = Base =>
                 }
             }
 
-            if (selectionChanged !== undefined) {
-
-                selectionChanged(this.props.selection); // Re-read from the updated selection props
-            }
+            this.callSelectionChanged(selection);
         }
 
         onChildAdded(child: HTMLElement) {
@@ -164,7 +157,7 @@ const SelectionContainerMixin = Base =>
             // If any of the values of the selection match the value of the child, then set the child as selected
             const {
                 multiple,
-                selectable 
+                selectable
             } = this.props;
 
             const selection = this.props.selection || [];

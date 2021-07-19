@@ -86,6 +86,3 @@ export { DataGrid } from './components/data/grid/DataGrid';
 export { MyTable } from '../examples/my-table';
 
 export { MyCounter } from '../examples/my-counter';
-
-// experimental
-export { XList } from './components/x-list/XList';

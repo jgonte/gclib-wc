@@ -7,11 +7,9 @@ import SizableMixin from '../mixins/sizable/SizableMixin';
 import VisibleMixin, { renderWhenVisible } from '../mixins/visible/VisibleMixin';
 import { DataFieldModel, RequiredValidator } from 'gclib-utils';
 import Validator from 'gclib-utils/dist/types/data/validation/validators/Validator';
-import oneOf from '../../core/helpers/oneOf';
+import ValuedMixin from '../mixins/valued/ValuedMixin';
 
 export const renderField = Symbol('renderField');
-
-export const valueChanged = 'valueChanged';
 
 //@ts-ignore
 export abstract class Field extends
@@ -19,7 +17,9 @@ export abstract class Field extends
         ValidatableMixin(
             SizableMixin(
                 ChildMixin(
-                    CustomElement
+                    ValuedMixin(
+                        CustomElement
+                    )        
                 )
             )
         )
@@ -34,20 +34,6 @@ export abstract class Field extends
 
     static properties = {
 
-        name: {
-            type: String
-        },
-
-        // isId: {
-        //     attribute: 'is-id',
-        //     type: Boolean,
-        //     value: false
-        // },
-
-        // type: {
-        //     type: Function
-        // },
-
         label: {
             type: ElementNode
         },
@@ -60,12 +46,6 @@ export abstract class Field extends
 
         required: {
             type: Boolean,
-            mutable: true,
-            reflect: true
-        },
-
-        value: {
-            type: oneOf(String, Object), // Ideally is a string but could be a more complex object
             mutable: true,
             reflect: true
         },
@@ -313,7 +293,6 @@ export abstract class Field extends
     onChange(event) {
 
         const {
-            name,
             change
         } = this.props;
 
@@ -328,18 +307,7 @@ export abstract class Field extends
         }
         else {
 
-            this.setValue(value, this.onValueSet); // Update the current value
-
-            //this.validate(value); // No need to validate again since this happens on input
-
-            this.dispatchEvent(new CustomEvent(valueChanged, {
-                detail: {
-                    name,
-                    value
-                },
-                bubbles: true,
-                composed: true
-            }));
+            this.updateValue(value);
         }
     }
 
