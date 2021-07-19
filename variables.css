@@ -16,11 +16,13 @@
     --gcl-color-medium: #989aa2;
     --gcl-color-dark: #222428;
 
-    --gcl-hoverable-background-color:green;
-    --gcl-hoverable-color: white;
+    --gcl-hoverable-background-color:rgb(211, 227, 233);
+    --gcl-hoverable-color: black;
 
-    --gcl-selected-background-color: orange;
-    --gcl-selected-color: #dd2645;
+    --gcl-selected-background-color:#8ebeba;
+    --gcl-selected-color: gold;
+
+    --gcl-header-background-color: #1d62d8;
 
     /* Border width */
     --gcl-border-width: 2px;

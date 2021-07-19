@@ -5407,7 +5407,7 @@ class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(Custom
         if (label === undefined) {
             return null;
         }
-        if (label.isVirtualText) {
+        if (label.isText) {
             return (h("label", { for: name, size: size, required: required }, label));
         }
         else { // ElementNode
@@ -5574,14 +5574,14 @@ Field.properties = {
     name: {
         type: String
     },
-    isId: {
-        attribute: 'is-id',
-        type: Boolean,
-        value: false
-    },
-    type: {
-        type: Function
-    },
+    // isId: {
+    //     attribute: 'is-id',
+    //     type: Boolean,
+    //     value: false
+    // },
+    // type: {
+    //     type: Function
+    // },
     label: {
         type: ElementNode
     },
@@ -5596,7 +5596,7 @@ Field.properties = {
         reflect: true
     },
     value: {
-        type: Object,
+        type: oneOf(String, Object),
         mutable: true,
         reflect: true
     },
@@ -5940,6 +5940,161 @@ Select.properties = {
 };
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-select`, Select);
+
+const dropChanged = 'dropChanged';
+//@ts-ignore
+class DropTool extends Tool {
+    constructor() {
+        super();
+        this.iconName = () => {
+            const { showing } = this.state;
+            if (showing === undefined) {
+                return 'chevron-down';
+            }
+            return showing === true ?
+                'chevron-up' :
+                'chevron-down';
+        };
+        this.click = () => {
+            let { showing } = this.state;
+            showing = !showing;
+            this.updateShowing(showing);
+        };
+        this.updateShowing = this.updateShowing.bind(this);
+    }
+    hideContent() {
+        this.updateShowing(false);
+    }
+    updateShowing(showing) {
+        this.setShowing(showing);
+        this.dispatchEvent(new CustomEvent(dropChanged, {
+            detail: {
+                showing,
+                dropElement: this // To track the element in a container if needed
+            },
+            bubbles: true,
+            composed: true
+        }));
+    }
+}
+DropTool.state = {
+    showing: {}
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-drop-tool`, DropTool);
+
+// Manages hiding the dropdowns when clicked outside
+let _shown;
+const dropdownManager = {
+    setShown(shown) {
+        _shown = shown;
+    },
+    hideShown(target) {
+        if (_shown !== undefined &&
+            _shown !== target) {
+            _shown.hide();
+        }
+    }
+};
+// Close the dropdown menu if the user clicks outside of it
+window.onclick = function (event) {
+    dropdownManager.hideShown(event.target);
+};
+
+class Dropdown extends CustomElement {
+    constructor() {
+        super();
+        this.handleSelectionChanged = this.handleSelectionChanged.bind(this);
+    }
+    connectedCallback() {
+        var _a;
+        (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        this.addEventListener(dropChanged, this.onDropChanged);
+    }
+    disconnectedCallback() {
+        var _a;
+        (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        this.removeEventListener(dropChanged, this.onDropChanged);
+    }
+    onDropChanged(event) {
+        const { showing } = event.detail;
+        if (showing === true) {
+            dropdownManager.hideShown(this);
+            dropdownManager.setShown(this);
+        }
+        this.setShowing(showing);
+        event.stopPropagation();
+    }
+    nodeDidConnect(node) {
+        var _a;
+        if (node.tagName === 'STYLE') {
+            return;
+        }
+        (_a = super.nodeDidConnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
+        this.dropTool = Array.from(node.childNodes).filter(n => n.id === 'drop-tool')[0];
+        const slots = node.querySelectorAll('slot');
+        const contentSlot = slots[1];
+        if (contentSlot === undefined) {
+            throw Error('The content slot must have a child');
+        }
+        const selectable = contentSlot.assignedNodes({ flatten: true })[0];
+        // Set the handler when the selection changes
+        selectable.setProperty('selectionChanged', this.handleSelectionChanged);
+        // Set any initial selection
+        const selection = selectable.props.selection;
+        if ((selection === null || selection === void 0 ? void 0 : selection.length) > 0) {
+            this.handleSelectionChanged(selection);
+        }
+    }
+    handleSelectionChanged(selection) {
+        //this.setValue(value, this.onValueSet); // Update the current value
+        //this.validate(value); // No need to validate again since this happens on input
+        const { name, hideOnSelection } = this.props;
+        const { showing } = this.state;
+        if (showing === true &&
+            hideOnSelection === true) {
+            this.hide();
+        }
+        this.dispatchEvent(new CustomEvent(valueChanged, {
+            detail: {
+                name,
+                selection
+            },
+            bubbles: true,
+            composed: true
+        }));
+    }
+    render() {
+        const { showing } = this.state;
+        return (h("div", { class: "dropdown" },
+            h("slot", { name: "header" }),
+            h("gcl-drop-tool", { id: "drop-tool" }),
+            h("div", { class: `dropdown-content ${showing ? 'show' : ''}` },
+                h("slot", { name: "content" }))));
+    }
+    hide() {
+        this.dropTool.hideContent();
+    }
+}
+Dropdown.component = {
+    styleUrls: [
+        `${config.assetsFolder}/field/dropdown/Dropdown.css`
+    ]
+};
+Dropdown.properties = {
+    hideOnSelection: {
+        attribute: 'hide-on-selection',
+        type: Boolean,
+        value: true
+    }
+};
+Dropdown.state = {
+    showing: {
+        value: false
+    }
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-dropdown`, Dropdown);
 
 //@ts-ignore
 class HiddenField extends Field {
@@ -7004,13 +7159,13 @@ const PageableMixin = Base => { var _a; return _a = class Pageable extends Base 
 //@ts-ignore
 class DataGrid extends PageableMixin(DataCollectionLoadableMixin(SelectionContainerMixin(SizableMixin(CustomElement)))) {
     render() {
-        return (h("div", { card: true, style: "background-color: beige; margin: 1rem;" },
+        return (h("div", { card: true, style: "background-color: white;" },
             h("div", null,
                 this.renderLoading(),
                 this.renderError()),
-            h("div", { style: "background-color: lightgreen;" }, this.renderHeader()),
+            h("div", { style: "background-color: var(--gcl-header-background-color);" }, this.renderHeader()),
             h("div", { class: "body" }, this.renderData()),
-            h("div", { style: "background-color: lightgreen;" }, this.renderPager())));
+            h("div", { style: "background-color: var(--gcl-header-background-color);" }, this.renderPager())));
     }
     wrapRecord(record, index, children) {
         const { rowIsHoverable, recordId, size, selectable } = this.props;
@@ -7274,4 +7429,4 @@ XList.component = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-x-list`, XList);
 
-export { Alert, App, Button, CloseTool, Content, CurrentYear, DataCell, DataGrid, DataRow, DateField, FileField, FilterField, FilterPanel, Form, Header, HiddenField, Icon, List, ListItem, LoginSection, MyCounter, MyTable, NavigationBar, NavigationLink, NumberField, OidcProvider, Overlay, Pager, Panel, Router, Row, Select, SelectableRow, SorterTool, Table, Text, TextArea, TextField, ValidationSummary, XList, appCtrl };
+export { Alert, App, Button, CloseTool, Content, CurrentYear, DataCell, DataGrid, DataRow, DateField, DropTool, Dropdown, FileField, FilterField, FilterPanel, Form, Header, HiddenField, Icon, List, ListItem, LoginSection, MyCounter, MyTable, NavigationBar, NavigationLink, NumberField, OidcProvider, Overlay, Pager, Panel, Router, Row, Select, SelectableRow, SorterTool, Table, Text, TextArea, TextField, ValidationSummary, XList, appCtrl };

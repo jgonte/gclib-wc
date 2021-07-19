@@ -1,5 +1,5 @@
 <head>
-    
+
     <script>
 
         function getData() {
@@ -99,18 +99,27 @@
 
 <body>
 
+    <gcl-dropdown size="small">
+        <input slot="header" type="text" />
+        <!-- <span slot="header">Dropdown 1</span> -->
+        <gcl-data-grid slot="content" size="small" data="getData()" render-record="renderRecord()" record-id="value" pageable="false"
+            selection='["c"]' >
+        </gcl-data-grid>
+    </gcl-dropdown>
+
+    <gcl-dropdown>
+        <span slot="header">Dropdown 2</span>
+        <gcl-data-grid slot="content" load-url="http://localhost:60314/api/contacts" fields="getFields()" size="small"
+            selection='[2]'>
+        </gcl-data-grid>
+    </gcl-dropdown>
+
     <gcl-data-cell record="getRecord()" field="getField()"></gcl-data-cell>
 
     <gcl-data-row record="getRecord()" fields="getFields()"></gcl-data-row>
 
-    <gcl-data-grid
-        size="small"
-        data="getData()" 
-        render-record="renderRecord()" 
-        record-id="value" 
-        pageable="false" 
-        selection='["c"]'
-        selection-changed="showSelection()">
+    <gcl-data-grid size="small" data="getData()" render-record="renderRecord()" record-id="value" pageable="false"
+        selection='["c"]' selection-changed="showSelection()">
     </gcl-data-grid>
 
     <gcl-data-grid id="contactsList" load-url="http://localhost:60314/api/contacts" fields="getFields()" size="small"

@@ -7,6 +7,7 @@ import SizableMixin from '../mixins/sizable/SizableMixin';
 import VisibleMixin, { renderWhenVisible } from '../mixins/visible/VisibleMixin';
 import { DataFieldModel, RequiredValidator } from 'gclib-utils';
 import Validator from 'gclib-utils/dist/types/data/validation/validators/Validator';
+import oneOf from '../../core/helpers/oneOf';
 
 export const renderField = Symbol('renderField');
 
@@ -37,15 +38,15 @@ export abstract class Field extends
             type: String
         },
 
-        isId: {
-            attribute: 'is-id',
-            type: Boolean,
-            value: false
-        },
+        // isId: {
+        //     attribute: 'is-id',
+        //     type: Boolean,
+        //     value: false
+        // },
 
-        type: {
-            type: Function
-        },
+        // type: {
+        //     type: Function
+        // },
 
         label: {
             type: ElementNode
@@ -64,7 +65,7 @@ export abstract class Field extends
         },
 
         value: {
-            type: Object, // Ideally is a string but could be a more complex object
+            type: oneOf(String, Object), // Ideally is a string but could be a more complex object
             mutable: true,
             reflect: true
         },
@@ -139,7 +140,7 @@ export abstract class Field extends
             return null;
         }
 
-        if (label.isVirtualText) {
+        if (label.isText) {
 
             return (
                 <label for={name} size={size} required={required}>

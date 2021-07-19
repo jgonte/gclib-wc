@@ -39,6 +39,8 @@ export { TextArea } from './components/field/textArea/TextArea';
 
 export { Select } from './components/field/select/Select';
 
+export { Dropdown } from './components/field/dropdown/Dropdown';
+
 export { HiddenField } from './components/field/hiddenField/HiddenField';
 
 export { NumberField } from './components/field/numberField/NumberField';
@@ -65,9 +67,11 @@ export { CurrentYear } from './components/current-year/CurrentYear';
 export { Row } from './components/layout/row/Row';
 
 // Tools
-export { CloseTool } from './components/tool/close-tool/CloseTool';
+export { CloseTool } from './components/tool/close/CloseTool';
 
 export { SorterTool } from './components/tool/sorter/SorterTool';
+
+export { DropTool } from './components/tool/drop/DropTool';
 
 // Data display and editing
 export { SelectableRow } from './components/selectable/row/SelectableRow';

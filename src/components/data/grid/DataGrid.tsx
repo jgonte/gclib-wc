@@ -39,14 +39,14 @@ export class DataGrid extends
     render() {
 
         return (
-            <div card style="background-color: beige; margin: 1rem;">
+            <div card style="background-color: white;">
 
                 <div>
                     {this.renderLoading()}
                     {this.renderError()}
                 </div>
 
-                <div style="background-color: lightgreen;">
+                <div style="background-color: var(--gcl-header-background-color);">
                     {this.renderHeader()}
                 </div>
 
@@ -54,7 +54,7 @@ export class DataGrid extends
                     {this.renderData()}
                 </div>
 
-                <div style="background-color: lightgreen;">
+                <div style="background-color: var(--gcl-header-background-color);">
                     {this.renderPager()}
                 </div>
 
