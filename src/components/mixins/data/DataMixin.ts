@@ -1,7 +1,8 @@
 import { markupToVDom, ElementNode, TextNode } from "gclib-vdom";
+import oneOf from "../../../core/helpers/oneOf";
 
 /**
- * Enables rendering data for a component
+ * Renders a component based on its data
  */
 const DataMixin = Base =>
 
@@ -13,7 +14,7 @@ const DataMixin = Base =>
              * The data fed into the element
              */
             data: {
-                type: Array,
+                type: oneOf(Function, Array),
                 mutable: true
             },
 
@@ -44,29 +45,84 @@ const DataMixin = Base =>
             }
         };
 
+        /**
+         * Reference to the loaded data
+         */
+        data: any;
+
         constructor(props?, children?) {
 
             super(props, children);
         }
 
-        renderData(): ElementNode | TextNode | string {
+        async getData() {
 
-            let {
+            // If it is loadable (it has an URL to load from), then load it
+            const {
+                loadUrl
+            } = this.props;
+
+            if (loadUrl !== undefined) {
+
+                this.data = await this.load();
+
+                return this.data;
+            }
+
+            if (this.data !== undefined) { // Return the cached data if any
+
+                return this.data;
+            }
+
+            const {
                 data
             } = this.props;
+
+            if (data === undefined) {
+
+                return undefined;
+            }
+
+            if (typeof data === 'function') { // If it is a function then call it
+
+                this.data = data();
+            }
+            else { // An array of records
+
+                this.data = data;
+            }
+
+            return this.data;
+        }
+
+        renderData(): ElementNode | TextNode | string {
 
             const {
                 fields
             } = this.props;
 
-            if (data === undefined) {
+            let data = this.data;
 
-                return this.renderNoData();
+            if (data === undefined) { // The data has not been cached, load it
+
+                this.getData().then(data => {
+                    
+                    this.setData(data);
+
+                    this.data = data;
+                });
+
+                return null;
             }
 
-            if (typeof data === 'function') {
+            // if (data === undefined) {
 
-                data = data();
+            //     return this.renderNoData();
+            // }
+
+            if (data.payload !== undefined) {
+
+                data = data.payload;
             }
 
             if (data.length === 0) { // The data was provided but it was empty

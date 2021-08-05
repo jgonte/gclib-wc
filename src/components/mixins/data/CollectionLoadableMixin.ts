@@ -14,15 +14,22 @@ const CollectionLoadableMixin = Base =>
             SortableMixin(
                 FilterableMixin(
                     LoadableMixin(Base)
-                ) 
-            )                  
+                )
+            )
         ) {
 
-        load() {
+        async load() {
 
             const {
                 loadUrl
             } = this.props;
+
+            if (loadUrl === undefined) {
+
+                console.warn(`Missing load URL`);
+
+                return;
+            }
 
             const {
                 pageIndex,
@@ -35,13 +42,20 @@ const CollectionLoadableMixin = Base =>
 
             this.setLoading(true);
 
-            this._loader.load({
-                url: loadUrl,
-                top: pageSize,
-                skip: pageSize * (pageIndex - 1),
-                filter,
-                orderBy: sorters
-            });
+            if (this._loader === undefined) {
+
+                this.initLoader();
+            }
+            else {
+
+                return await this._loader.load({
+                    url: loadUrl,
+                    top: pageSize,
+                    skip: pageSize * (pageIndex - 1),
+                    filter,
+                    orderBy: sorters
+                });
+            }
         }
 
         initLoader() {

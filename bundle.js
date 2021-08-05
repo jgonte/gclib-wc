@@ -954,9 +954,7 @@ var Fetcher = (function () {
                         response = _e.sent();
                         if (!(response.status != 204)) return [3, 5];
                         return [4, this.processResponse(response)];
-                    case 4:
-                        _e.sent();
-                        _e.label = 5;
+                    case 4: return [2, _e.sent()];
                     case 5: return [3, 7];
                     case 6:
                         error_1 = _e.sent();
@@ -1038,37 +1036,37 @@ var Fetcher = (function () {
     };
     Fetcher.prototype.processResponse = function (response) {
         return __awaiter(this, void 0, void 0, function () {
-            var error, _a;
-            var _b, _c;
-            return __generator(this, function (_d) {
-                switch (_d.label) {
+            var error, data;
+            var _a, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
                     case 0:
                         if (this.onResponse) {
                             this.onResponse(response);
                         }
                         if (!(response.status > 299)) return [3, 2];
-                        _b = {
+                        _a = {
                             status: response.status,
                             statusText: response.statusText
                         };
                         return [4, this.parseContent(response)];
                     case 1:
-                        error = (_b.payload = _d.sent(),
-                            _b);
+                        error = (_a.payload = _c.sent(),
+                            _a);
                         this.handleError(error);
                         return [2];
                     case 2:
-                        if (!(this.onData !== undefined)) return [3, 4];
-                        _a = this.onData;
-                        _c = {
+                        _b = {
                             headers: response.headers
                         };
                         return [4, this.parseContent(response)];
                     case 3:
-                        _a.apply(this, [(_c.payload = _d.sent(),
-                                _c)]);
-                        _d.label = 4;
-                    case 4: return [2];
+                        data = (_b.payload = _c.sent(),
+                            _b);
+                        if (this.onData !== undefined) {
+                            this.onData(data);
+                        }
+                        return [2, data];
                 }
             });
         });
@@ -1141,9 +1139,7 @@ var SingleRecordLoader = (function (_super) {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4, this.fetch(__assign(__assign({}, request), { url: this.urlBuilder.build(request) }))];
-                    case 1:
-                        _a.sent();
-                        return [2];
+                    case 1: return [2, _a.sent()];
                 }
             });
         });
@@ -1201,9 +1197,7 @@ var CollectionLoader = (function (_super) {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4, this.fetch(__assign(__assign({}, request), { url: this.urlBuilder.build(request) }))];
-                    case 1:
-                        _a.sent();
-                        return [2];
+                    case 1: return [2, _a.sent()];
                 }
             });
         });
@@ -4299,20 +4293,49 @@ const ErrorableMixin = Base => { var _a; return _a = class Errorable extends Bas
     _a; };
 
 /**
- * Enables rendering data for a component
+ * Renders a component based on its data
  */
 const DataMixin = Base => { var _a; return _a = class Data extends Base {
         constructor(props, children) {
             super(props, children);
         }
-        renderData() {
-            let { data } = this.props;
-            const { fields } = this.props;
-            if (data === undefined) {
-                return this.renderNoData();
+        async getData() {
+            // If it is loadable (it has an URL to load from), then load it
+            const { loadUrl } = this.props;
+            if (loadUrl !== undefined) {
+                this.data = await this.load();
+                return this.data;
             }
-            if (typeof data === 'function') {
-                data = data();
+            if (this.data !== undefined) { // Return the cached data if any
+                return this.data;
+            }
+            const { data } = this.props;
+            if (data === undefined) {
+                return undefined;
+            }
+            if (typeof data === 'function') { // If it is a function then call it
+                this.data = data();
+            }
+            else { // An array of records
+                this.data = data;
+            }
+            return this.data;
+        }
+        renderData() {
+            const { fields } = this.props;
+            let data = this.data;
+            if (data === undefined) { // The data has not been cached, load it
+                this.getData().then(data => {
+                    this.setData(data);
+                    this.data = data;
+                });
+                return null;
+            }
+            // if (data === undefined) {
+            //     return this.renderNoData();
+            // }
+            if (data.payload !== undefined) {
+                data = data.payload;
             }
             if (data.length === 0) { // The data was provided but it was empty
                 return this.renderEmptyData();
@@ -4373,7 +4396,7 @@ const DataMixin = Base => { var _a; return _a = class Data extends Base {
          * The data fed into the element
          */
         data: {
-            type: Array,
+            type: oneOf(Function, Array),
             mutable: true
         },
         /**
@@ -4584,18 +4607,27 @@ const SortableMixin = Base => { var _a; return _a = class Sortable extends Base 
  * Implements a mixin that loads a collection of records
  */
 const CollectionLoadableMixin = Base => class CollectionLoadable extends PageableMixin$1(SortableMixin(FilterableMixin(LoadableMixin(Base)))) {
-    load() {
+    async load() {
         const { loadUrl } = this.props;
+        if (loadUrl === undefined) {
+            console.warn(`Missing load URL`);
+            return;
+        }
         const { pageIndex, pageSize, filter, sorters } = this.state;
         this.setError(undefined);
         this.setLoading(true);
-        this._loader.load({
-            url: loadUrl,
-            top: pageSize,
-            skip: pageSize * (pageIndex - 1),
-            filter,
-            orderBy: sorters
-        });
+        if (this._loader === undefined) {
+            this.initLoader();
+        }
+        else {
+            return await this._loader.load({
+                url: loadUrl,
+                top: pageSize,
+                skip: pageSize * (pageIndex - 1),
+                filter,
+                orderBy: sorters
+            });
+        }
     }
     initLoader() {
         const { loadUrl, autoLoad } = this.props;
@@ -6074,22 +6106,24 @@ class Dropdown extends SelectableMixin(SelectionHandlerMixin(CustomElement)) {
             return;
         }
         (_a = super.nodeDidConnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
-        this.dropTool = Array.from(node.childNodes).filter(n => n.id === 'drop-tool')[0];
+        const childNodes = Array.from(node.childNodes);
+        this.dropTool = childNodes.filter(n => n.id === 'drop-tool')[0];
         const slots = node.querySelectorAll('slot');
+        this.headerSlot = slots[0];
         const contentSlot = slots[1];
         if (contentSlot === undefined) {
             throw Error('The content slot must have a child');
         }
-        const selectable = contentSlot.assignedNodes({ flatten: true })[0];
+        this.contentNode = contentSlot.assignedNodes({ flatten: true })[0];
         // Set the handler when the selection changes
-        selectable.setProperty('selectionChanged', this.handleSelectionChanged);
+        this.contentNode.setProperty('selectionChanged', this.handleSelectionChanged);
         // Set any initial selection
-        const selection = selectable.props.selection;
+        const selection = this.contentNode.props.selection;
         if ((selection === null || selection === void 0 ? void 0 : selection.length) > 0) {
             this.handleSelectionChanged(selection);
         }
     }
-    handleSelectionChanged(selection) {
+    async handleSelectionChanged(selection) {
         //this.setValue(value, this.onValueSet); // Update the current value
         //this.validate(value); // No need to validate again since this happens on input
         const { hideOnSelection } = this.props;
@@ -6098,13 +6132,40 @@ class Dropdown extends SelectableMixin(SelectionHandlerMixin(CustomElement)) {
             hideOnSelection === true) {
             this.hide();
         }
+        // Update the display of the header
+        const header = this.headerSlot.assignedNodes({ flatten: true })[0];
+        let data = await this.contentNode.getData();
+        if (data.payload !== undefined) {
+            data = data.payload;
+        }
+        const recordId = this.contentNode.props.recordId;
+        switch (selection.length) {
+            case 0:
+                {
+                    header.setProperty('record', undefined);
+                }
+                break;
+            case 1:
+                {
+                    const records = data.filter(r => r[recordId] === selection[0]);
+                    //@ts-ignore
+                    records[0];
+                    //header.setProperty('record', record);
+                }
+                break;
+            default: // Multiple selection
+                {
+                    const records = data.filter(r => selection.includes(r[recordId]));
+                    header.setProperty('record', records);
+                }
+        }
         this.notifySelectionChanged(selection);
         this.callSelectionChanged(selection);
     }
     render() {
         const { showing } = this.state;
         return (h("div", { class: "dropdown" },
-            h("slot", { name: "header" }),
+            h("slot", { id: "header", name: "header" }),
             h("gcl-drop-tool", { id: "drop-tool" }),
             h("div", { class: `dropdown-content ${showing ? 'show' : ''}` },
                 h("slot", { name: "content" }))));
@@ -6400,11 +6461,11 @@ customElements.define(`${config.tagPrefix}-validation-summary`, ValidationSummar
  * Implements a mixin that loads a single record
  */
 const SingleLoadableMixin = Base => class SingleLoadable extends LoadableMixin(Base) {
-    load() {
+    async load() {
         const { loadUrl } = this.props;
         this.setError(undefined);
         this.setLoading(true);
-        this._loader.load({
+        return await this._loader.load({
             url: loadUrl
         });
     }

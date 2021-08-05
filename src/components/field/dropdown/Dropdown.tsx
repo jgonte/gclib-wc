@@ -39,9 +39,19 @@ export class Dropdown extends SelectableMixin(
     }
 
     /**
+     * The slottted header to set the text when a selection is made
+     */
+    headerSlot: any;
+
+    /**
      * The drop tool to show or hide the content
      */
     dropTool: DropTool;
+
+    /**
+     * The child node of the slotted content
+     */
+    contentNode: any;
 
     constructor() {
 
@@ -91,9 +101,13 @@ export class Dropdown extends SelectableMixin(
 
         super.nodeDidConnect?.(node);
 
-        this.dropTool = Array.from(node.childNodes).filter(n => (n as any).id === 'drop-tool')[0] as any as DropTool;
+        const childNodes = Array.from(node.childNodes);
+
+        this.dropTool = childNodes.filter(n => (n as any).id === 'drop-tool')[0] as any as DropTool;
 
         const slots = node.querySelectorAll('slot');
+
+        this.headerSlot = slots[0];
 
         const contentSlot = slots[1];
 
@@ -102,13 +116,13 @@ export class Dropdown extends SelectableMixin(
             throw Error('The content slot must have a child');
         }
 
-        const selectable = contentSlot.assignedNodes({ flatten: true })[0];
+        this.contentNode = contentSlot.assignedNodes({ flatten: true })[0];
 
         // Set the handler when the selection changes
-        (selectable as any).setProperty('selectionChanged', this.handleSelectionChanged);
+        this.contentNode.setProperty('selectionChanged', this.handleSelectionChanged);
 
         // Set any initial selection
-        const selection = (selectable as any).props.selection;
+        const selection = this.contentNode.props.selection;
 
         if (selection?.length > 0) {
 
@@ -117,7 +131,7 @@ export class Dropdown extends SelectableMixin(
 
     }
 
-    handleSelectionChanged(selection) {
+    async handleSelectionChanged(selection) {
 
         //this.setValue(value, this.onValueSet); // Update the current value
 
@@ -132,9 +146,46 @@ export class Dropdown extends SelectableMixin(
         } = this.state;
 
         if (showing === true &&
+            
             hideOnSelection === true) {
 
             this.hide();
+        }
+
+        // Update the display of the header
+        const header = this.headerSlot.assignedNodes({ flatten: true })[0];
+
+        let data = await this.contentNode.getData();
+
+        if (data.payload !== undefined) {
+
+            data = data.payload;
+        }
+
+        const recordId = this.contentNode.props.recordId;
+
+        switch (selection.length) {
+            case 0:
+                {
+                    header.setProperty('record', undefined);
+                }
+                break;
+            case 1:
+                {
+                    const records = data.filter(r => r[recordId] === selection[0]);
+
+                    //@ts-ignore
+                    const record = records[0];
+
+                    //header.setProperty('record', record);
+                }
+                break;
+            default: // Multiple selection
+                {
+                    const records = data.filter(r => selection.includes(r[recordId]));
+
+                    header.setProperty('record', records);
+                }
         }
 
         this.notifySelectionChanged(selection);
@@ -150,7 +201,7 @@ export class Dropdown extends SelectableMixin(
 
         return (
             <div class="dropdown">
-                <slot name="header" />
+                <slot id="header" name="header" />
                 <gcl-drop-tool id="drop-tool"></gcl-drop-tool>
                 <div class={`dropdown-content ${showing ? 'show' : ''}`}>
                     <slot name="content" />

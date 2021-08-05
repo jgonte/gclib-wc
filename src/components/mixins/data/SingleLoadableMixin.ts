@@ -9,7 +9,7 @@ const SingleLoadableMixin = Base =>
     class SingleLoadable extends
         LoadableMixin(Base) {
 
-        load() {
+        async load() {
 
             const {
                 loadUrl
@@ -19,7 +19,7 @@ const SingleLoadableMixin = Base =>
 
             this.setLoading(true);
 
-            this._loader.load({
+            return await this._loader.load({
                 url: loadUrl
             });
         }
