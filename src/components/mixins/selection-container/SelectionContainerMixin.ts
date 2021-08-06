@@ -147,7 +147,7 @@ const SelectionContainerMixin = Base =>
                 }
             }
 
-            this.callSelectionChanged(selection);
+            this.callSelectionChanged(this.props.selection); // Get the fresh selection from the props
         }
 
         onChildAdded(child: HTMLElement) {

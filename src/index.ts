@@ -11,6 +11,8 @@ export { Icon } from './components/icon/Icon';
 
 export { Text } from './components/text/Text';
 
+export { Display } from './components/display/Display';
+
 export { Alert } from './components/alert/Alert';
 
 export { Button } from './components/button/Button';

@@ -3723,6 +3723,26 @@ Text.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-text`, Text);
 
+/**
+ * Displays a custom content
+ */
+class Display extends CustomElement {
+    render() {
+        return this.props.content || null;
+    }
+}
+Display.properties = {
+    /**
+     * The content of the display
+     */
+    content: {
+        type: ElementNode,
+        mutable: true
+    }
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-display`, Display);
+
 function getChildren(node) {
     if (node instanceof HTMLElement) {
         const slot = node.querySelector('slot');
@@ -4930,7 +4950,7 @@ class SelectionContainer extends SelectionHandlerMixin(ContainerMixin(Base)) {
                     this.setSelectedChild(undefined);
                 }
             }
-            this.callSelectionChanged(selection);
+            this.callSelectionChanged(this.props.selection); // Get the fresh selection from the props
         }
         onChildAdded(child) {
             var _a;
@@ -6148,9 +6168,20 @@ class Dropdown extends SelectableMixin(SelectionHandlerMixin(CustomElement)) {
             case 1:
                 {
                     const records = data.filter(r => r[recordId] === selection[0]);
-                    //@ts-ignore
-                    records[0];
-                    //header.setProperty('record', record);
+                    const record = records[0];
+                    const { displayField } = this.props;
+                    if (typeof displayField === 'function') {
+                        let node = displayField(record);
+                        if (typeof node === 'string') {
+                            node = markupToVDom(node.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
+                        }
+                        header.setContent(node);
+                    }
+                    else {
+                        const displayValue = record[displayField];
+                        header.setContent(displayValue);
+                    }
+                    // header.setProperty('record', record);
                 }
                 break;
             default: // Multiple selection
@@ -6184,6 +6215,12 @@ Dropdown.properties = {
         attribute: 'hide-on-selection',
         type: Boolean,
         value: true
+    },
+    // The name of the field of the record to display its value in the dropdown header
+    displayField: {
+        attribute: 'display-field',
+        type: oneOf(String, Function),
+        value: 'description'
     }
 };
 Dropdown.state = {
@@ -7441,4 +7478,4 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
-export { Alert, App, Button, CloseTool, Content, CurrentYear, DataCell, DataGrid, DataRow, DateField, DropTool, Dropdown, FileField, FilterField, FilterPanel, Form, Header, HiddenField, Icon, List, ListItem, LoginSection, MyCounter, MyTable, NavigationBar, NavigationLink, NumberField, OidcProvider, Overlay, Pager, Panel, Router, Row, Select, SelectableRow, SorterTool, Table, Text, TextArea, TextField, ValidationSummary, appCtrl };
+export { Alert, App, Button, CloseTool, Content, CurrentYear, DataCell, DataGrid, DataRow, DateField, Display, DropTool, Dropdown, FileField, FilterField, FilterPanel, Form, Header, HiddenField, Icon, List, ListItem, LoginSection, MyCounter, MyTable, NavigationBar, NavigationLink, NumberField, OidcProvider, Overlay, Pager, Panel, Router, Row, Select, SelectableRow, SorterTool, Table, Text, TextArea, TextField, ValidationSummary, appCtrl };

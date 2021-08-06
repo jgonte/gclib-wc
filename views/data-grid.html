@@ -85,7 +85,7 @@
                     return `
                     <gcl-row justify-content="center" style="width:${field.width};">
                         <gcl-icon name="person" variant="warning" size="large"></gcl-icon>
-                        <span style="background-color: red;">           
+                        <span style="background-color: red;">
                             ${record[field.name]}
                         </span>
                     </gcl-row>`;
@@ -99,24 +99,29 @@
 
 <body>
 
-    <gcl-dropdown size="small" selection-changed="showSelection()">
-        <gcl-data-cell slot="header" record="getRecord()" field="getField()"></gcl-data-cell>
+    <!-- <gcl-display display-field="renderRecord()"></gcl-display> -->
+
+    <gcl-dropdown size="small" selection-changed="showSelection()" display-field="renderRecord()">
+        <gcl-display slot="header"></gcl-display>
+        <!-- <gcl-data-cell slot="header" record="getRecord()" field="getField()"></gcl-data-cell> -->
         <!-- <span slot="header">Dropdown 1</span> -->
-        <gcl-data-grid slot="content" size="small" data="getData()" render-record="renderRecord()" record-id="value" pageable="false"
-            selection='["c"]' >
+        <gcl-data-grid slot="content" size="small" data="getData()" render-record="renderRecord()" record-id="value"
+            pageable="false" selection='["c"]'>
         </gcl-data-grid>
     </gcl-dropdown>
 
-    <gcl-dropdown selection-changed="showSelection()">
-        <span slot="header">Dropdown 2</span>
+    <gcl-dropdown selection-changed="showSelection()" display-field="name">
+        <gcl-display slot="header"></gcl-display>
         <gcl-data-grid slot="content" load-url="http://localhost:60314/api/contacts" fields="getFields()" size="small"
             selection='[2]'>
         </gcl-data-grid>
     </gcl-dropdown>
 
-    <gcl-data-cell record="getRecord()" field="getField()"></gcl-data-cell>
+    <!-- <gcl-data-cell record="getRecord()" field="getField()"></gcl-data-cell> -->
 
-    <gcl-data-row record="getRecord()" fields="getFields()"></gcl-data-row>
+    <!-- <gcl-data-row record="getRecord()" fields="getFields()"></gcl-data-row> -->
+
+    <h4>Grid with local data</h4>
 
     <gcl-data-grid size="small" data="getData()" render-record="renderRecord()" record-id="value" pageable="false"
         selection='["c"]' selection-changed="showSelection()">

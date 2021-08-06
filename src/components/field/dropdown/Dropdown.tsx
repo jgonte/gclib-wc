@@ -1,7 +1,7 @@
-import { h } from 'gclib-vdom';
+import { h, markupToVDom } from 'gclib-vdom';
 import CustomElement from '../../../core/customElement/CustomElement';
+import oneOf from '../../../core/helpers/oneOf';
 // import { SelectableRow } from '../../selectable/row/SelectableRow';
-// import oneOf from '../../../core/helpers/oneOf';
 import { config } from '../../config';
 import SelectableMixin from '../../mixins/selectable/SelectableMixin';
 import SelectionHandlerMixin from '../../mixins/selection/SelectionHandlerMixin';
@@ -28,6 +28,13 @@ export class Dropdown extends SelectableMixin(
             attribute: 'hide-on-selection',
             type: Boolean,
             value: true
+        },
+
+        // The name of the field of the record to display its value in the dropdown header
+        displayField: {
+            attribute: 'display-field',
+            type: oneOf(String, Function),
+            value: 'description'
         }
     };
 
@@ -146,7 +153,7 @@ export class Dropdown extends SelectableMixin(
         } = this.state;
 
         if (showing === true &&
-            
+
             hideOnSelection === true) {
 
             this.hide();
@@ -174,10 +181,29 @@ export class Dropdown extends SelectableMixin(
                 {
                     const records = data.filter(r => r[recordId] === selection[0]);
 
-                    //@ts-ignore
                     const record = records[0];
 
-                    //header.setProperty('record', record);
+                    const { displayField } = this.props;
+
+                    if (typeof displayField === 'function') {
+
+                        let node = displayField(record);
+
+                        if (typeof node === 'string') {
+
+                            node = markupToVDom(node.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
+                        }
+
+                        header.setContent(node);
+                    }
+                    else {
+
+                        const displayValue = record[displayField];
+
+                        header.setContent(displayValue);
+                    }            
+
+                    // header.setProperty('record', record);
                 }
                 break;
             default: // Multiple selection
