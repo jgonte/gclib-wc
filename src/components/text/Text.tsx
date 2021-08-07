@@ -32,23 +32,44 @@ export class Text extends
             type: String
         },
 
-        /** 
-         * The value of the text
+        /**
+         * The language to translate to
          */
-        value: {
+        lang: {
             type: String,
             mutable: true,
             reflect: true
-        }
+        },
+
+        // /** 
+        //  * The value of the text
+        //  */
+        // value: {
+        //     type: String,
+        //     mutable: true,
+        //     reflect: true
+        // }
     };
 
     render() {
 
-        const { 
-            value,
+        const {
+            intlKey,
+            lang,
             size,
-            variant
+            variant,
         } = this.props;
+
+        // let {
+        //     value
+        // } = this.props;
+
+        let value;
+
+        if (intlKey !== undefined) {
+
+            value = appCtrl.intlProvider.getTranslation(lang, intlKey);
+        }
 
         return (
             <Fragment size={size} variant={variant}>
@@ -57,7 +78,12 @@ export class Text extends
         );
     }
 
-    connectedCallback() {
+    nodeDidConnect(node: HTMLElement) {
+
+        if (node.tagName === 'STYLE') {
+
+            return;
+        }
 
         const { intlKey } = this.props;
 
@@ -65,15 +91,20 @@ export class Text extends
 
             appCtrl.intlProvider.subscribe(this);
 
-            const value = appCtrl.intlProvider.getTranslation(this.lang, intlKey);
+            // const value = appCtrl.intlProvider.getTranslation(this.lang, intlKey);
 
-            this.setValue(value);
+            // this.setValue(value);
         }
 
-        super.connectedCallback();
+        super.nodeDidConnect?.(node);
     }
 
-    disconnectedCallback() {
+    nodeWillDisconnect(node: HTMLElement) {
+
+        if (node.tagName === 'STYLE') {
+
+            return;
+        }
 
         const { intlKey } = this.props;
 
@@ -87,6 +118,8 @@ export class Text extends
 
         this.setValue(provider.getTranslation(this.lang, this.intlKey));
     }
+
+
 }
 
 //@ts-ignore
