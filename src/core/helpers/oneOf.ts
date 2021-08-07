@@ -11,7 +11,8 @@ export class OneOf {
     toProperty(value: any) {
 
         // First try a function since that can create any of the objects below
-        if (this.types.includes(Function)) {
+        if (value[value.length - 2] === '(' && value[value.length - 1] === ')' // The function by convention must end in ()
+            && this.types.includes(Function)) {
 
             var fcn = getGlobalFunction(value);
 
