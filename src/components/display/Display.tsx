@@ -1,4 +1,4 @@
-import { ElementNode } from "gclib-vdom";
+import { ElementNode, h } from "gclib-vdom";
 import CustomElement from "../../core/customElement/CustomElement";
 import { config } from "../config";
 
@@ -20,7 +20,20 @@ export class Display extends CustomElement {
 
     render() {
 
-        return this.props.content || null;
+        const {
+            content
+        } = this.props;
+
+        if (content === undefined) {
+
+            return null;
+        }
+
+        return (
+            <span>
+                {content}
+            </span>
+        );
     }
 }
 

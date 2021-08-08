@@ -3751,7 +3751,11 @@ customElements.define(`${config.tagPrefix}-text`, Text);
  */
 class Display extends CustomElement {
     render() {
-        return this.props.content || null;
+        const { content } = this.props;
+        if (content === undefined) {
+            return null;
+        }
+        return (h("span", null, content));
     }
 }
 Display.properties = {
