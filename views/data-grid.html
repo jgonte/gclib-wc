@@ -35,8 +35,10 @@
             } = record;
 
             return `
-                <gcl-icon name="${iconName}" style="width: 50px;"></gcl-icon>
-                <gcl-text intl-key="${textKey}" lang="${lang}"></gcl-text>
+                <gcl-row>
+                    <gcl-icon name="${iconName}" style="width: 50px;"></gcl-icon>
+                    <gcl-text intl-key="${textKey}" lang="${lang}"></gcl-text>
+                </gcl-row>
             `;
         }
 
@@ -99,16 +101,24 @@
 
 <body>
 
-    <!-- <gcl-display display-field="renderRecord()"></gcl-display> -->
-
     <gcl-dropdown size="small" selection-changed="showSelection()" display-field="renderRecord()">
-        <gcl-display slot="header"></gcl-display>
-        <!-- <gcl-data-cell slot="header" record="getRecord()" field="getField()"></gcl-data-cell> -->
-        <!-- <span slot="header">Dropdown 1</span> -->
+        <span slot="header">Dropdown 1</span>
         <gcl-data-grid slot="content" size="small" data="getData()" render-record="renderRecord()" record-id="value"
             pageable="false" selection='["c"]'>
         </gcl-data-grid>
     </gcl-dropdown>
+
+    <br/>
+
+    <!-- Combobox  -->
+    <gcl-dropdown size="small" selection-changed="showSelection()" display-field="renderRecord()">
+        <gcl-display slot="header"></gcl-display>
+        <gcl-data-grid slot="content" size="small" data="getData()" render-record="renderRecord()" record-id="value"
+            pageable="false" selection='["c"]'>
+        </gcl-data-grid>
+    </gcl-dropdown>
+
+    <br/>
 
     <gcl-dropdown selection-changed="showSelection()" display-field="name">
         <gcl-display slot="header"></gcl-display>

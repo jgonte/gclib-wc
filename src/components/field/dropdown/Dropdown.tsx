@@ -108,9 +108,9 @@ export class Dropdown extends SelectableMixin(
 
         super.nodeDidConnect?.(node);
 
-        const childNodes = Array.from(node.childNodes);
+        const childNode = node.childNodes[0]; //gcl-row
 
-        this.dropTool = childNodes.filter(n => (n as any).id === 'drop-tool')[0] as any as DropTool;
+        this.dropTool = Array.from(childNode.childNodes).filter(n => (n as any).id === 'drop-tool')[0] as any as DropTool;
 
         const slots = node.querySelectorAll('slot');
 
@@ -187,21 +187,24 @@ export class Dropdown extends SelectableMixin(
 
                     if (typeof displayField === 'function') {
 
-                        let node = displayField(record);
+                        if ("setContent" in header) {
 
-                        if (typeof node === 'string') {
+                            let node = displayField(record);
 
-                            node = markupToVDom(node.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
+                            if (typeof node === 'string') {
+
+                                node = markupToVDom(node.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
+                            }
+
+                            header.setContent(node);
                         }
-
-                        header.setContent(node);
                     }
                     else {
 
                         const displayValue = record[displayField];
 
                         header.setContent(displayValue);
-                    }            
+                    }
 
                     // header.setProperty('record', record);
                 }
@@ -226,9 +229,11 @@ export class Dropdown extends SelectableMixin(
         } = this.state;
 
         return (
-            <div class="dropdown">
-                <slot id="header" name="header" />
-                <gcl-drop-tool id="drop-tool"></gcl-drop-tool>
+            <div tabindex="0" class="dropdown">
+                <gcl-row>
+                    <slot id="header" name="header" />
+                    <gcl-drop-tool id="drop-tool"></gcl-drop-tool>
+                </gcl-row>
                 <div class={`dropdown-content ${showing ? 'show' : ''}`}>
                     <slot name="content" />
                 </div>
