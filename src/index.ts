@@ -41,7 +41,7 @@ export { TextArea } from './components/field/textArea/TextArea';
 
 export { Select } from './components/field/select/Select';
 
-export { Dropdown } from './components/field/dropdown/Dropdown';
+export { Dropdown } from './components/dropdown/Dropdown';
 
 export { HiddenField } from './components/field/hiddenField/HiddenField';
 

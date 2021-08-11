@@ -6149,7 +6149,8 @@ class Dropdown extends SelectableMixin(SelectionHandlerMixin(CustomElement)) {
     }
     nodeDidConnect(node) {
         var _a;
-        if (node.tagName === 'STYLE') {
+        if (node.tagName !== 'DIV' &&
+            node.className !== 'dropdown') {
             return;
         }
         (_a = super.nodeDidConnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
@@ -6237,7 +6238,7 @@ class Dropdown extends SelectableMixin(SelectionHandlerMixin(CustomElement)) {
 }
 Dropdown.component = {
     styleUrls: [
-        `${config.assetsFolder}/field/dropdown/Dropdown.css`
+        `${config.assetsFolder}/dropdown/Dropdown.css`
     ]
 };
 Dropdown.properties = {
