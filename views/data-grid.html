@@ -111,7 +111,7 @@
     <br/>
 
     <!-- Combobox  -->
-    <gcl-dropdown size="small" selection-changed="showSelection()" display-field="renderRecord()">
+    <gcl-dropdown size="small" selection-changed="showSelection()" display-field="renderRecord()" empty-display="--Select--">
         <gcl-display slot="header"></gcl-display>
         <gcl-data-grid slot="content" size="small" data="getData()" render-record="renderRecord()" record-id="value"
             pageable="false" selection='["c"]'>

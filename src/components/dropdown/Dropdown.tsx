@@ -30,11 +30,22 @@ export class Dropdown extends SelectableMixin(
             value: true
         },
 
-        // The name of the field of the record to display its value in the dropdown header
+        /**
+         * The name of the field of the record to display its value in the dropdown header
+         */
         displayField: {
             attribute: 'display-field',
             type: oneOf(String, Function),
             value: 'description'
+        },
+
+        /**
+         * The text to display when there is no selection in the dropdown
+         */
+        emptyDisplay: {
+            attribute: 'empty-display',
+            type: oneOf(String, Function),
+            value: 'Please select'
         }
     };
 
@@ -59,6 +70,11 @@ export class Dropdown extends SelectableMixin(
      * The child node of the slotted content
      */
     contentNode: any;
+
+    /**
+     * The cached data
+     */
+    contentData: any;
 
     constructor() {
 
@@ -163,11 +179,14 @@ export class Dropdown extends SelectableMixin(
         // Update the display of the header
         const header = this.headerSlot.assignedNodes({ flatten: true })[0];
 
-        let data = await this.contentNode.getData();
+        if (this.contentData === undefined) {
 
-        if (data.payload !== undefined) {
+            this.contentData = await this.contentNode.getData();
 
-            data = data.payload;
+            if (this.contentData.payload !== undefined) {
+
+                this.contentData = this.contentData.payload;
+            }
         }
 
         const recordId = this.contentNode.props.recordId;
@@ -175,12 +194,17 @@ export class Dropdown extends SelectableMixin(
         switch (selection.length) {
             case 0:
                 {
-                    header.setProperty('record', undefined);
+                    const { emptyDisplay } = this.props;
+
+                    if ('setContent' in header) {
+
+                        header.setContent(emptyDisplay);
+                    }
                 }
                 break;
             case 1:
                 {
-                    const records = data.filter(r => r[recordId] === selection[0]);
+                    const records = this.contentData.filter(r => r[recordId] === selection[0]);
 
                     const record = records[0];
 
@@ -212,7 +236,7 @@ export class Dropdown extends SelectableMixin(
                 break;
             default: // Multiple selection
                 {
-                    const records = data.filter(r => selection.includes(r[recordId]));
+                    const records = this.contentData.filter(r => selection.includes(r[recordId]));
 
                     header.setProperty('record', records);
                 }

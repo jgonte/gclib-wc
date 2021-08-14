@@ -23,7 +23,7 @@ const dropdownManager = {
 // Close the dropdown menu if the user clicks outside of it
 window.onclick = function (event) {
 
-    dropdownManager.hideShown(event.target);
+    //dropdownManager.hideShown(event.target);
 }
 
 export default dropdownManager;

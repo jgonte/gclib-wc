@@ -246,7 +246,10 @@ export class Form extends
 
                 const field = fieldsMap.get(key);
 
-                field.setValue(data[key], field.onValueSet);
+                if (field !== undefined) { // There might not be a field configured for the loaded value
+
+                    field.setValue(data[key], field.onValueSet);
+                }               
             }
         }
     }

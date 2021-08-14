@@ -135,8 +135,15 @@ const SelectionContainerMixin = Base =>
 
                 if (selected === true) {
 
-                    this.setSelection([selectableValue]);
+                    if (selectableValue !== undefined) {
 
+                        this.setSelection([selectableValue]);
+                    }
+                    else {
+
+                        this.setSelection(selection);
+                    }
+                    
                     this.setSelectedChild(child);
                 }
                 else {

@@ -2618,7 +2618,7 @@ function hasKeys(children) {
         }
         if (isVirtualNode(child)) {
             var key = child.key;
-            if (key) {
+            if (key !== undefined) {
                 if (missingFirstKey) {
                     throw new Error('Missing key at index: [0] in children collection.');
                 }
@@ -3259,7 +3259,7 @@ const CustomElementMetadataInitializerMixin = Base => class CustomElementMetadat
                 else {
                     this.setProperty(name, newValue);
                 }
-                callback === null || callback === void 0 ? void 0 : callback();
+                callback === null || callback === void 0 ? void 0 : callback(newValue);
             };
             var setterName = this.getSetterName(name);
             this[setterName] = setter.bind(this);
@@ -4284,6 +4284,303 @@ Overlay.component = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-overlay`, Overlay);
 
+const selectionChanged = 'selectionChanged';
+/**
+ * Allows a component to be selected when clicked
+ */
+const SelectableMixin = Base => { var _a; return _a = class Selectable extends Base {
+        notifySelectionChanged(selection) {
+            const { selectableValue } = this.props;
+            this.dispatchEvent(new CustomEvent(selectionChanged, {
+                detail: {
+                    child: this,
+                    selectableValue,
+                    selected: selection || this.props.selected // Need to read it again since the property was updated
+                },
+                bubbles: true,
+                composed: true
+            }));
+        }
+    },
+    _a.properties = {
+        /**
+         * Whether the component is selectable
+         */
+        selectable: {
+            type: Boolean,
+            value: true,
+            reflect: true,
+            passToChildren: true // Maybe the children are selectable too
+        },
+        /**
+         * Whether the item is selected
+         */
+        selected: {
+            type: Boolean,
+            mutable: true,
+            reflect: true,
+            //passToChildren: true // Maybe the children want to show some UI that they were selected
+        },
+        /**
+         * The value to select in the event
+         */
+        selectableValue: {
+            attribute: 'selectable-value',
+            type: Object
+        }
+    },
+    _a; };
+
+/**
+ * Allows the component to call a handler when the selection has changed
+ */
+const SelectionHandlerMixin = Base => { var _a; return _a = class SelectionHandler extends Base {
+        callSelectionChanged(selection) {
+            const { selectionChanged } = this.props;
+            if (selectionChanged !== undefined) {
+                selectionChanged(selection || this.props.selection); // Re-read from the updated selection props
+            }
+        }
+    },
+    _a.properties = {
+        /**
+         * The handler to call when the selection has changed
+         */
+        selectionChanged: {
+            attribute: 'selection-changed',
+            type: Function
+        }
+    },
+    _a; };
+
+//@ts-ignore
+class Tool extends SizableMixin(VariantMixin(CustomElement)) {
+    render() {
+        const { variant, size } = this.props;
+        const { iconName, click } = this;
+        const icon = typeof iconName === 'function' ?
+            iconName() :
+            iconName;
+        return (h("gcl-button", { variant: variant, size: size, click: click },
+            h("gcl-icon", { name: icon })));
+    }
+}
+
+const dropChanged = 'dropChanged';
+//@ts-ignore
+class DropTool extends Tool {
+    constructor() {
+        super();
+        this.iconName = () => {
+            const { showing } = this.state;
+            if (showing === undefined) {
+                return 'chevron-down';
+            }
+            return showing === true ?
+                'chevron-up' :
+                'chevron-down';
+        };
+        this.click = () => {
+            let { showing } = this.state;
+            showing = !showing;
+            this.updateShowing(showing);
+        };
+        this.updateShowing = this.updateShowing.bind(this);
+    }
+    hideContent() {
+        this.updateShowing(false);
+    }
+    updateShowing(showing) {
+        this.setShowing(showing);
+        this.dispatchEvent(new CustomEvent(dropChanged, {
+            detail: {
+                showing,
+                dropElement: this // To track the element in a container if needed
+            },
+            bubbles: true,
+            composed: true
+        }));
+    }
+}
+DropTool.state = {
+    showing: {}
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-drop-tool`, DropTool);
+
+// Manages hiding the dropdowns when clicked outside
+let _shown;
+const dropdownManager = {
+    setShown(shown) {
+        _shown = shown;
+    },
+    hideShown(target) {
+        if (_shown !== undefined &&
+            _shown !== target) {
+            _shown.hide();
+        }
+    }
+};
+// Close the dropdown menu if the user clicks outside of it
+window.onclick = function (event) {
+    //dropdownManager.hideShown(event.target);
+};
+
+//@ts-ignore
+class Dropdown extends SelectableMixin(SelectionHandlerMixin(CustomElement)) {
+    constructor() {
+        super();
+        this.handleSelectionChanged = this.handleSelectionChanged.bind(this);
+    }
+    connectedCallback() {
+        var _a;
+        (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        this.addEventListener(dropChanged, this.onDropChanged);
+    }
+    disconnectedCallback() {
+        var _a;
+        (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        this.removeEventListener(dropChanged, this.onDropChanged);
+    }
+    onDropChanged(event) {
+        const { showing } = event.detail;
+        if (showing === true) { // Hide the contents of other showing dropdowns abd set this one as being shown
+            dropdownManager.hideShown(this);
+            dropdownManager.setShown(this);
+        }
+        this.setShowing(showing);
+        event.stopPropagation();
+    }
+    nodeDidConnect(node) {
+        var _a;
+        if (node.tagName !== 'DIV' &&
+            node.className !== 'dropdown') {
+            return;
+        }
+        (_a = super.nodeDidConnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
+        const childNode = node.childNodes[0]; //gcl-row
+        this.dropTool = Array.from(childNode.childNodes).filter(n => n.id === 'drop-tool')[0];
+        const slots = node.querySelectorAll('slot');
+        this.headerSlot = slots[0];
+        const contentSlot = slots[1];
+        if (contentSlot === undefined) {
+            throw Error('The content slot must have a child');
+        }
+        this.contentNode = contentSlot.assignedNodes({ flatten: true })[0];
+        // Set the handler when the selection changes
+        this.contentNode.setProperty('selectionChanged', this.handleSelectionChanged);
+        // Set any initial selection
+        const selection = this.contentNode.props.selection;
+        if ((selection === null || selection === void 0 ? void 0 : selection.length) > 0) {
+            this.handleSelectionChanged(selection);
+        }
+    }
+    async handleSelectionChanged(selection) {
+        //this.setValue(value, this.onValueSet); // Update the current value
+        //this.validate(value); // No need to validate again since this happens on input
+        const { hideOnSelection } = this.props;
+        const { showing } = this.state;
+        if (showing === true &&
+            hideOnSelection === true) {
+            this.hide();
+        }
+        // Update the display of the header
+        const header = this.headerSlot.assignedNodes({ flatten: true })[0];
+        if (this.contentData === undefined) {
+            this.contentData = await this.contentNode.getData();
+            if (this.contentData.payload !== undefined) {
+                this.contentData = this.contentData.payload;
+            }
+        }
+        const recordId = this.contentNode.props.recordId;
+        switch (selection.length) {
+            case 0:
+                {
+                    const { emptyDisplay } = this.props;
+                    if ('setContent' in header) {
+                        header.setContent(emptyDisplay);
+                    }
+                }
+                break;
+            case 1:
+                {
+                    const records = this.contentData.filter(r => r[recordId] === selection[0]);
+                    const record = records[0];
+                    const { displayField } = this.props;
+                    if (typeof displayField === 'function') {
+                        if ("setContent" in header) {
+                            let node = displayField(record);
+                            if (typeof node === 'string') {
+                                node = markupToVDom(node.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
+                            }
+                            header.setContent(node);
+                        }
+                    }
+                    else {
+                        const displayValue = record[displayField];
+                        header.setContent(displayValue);
+                    }
+                    // header.setProperty('record', record);
+                }
+                break;
+            default: // Multiple selection
+                {
+                    const records = this.contentData.filter(r => selection.includes(r[recordId]));
+                    header.setProperty('record', records);
+                }
+        }
+        this.notifySelectionChanged(selection);
+        this.callSelectionChanged(selection);
+    }
+    render() {
+        const { showing } = this.state;
+        return (h("div", { tabindex: "0", class: "dropdown" },
+            h("gcl-row", null,
+                h("slot", { id: "header", name: "header" }),
+                h("gcl-drop-tool", { id: "drop-tool" })),
+            h("div", { class: `dropdown-content ${showing ? 'show' : ''}` },
+                h("slot", { name: "content" }))));
+    }
+    hide() {
+        this.dropTool.hideContent();
+    }
+}
+Dropdown.component = {
+    styleUrls: [
+        `${config.assetsFolder}/dropdown/Dropdown.css`
+    ]
+};
+Dropdown.properties = {
+    hideOnSelection: {
+        attribute: 'hide-on-selection',
+        type: Boolean,
+        value: true
+    },
+    /**
+     * The name of the field of the record to display its value in the dropdown header
+     */
+    displayField: {
+        attribute: 'display-field',
+        type: oneOf(String, Function),
+        value: 'description'
+    },
+    /**
+     * The text to display when there is no selection in the dropdown
+     */
+    emptyDisplay: {
+        attribute: 'empty-display',
+        type: oneOf(String, Function),
+        value: 'Please select'
+    }
+};
+Dropdown.state = {
+    showing: {
+        value: false
+    }
+};
+//@ts-ignore
+customElements.define(`${config.tagPrefix}-dropdown`, Dropdown);
+
 /**
  * Mixin that handles errors
  * @param Base
@@ -4554,19 +4851,6 @@ const PageableMixin$1 = Base => { var _a; return _a = class Pageable extends Bas
     },
     _a; };
 
-//@ts-ignore
-class Tool extends SizableMixin(VariantMixin(CustomElement)) {
-    render() {
-        const { variant, size } = this.props;
-        const { iconName, click } = this;
-        const icon = typeof iconName === 'function' ?
-            iconName() :
-            iconName;
-        return (h("gcl-button", { variant: variant, size: size, click: click },
-            h("gcl-icon", { name: icon })));
-    }
-}
-
 const sorterChanged = 'sorterChanged';
 //@ts-ignore
 class SorterTool extends Tool {
@@ -4786,53 +5070,6 @@ Table.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-table`, Table);
 
-const selectionChanged = 'selectionChanged';
-/**
- * Allows a component to be selected when clicked
- */
-const SelectableMixin = Base => { var _a; return _a = class Selectable extends Base {
-        notifySelectionChanged(selection) {
-            const { selectableValue } = this.props;
-            this.dispatchEvent(new CustomEvent(selectionChanged, {
-                detail: {
-                    child: this,
-                    selectableValue,
-                    selected: selection || this.props.selected // Need to read it again since the property was updated
-                },
-                bubbles: true,
-                composed: true
-            }));
-        }
-    },
-    _a.properties = {
-        /**
-         * Whether the component is selectable
-         */
-        selectable: {
-            type: Boolean,
-            value: true,
-            reflect: true,
-            passToChildren: true // Maybe the children are selectable too
-        },
-        /**
-         * Whether the item is selected
-         */
-        selected: {
-            type: Boolean,
-            mutable: true,
-            reflect: true,
-            //passToChildren: true // Maybe the children want to show some UI that they were selected
-        },
-        /**
-         * The value to select in the event
-         */
-        selectableValue: {
-            attribute: 'selectable-value',
-            type: Object
-        }
-    },
-    _a; };
-
 /**
  * Allows a component to be selected when clicked
  */
@@ -4904,28 +5141,6 @@ ListItem.component = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-list-item`, ListItem);
 
-/**
- * Allows the component to call a handler when the selection has changed
- */
-const SelectionHandlerMixin = Base => { var _a; return _a = class SelectionHandler extends Base {
-        callSelectionChanged(selection) {
-            const { selectionChanged } = this.props;
-            if (selectionChanged !== undefined) {
-                selectionChanged(selection || this.props.selection); // Re-read from the updated selection props
-            }
-        }
-    },
-    _a.properties = {
-        /**
-         * The handler to call when the selection has changed
-         */
-        selectionChanged: {
-            attribute: 'selection-changed',
-            type: Function
-        }
-    },
-    _a; };
-
 const SelectionContainerMixin = Base => { var _a; return _a = 
 //@ts-ignore
 class SelectionContainer extends SelectionHandlerMixin(ContainerMixin(Base)) {
@@ -4969,7 +5184,12 @@ class SelectionContainer extends SelectionHandlerMixin(ContainerMixin(Base)) {
                     selectedChild.setSelected(false);
                 }
                 if (selected === true) {
-                    this.setSelection([selectableValue]);
+                    if (selectableValue !== undefined) {
+                        this.setSelection([selectableValue]);
+                    }
+                    else {
+                        this.setSelection(selection);
+                    }
                     this.setSelectedChild(child);
                 }
                 else {
@@ -6062,205 +6282,104 @@ Select.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-select`, Select);
 
-const dropChanged = 'dropChanged';
 //@ts-ignore
-class DropTool extends Tool {
+class ComboBox extends Field {
     constructor() {
         super();
-        this.iconName = () => {
-            const { showing } = this.state;
-            if (showing === undefined) {
-                return 'chevron-down';
-            }
-            return showing === true ?
-                'chevron-up' :
-                'chevron-down';
-        };
-        this.click = () => {
-            let { showing } = this.state;
-            showing = !showing;
-            this.updateShowing(showing);
-        };
-        this.updateShowing = this.updateShowing.bind(this);
+        this.handleSelection = this.handleSelection.bind(this);
     }
-    hideContent() {
-        this.updateShowing(false);
-    }
-    updateShowing(showing) {
-        this.setShowing(showing);
-        this.dispatchEvent(new CustomEvent(dropChanged, {
-            detail: {
-                showing,
-                dropElement: this // To track the element in a container if needed
-            },
-            bubbles: true,
-            composed: true
-        }));
-    }
-}
-DropTool.state = {
-    showing: {}
-};
-//@ts-ignore
-customElements.define(`${config.tagPrefix}-drop-tool`, DropTool);
-
-// Manages hiding the dropdowns when clicked outside
-let _shown;
-const dropdownManager = {
-    setShown(shown) {
-        _shown = shown;
-    },
-    hideShown(target) {
-        if (_shown !== undefined &&
-            _shown !== target) {
-            _shown.hide();
-        }
-    }
-};
-// Close the dropdown menu if the user clicks outside of it
-window.onclick = function (event) {
-    dropdownManager.hideShown(event.target);
-};
-
-//@ts-ignore
-class Dropdown extends SelectableMixin(SelectionHandlerMixin(CustomElement)) {
-    constructor() {
-        super();
-        this.handleSelectionChanged = this.handleSelectionChanged.bind(this);
-    }
-    connectedCallback() {
-        var _a;
-        (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
-        this.addEventListener(dropChanged, this.onDropChanged);
-    }
-    disconnectedCallback() {
-        var _a;
-        (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
-        this.removeEventListener(dropChanged, this.onDropChanged);
-    }
-    onDropChanged(event) {
-        const { showing } = event.detail;
-        if (showing === true) { // Hide the contents of other showing dropdowns abd set this one as being shown
-            dropdownManager.hideShown(this);
-            dropdownManager.setShown(this);
-        }
-        this.setShowing(showing);
-        event.stopPropagation();
-    }
-    nodeDidConnect(node) {
-        var _a;
-        if (node.tagName !== 'DIV' &&
-            node.className !== 'dropdown') {
-            return;
-        }
-        (_a = super.nodeDidConnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
-        const childNode = node.childNodes[0]; //gcl-row
-        this.dropTool = Array.from(childNode.childNodes).filter(n => n.id === 'drop-tool')[0];
-        const slots = node.querySelectorAll('slot');
-        this.headerSlot = slots[0];
-        const contentSlot = slots[1];
-        if (contentSlot === undefined) {
-            throw Error('The content slot must have a child');
-        }
-        this.contentNode = contentSlot.assignedNodes({ flatten: true })[0];
-        // Set the handler when the selection changes
-        this.contentNode.setProperty('selectionChanged', this.handleSelectionChanged);
-        // Set any initial selection
-        const selection = this.contentNode.props.selection;
-        if ((selection === null || selection === void 0 ? void 0 : selection.length) > 0) {
-            this.handleSelectionChanged(selection);
-        }
-    }
-    async handleSelectionChanged(selection) {
-        //this.setValue(value, this.onValueSet); // Update the current value
-        //this.validate(value); // No need to validate again since this happens on input
-        const { hideOnSelection } = this.props;
-        const { showing } = this.state;
-        if (showing === true &&
-            hideOnSelection === true) {
-            this.hide();
-        }
-        // Update the display of the header
-        const header = this.headerSlot.assignedNodes({ flatten: true })[0];
-        let data = await this.contentNode.getData();
-        if (data.payload !== undefined) {
-            data = data.payload;
-        }
-        const recordId = this.contentNode.props.recordId;
+    handleSelection(selection) {
+        let newValue;
+        const { emptyValue, value } = this.props;
         switch (selection.length) {
             case 0:
                 {
-                    header.setProperty('record', undefined);
+                    newValue = emptyValue;
                 }
                 break;
             case 1:
                 {
-                    const records = data.filter(r => r[recordId] === selection[0]);
-                    const record = records[0];
-                    const { displayField } = this.props;
-                    if (typeof displayField === 'function') {
-                        if ("setContent" in header) {
-                            let node = displayField(record);
-                            if (typeof node === 'string') {
-                                node = markupToVDom(node.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
-                            }
-                            header.setContent(node);
-                        }
-                    }
-                    else {
-                        const displayValue = record[displayField];
-                        header.setContent(displayValue);
-                    }
-                    // header.setProperty('record', record);
+                    newValue = selection[0];
                 }
                 break;
-            default: // Multiple selection
+            default:
                 {
-                    const records = data.filter(r => selection.includes(r[recordId]));
-                    header.setProperty('record', records);
+                    newValue = selection;
                 }
+                break;
         }
-        this.notifySelectionChanged(selection);
-        this.callSelectionChanged(selection);
+        if (value !== newValue) {
+            this.setValue(newValue);
+        }
     }
-    render() {
-        const { showing } = this.state;
-        return (h("div", { tabindex: "0", class: "dropdown" },
-            h("gcl-row", null,
-                h("slot", { id: "header", name: "header" }),
-                h("gcl-drop-tool", { id: "drop-tool" })),
-            h("div", { class: `dropdown-content ${showing ? 'show' : ''}` },
-                h("slot", { name: "content" }))));
+    onValueSet(value) {
+        console.log(value);
     }
-    hide() {
-        this.dropTool.hideContent();
+    [renderField]() {
+        const { 
+        //name,
+        value, loadUrl, autoLoad, size,
+        //required,
+        //disabled
+         } = this.props;
+        return (h("gcl-dropdown", { "selection-changed": this.handleSelection, "display-field": "description" },
+            h("gcl-display", { id: "header", slot: "header" }),
+            h("gcl-data-grid", { id: "content", slot: "content", "load-url": loadUrl, autoLoad: autoLoad, fields: this.getFields, size: size, selection: value === undefined ? value : [...value], "record-id": "description" })));
+        // return (
+        //     <input
+        //         type="text"
+        //         name={name}
+        //         id={name}
+        //         size={size} // Needed for the CSS to get the right size
+        //         //class={this.getCSSClass()}
+        //         //required={required}
+        //         // style={{ maxWidth, width }}
+        //         value={value}
+        //         onInput={this.onInput}
+        //         onChange={this.onChange}
+        //         // onFocus={onFocus}
+        //         onBlur={this.onBlur}
+        //         // title={error}
+        //         // ref={i => this.inputref = i}
+        //         disabled={disabled}
+        //     />
+        // );
+    }
+    getFields() {
+        return [
+            {
+                name: "description",
+                display: "Gender",
+                width: '100%'
+            }
+        ];
     }
 }
-Dropdown.component = {
-    styleUrls: [
-        `${config.assetsFolder}/dropdown/Dropdown.css`
-    ]
-};
-Dropdown.properties = {
-    hideOnSelection: {
-        attribute: 'hide-on-selection',
+// static component = {
+//     styleUrls: [
+//         `${config.assetsFolder}/comboBox/ComboBox.css`
+//     ]
+// };
+ComboBox.properties = {
+    /**
+     * The URL to retrieve the data from
+     */
+    loadUrl: {
+        attribute: 'load-url',
+        type: String,
+        //required: true Loading the form or other component might be optional
+    },
+    /**
+     * Whether to load the data for the component when the component is connected
+     */
+    autoLoad: {
+        attribute: 'auto-load',
         type: Boolean,
         value: true
-    },
-    // The name of the field of the record to display its value in the dropdown header
-    displayField: {
-        attribute: 'display-field',
-        type: oneOf(String, Function),
-        value: 'description'
-    }
-};
-Dropdown.state = {
-    showing: {
-        value: false
     }
 };
 //@ts-ignore
-customElements.define(`${config.tagPrefix}-dropdown`, Dropdown);
+customElements.define(`${config.tagPrefix}-combo-box`, ComboBox);
 
 //@ts-ignore
 class HiddenField extends Field {
@@ -6755,7 +6874,9 @@ class Form extends SubmitableMixin(DataSingleLoadableMixin(ValidatableMixin(Cont
         for (const key in data) {
             if (data.hasOwnProperty(key)) {
                 const field = fieldsMap.get(key);
-                field.setValue(data[key], field.onValueSet);
+                if (field !== undefined) { // There might not be a field configured for the loaded value
+                    field.setValue(data[key], field.onValueSet);
+                }
             }
         }
     }
@@ -7509,4 +7630,4 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
-export { Alert, App, Button, CloseTool, Content, CurrentYear, DataCell, DataGrid, DataRow, DateField, Display, DropTool, Dropdown, FileField, FilterField, FilterPanel, Form, Header, HiddenField, Icon, List, ListItem, LoginSection, MyCounter, MyTable, NavigationBar, NavigationLink, NumberField, OidcProvider, Overlay, Pager, Panel, Router, Row, Select, SelectableRow, SorterTool, Table, Text, TextArea, TextField, ValidationSummary, appCtrl };
+export { Alert, App, Button, CloseTool, ComboBox, Content, CurrentYear, DataCell, DataGrid, DataRow, DateField, Display, DropTool, Dropdown, FileField, FilterField, FilterPanel, Form, Header, HiddenField, Icon, List, ListItem, LoginSection, MyCounter, MyTable, NavigationBar, NavigationLink, NumberField, OidcProvider, Overlay, Pager, Panel, Router, Row, Select, SelectableRow, SorterTool, Table, Text, TextArea, TextField, ValidationSummary, appCtrl };

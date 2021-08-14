@@ -23,6 +23,8 @@ export { Panel } from './components/panel/Panel';
 
 export { Overlay } from './components/overlay/Overlay';
 
+export { Dropdown } from './components/dropdown/Dropdown';
+
 export { Table } from './components/table/Table';
 
 export { ListItem } from './components/list/list-item/ListItem';
@@ -41,7 +43,7 @@ export { TextArea } from './components/field/textArea/TextArea';
 
 export { Select } from './components/field/select/Select';
 
-export { Dropdown } from './components/dropdown/Dropdown';
+export { ComboBox } from './components/field/combobox/ComboBox';
 
 export { HiddenField } from './components/field/hiddenField/HiddenField';
 
