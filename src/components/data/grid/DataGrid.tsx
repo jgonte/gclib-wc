@@ -139,6 +139,7 @@ export class DataGrid extends
             size,
             selectable,
         } = this.props;
+        
         return data.map((record, index) => {
 
             const value = record[recordId];

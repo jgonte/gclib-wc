@@ -105,7 +105,7 @@ const DataMixin = Base =>
 
             if (data === undefined) { // The data has not been cached, load it
 
-                if (this.props.data !== undefined) { // it has local data
+                if (this.props.data !== undefined) { // It has local data
 
                     data = this.props.data;
                 }

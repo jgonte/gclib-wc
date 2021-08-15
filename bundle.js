@@ -4676,7 +4676,7 @@ const DataMixin = Base => { var _a; return _a = class Data extends Base {
             const { fields } = this.props;
             let data = this.data;
             if (data === undefined) { // The data has not been cached, load it
-                if (this.props.data !== undefined) { // it has local data
+                if (this.props.data !== undefined) { // It has local data
                     data = this.props.data;
                 }
                 else { // Request the remote data and return null, since setData will trigger a refresh
@@ -5081,254 +5081,6 @@ Table.properties = {
 };
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-table`, Table);
-
-/**
- * Allows a component to be selected when clicked
- */
-const SelectableOnClickMixin = Base => { var _a; return _a = class SelectableOnClick extends SelectableMixin(Base) {
-        constructor() {
-            super();
-            this.toggleSelect = this.toggleSelect.bind(this);
-        }
-        nodeDidConnect(node) {
-            var _a;
-            (_a = super.nodeDidConnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
-            const { selectable } = this.props;
-            if (selectable === true) {
-                node.addEventListener('click', this.toggleSelect);
-            }
-        }
-        // attributeChangedCallback(attributeName: string, oldValue: string, newValue: string) {
-        //     if (super.attributeChangedCallback) {
-        //         super.attributeChangedCallback(attributeName, oldValue, newValue);
-        //     }
-        //     if (attributeName === "selectable") {
-        //         if (newValue === "true" || newValue === "") {
-        //             this.addEventListener('click', this.toggleSelect);
-        //         }
-        //         else { // newValue === "false"
-        //             if (this.props.selected) { // Unselect if selected
-        //                 this.setSelected(false);
-        //                 this.dispatchEvent(new CustomEvent(selectionChanged, {
-        //                     detail: {
-        //                         child: this,
-        //                         removed: this.props.value
-        //                     },
-        //                     bubbles: true,
-        //                     composed: true
-        //                 }));
-        //             }
-        //             this.removeEventListener('click', this.toggleSelect);
-        //         }
-        //     }
-        // }
-        toggleSelect() {
-            const { selectable, selected } = this.props;
-            if (!selectable) {
-                return;
-            }
-            this.setSelected(!selected);
-            this.notifySelectionChanged(undefined);
-        }
-    },
-    _a.component = {
-        styleUrls: [
-            `${config.assetsFolder}/mixins/selectable/on-click/SelectableOnClick.css`
-        ]
-    },
-    _a; };
-
-class ListItem extends SelectableOnClickMixin(SizableMixin(ChildMixin(CustomElement))) {
-    render() {
-        const { size } = this.props;
-        return (h("li", { size: size },
-            h("slot", null)));
-    }
-}
-ListItem.component = {
-    styleUrls: [
-        `${config.assetsFolder}/list/list-item/ListItem.css`
-    ]
-};
-//@ts-ignore
-customElements.define(`${config.tagPrefix}-list-item`, ListItem);
-
-const SelectionContainerMixin = Base => { var _a; return _a = 
-//@ts-ignore
-class SelectionContainer extends SelectionHandlerMixin(ContainerMixin(Base)) {
-        connectedCallback() {
-            super.connectedCallback();
-            this.updateSelection = this.updateSelection.bind(this);
-            const { selectable } = this.props;
-            if (selectable === true) {
-                this.addEventListener('selectionChanged', this.updateSelection);
-            }
-        }
-        attributeChangedCallback(attributeName, oldValue, newValue) {
-            var _a;
-            (_a = super.attributeChangedCallback) === null || _a === void 0 ? void 0 : _a.call(this, attributeName, oldValue, newValue);
-            if (attributeName === "selectable") {
-                if (newValue === "true" || newValue === "") {
-                    this.addEventListener('selectionChanged', this.updateSelection);
-                }
-                else { // newValue === "false"
-                    this.removeEventListener('selectionChanged', this.updateSelection);
-                }
-            }
-        }
-        updateSelection(e) {
-            const { multiple, selection } = this.props;
-            const { child, selectableValue, selected } = e.detail;
-            if (multiple !== undefined) { // Add values to the selection
-                if (selected === true) {
-                    this.setSelection([...selection, selectableValue]);
-                }
-                else {
-                    const index = selection.indexOf(selectableValue);
-                    selection.splice(index, 1);
-                    this.setSelection(selection);
-                }
-            }
-            else { // Replace the old selection with the new one
-                const { selectedChild } = this.state;
-                // Deselect previous selected child
-                if (selectedChild !== undefined) {
-                    selectedChild.setSelected(false);
-                }
-                if (selected === true) {
-                    if (selectableValue !== undefined) {
-                        this.setSelection([selectableValue]);
-                    }
-                    else {
-                        this.setSelection(selection);
-                    }
-                    this.setSelectedChild(child);
-                }
-                else {
-                    this.setSelection([]);
-                    this.setSelectedChild(undefined);
-                }
-            }
-            this.callSelectionChanged(this.props.selection); // Get the fresh selection from the props
-        }
-        onChildAdded(child) {
-            var _a;
-            (_a = super.onChildAdded) === null || _a === void 0 ? void 0 : _a.call(this, child);
-            // If any of the values of the selection match the value of the child, then set the child as selected
-            const { multiple, selectable } = this.props;
-            const selection = this.props.selection || [];
-            if (selectable !== true) {
-                return;
-            }
-            const childProps = child.props || {};
-            const selectableValue = childProps.selectableValue;
-            if (selection.includes(selectableValue) &&
-                child.setSelected !== undefined) {
-                child.setSelected(true);
-                if (multiple === undefined) { // Set the selected child for single selection model
-                    this.setSelectedChild(child);
-                }
-            }
-        }
-    },
-    _a.properties = {
-        /**
-         * Whether the container is selectable
-         */
-        selectable: {
-            type: Boolean,
-            value: true,
-            reflect: true,
-            passToChildren: true
-        },
-        /**
-         * Whether we can process multiple selection (false by default)
-         */
-        multiple: {
-            type: Boolean,
-            reflect: true
-        },
-        /**
-         * The selected item or items. It is an attribute since it can be passed through a property initally
-         */
-        selection: {
-            type: Array,
-            value: [],
-            mutable: true,
-            reflect: true
-        },
-        /**
-         * The name of the property that identifies the record id
-         */
-        recordId: {
-            attribute: 'record-id',
-            type: String,
-            value: 'id'
-        }
-    },
-    _a.state = {
-        /**
-         * To track the current selected child for a single selection model
-         */
-        selectedChild: {
-            value: undefined
-        }
-    },
-    _a; };
-
-class List extends SelectionContainerMixin(SizableMixin(DataCollectionLoadableMixin(CustomElement))) {
-    render() {
-        return (h(Fragment, null,
-            this.renderLoading(),
-            this.renderError(),
-            h("ul", null, this.renderHeader()),
-            h("ul", null, this.renderData())));
-    }
-    renderHeader() {
-        const { fields } = this.props;
-        if (fields === undefined) {
-            return null;
-        }
-        const fds = typeof fields === 'function' ? fields() : fields;
-        const children = fds.map(f => {
-            const sorter = f.sortable !== false ?
-                (h("gcl-sorter-tool", { field: f.name })) :
-                null;
-            return (h("span", { class: "list-cell", style: {
-                    width: f.width || '100px'
-                } },
-                f.display,
-                sorter));
-        });
-        return (h("gcl-list-item", { selectable: "false" }, children));
-    }
-    renderFields(fields, data) {
-        const { recordId } = this.props;
-        return data.map(record => {
-            const value = record[recordId];
-            const children = fields.map(f => {
-                return (h("span", { class: "list-cell", style: {
-                        width: f.width || '100px'
-                    } }, record[f.name]));
-            });
-            return (h("gcl-list-item", { value: value }, children));
-        });
-    }
-    /**
-     * When there is no data provided to the component, render its children
-     */
-    renderNoData() {
-        return (h("ul", null,
-            h("slot", null)));
-    }
-}
-List.component = {
-    styleUrls: [
-        `${config.assetsFolder}/list/List.css`
-    ]
-};
-//@ts-ignore
-customElements.define(`${config.tagPrefix}-list`, List);
 
 const TargetViewHolderMixin = Base => { var _a; return _a = class TargetViewHolder extends Base {
         /**
@@ -6299,6 +6051,7 @@ class ComboBox extends Field {
     constructor() {
         super();
         this.handleSelection = this.handleSelection.bind(this);
+        this.renderRecord = this.renderRecord.bind(this);
     }
     handleSelection(selection) {
         let newValue;
@@ -6344,7 +6097,9 @@ class ComboBox extends Field {
          } = this.props;
         return (h("gcl-dropdown", { "selection-changed": this.handleSelection, "display-field": displayField },
             h("gcl-display", { id: "header", slot: "header" }),
-            h("gcl-data-grid", { id: "content", slot: "content", "load-url": loadUrl, autoLoad: autoLoad, fields: this.getFields, size: size, selection: value === undefined ? value : [...value], "record-id": valueField })));
+            h("gcl-data-grid", { id: "content", slot: "content", "load-url": loadUrl, autoLoad: autoLoad, fields: this.getFields, 
+                // render-record={this.renderRecord}
+                size: size, selection: value === undefined ? value : [...value], "record-id": valueField, pageable: "false" })));
         // return (
         //     <input
         //         type="text"
@@ -6373,6 +6128,10 @@ class ComboBox extends Field {
                 width: '100%'
             }
         ];
+    }
+    renderRecord(record) {
+        const { displayField } = this.props;
+        return record[displayField];
     }
 }
 // static component = {
@@ -7334,6 +7093,62 @@ CloseTool.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-close-tool`, CloseTool);
 
+/**
+ * Allows a component to be selected when clicked
+ */
+const SelectableOnClickMixin = Base => { var _a; return _a = class SelectableOnClick extends SelectableMixin(Base) {
+        constructor() {
+            super();
+            this.toggleSelect = this.toggleSelect.bind(this);
+        }
+        nodeDidConnect(node) {
+            var _a;
+            (_a = super.nodeDidConnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
+            const { selectable } = this.props;
+            if (selectable === true) {
+                node.addEventListener('click', this.toggleSelect);
+            }
+        }
+        // attributeChangedCallback(attributeName: string, oldValue: string, newValue: string) {
+        //     if (super.attributeChangedCallback) {
+        //         super.attributeChangedCallback(attributeName, oldValue, newValue);
+        //     }
+        //     if (attributeName === "selectable") {
+        //         if (newValue === "true" || newValue === "") {
+        //             this.addEventListener('click', this.toggleSelect);
+        //         }
+        //         else { // newValue === "false"
+        //             if (this.props.selected) { // Unselect if selected
+        //                 this.setSelected(false);
+        //                 this.dispatchEvent(new CustomEvent(selectionChanged, {
+        //                     detail: {
+        //                         child: this,
+        //                         removed: this.props.value
+        //                     },
+        //                     bubbles: true,
+        //                     composed: true
+        //                 }));
+        //             }
+        //             this.removeEventListener('click', this.toggleSelect);
+        //         }
+        //     }
+        // }
+        toggleSelect() {
+            const { selectable, selected } = this.props;
+            if (!selectable) {
+                return;
+            }
+            this.setSelected(!selected);
+            this.notifySelectionChanged(undefined);
+        }
+    },
+    _a.component = {
+        styleUrls: [
+            `${config.assetsFolder}/mixins/selectable/on-click/SelectableOnClick.css`
+        ]
+    },
+    _a; };
+
 //@ts-ignore
 class SelectableRow extends SelectableOnClickMixin(HoverableMixin(SizableMixin(ChildMixin(CustomElement)))) {
     render() {
@@ -7451,6 +7266,129 @@ DataRow.properties = {
 };
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-data-row`, DataRow);
+
+const SelectionContainerMixin = Base => { var _a; return _a = 
+//@ts-ignore
+class SelectionContainer extends SelectionHandlerMixin(ContainerMixin(Base)) {
+        connectedCallback() {
+            super.connectedCallback();
+            this.updateSelection = this.updateSelection.bind(this);
+            const { selectable } = this.props;
+            if (selectable === true) {
+                this.addEventListener('selectionChanged', this.updateSelection);
+            }
+        }
+        attributeChangedCallback(attributeName, oldValue, newValue) {
+            var _a;
+            (_a = super.attributeChangedCallback) === null || _a === void 0 ? void 0 : _a.call(this, attributeName, oldValue, newValue);
+            if (attributeName === "selectable") {
+                if (newValue === "true" || newValue === "") {
+                    this.addEventListener('selectionChanged', this.updateSelection);
+                }
+                else { // newValue === "false"
+                    this.removeEventListener('selectionChanged', this.updateSelection);
+                }
+            }
+        }
+        updateSelection(e) {
+            const { multiple, selection } = this.props;
+            const { child, selectableValue, selected } = e.detail;
+            if (multiple !== undefined) { // Add values to the selection
+                if (selected === true) {
+                    this.setSelection([...selection, selectableValue]);
+                }
+                else {
+                    const index = selection.indexOf(selectableValue);
+                    selection.splice(index, 1);
+                    this.setSelection(selection);
+                }
+            }
+            else { // Replace the old selection with the new one
+                const { selectedChild } = this.state;
+                // Deselect previous selected child
+                if (selectedChild !== undefined) {
+                    selectedChild.setSelected(false);
+                }
+                if (selected === true) {
+                    if (selectableValue !== undefined) {
+                        this.setSelection([selectableValue]);
+                    }
+                    else {
+                        this.setSelection(selection);
+                    }
+                    this.setSelectedChild(child);
+                }
+                else {
+                    this.setSelection([]);
+                    this.setSelectedChild(undefined);
+                }
+            }
+            this.callSelectionChanged(this.props.selection); // Get the fresh selection from the props
+        }
+        onChildAdded(child) {
+            var _a;
+            (_a = super.onChildAdded) === null || _a === void 0 ? void 0 : _a.call(this, child);
+            // If any of the values of the selection match the value of the child, then set the child as selected
+            const { multiple, selectable } = this.props;
+            const selection = this.props.selection || [];
+            if (selectable !== true) {
+                return;
+            }
+            const childProps = child.props || {};
+            const selectableValue = childProps.selectableValue;
+            if (selection.includes(selectableValue) &&
+                child.setSelected !== undefined) {
+                child.setSelected(true);
+                if (multiple === undefined) { // Set the selected child for single selection model
+                    this.setSelectedChild(child);
+                }
+            }
+        }
+    },
+    _a.properties = {
+        /**
+         * Whether the container is selectable
+         */
+        selectable: {
+            type: Boolean,
+            value: true,
+            reflect: true,
+            passToChildren: true
+        },
+        /**
+         * Whether we can process multiple selection (false by default)
+         */
+        multiple: {
+            type: Boolean,
+            reflect: true
+        },
+        /**
+         * The selected item or items. It is an attribute since it can be passed through a property initally
+         */
+        selection: {
+            type: Array,
+            value: [],
+            mutable: true,
+            reflect: true
+        },
+        /**
+         * The name of the property that identifies the record id
+         */
+        recordId: {
+            attribute: 'record-id',
+            type: String,
+            value: 'id'
+        }
+    },
+    _a.state = {
+        /**
+         * To track the current selected child for a single selection model
+         */
+        selectedChild: {
+            value: undefined
+        }
+    },
+    _a; };
 
 /**
  * Allows a component to be pageable
@@ -7662,4 +7600,4 @@ MyCounter.properties = {
 //@ts-ignore
 customElements.define('my-counter', MyCounter);
 
-export { Alert, App, Button, CloseTool, ComboBox, Content, CurrentYear, DataCell, DataGrid, DataRow, DateField, Display, DropTool, Dropdown, FileField, FilterField, FilterPanel, Form, Header, HiddenField, Icon, List, ListItem, LoginSection, MyCounter, MyTable, NavigationBar, NavigationLink, NumberField, OidcProvider, Overlay, Pager, Panel, Router, Row, Select, SelectableRow, SorterTool, Table, Text, TextArea, TextField, ValidationSummary, appCtrl };
+export { Alert, App, Button, CloseTool, ComboBox, Content, CurrentYear, DataCell, DataGrid, DataRow, DateField, Display, DropTool, Dropdown, FileField, FilterField, FilterPanel, Form, Header, HiddenField, Icon, LoginSection, MyCounter, MyTable, NavigationBar, NavigationLink, NumberField, OidcProvider, Overlay, Pager, Panel, Router, Row, Select, SelectableRow, SorterTool, Table, Text, TextArea, TextField, ValidationSummary, appCtrl };

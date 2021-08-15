@@ -27,10 +27,6 @@ export { Dropdown } from './components/dropdown/Dropdown';
 
 export { Table } from './components/table/Table';
 
-export { ListItem } from './components/list/list-item/ListItem';
-
-export { List } from './components/list/List';
-
 export { Pager } from './components/pager/Pager';
 
 export { FilterField } from './components/filter/FilterField';

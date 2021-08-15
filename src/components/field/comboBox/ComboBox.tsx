@@ -35,7 +35,7 @@ export class ComboBox extends Field {
         /**
          * The name of the property to map the value of the option
          */
-         valueField: {
+        valueField: {
             attribute: 'value-field',
             type: String,
             value: 'code'
@@ -44,7 +44,7 @@ export class ComboBox extends Field {
         /**
          * The name of the property to map the description of the option
          */
-         displayField: {
+        displayField: {
             attribute: 'display-field',
             type: String,
             value: 'description'
@@ -56,6 +56,8 @@ export class ComboBox extends Field {
         super();
 
         this.handleSelection = this.handleSelection.bind(this);
+
+        this.renderRecord = this.renderRecord.bind(this);
 
     }
 
@@ -127,14 +129,17 @@ export class ComboBox extends Field {
             <gcl-dropdown selection-changed={this.handleSelection} display-field={displayField}>
                 <gcl-display id="header" slot="header"></gcl-display>
                 <gcl-data-grid
-                    id="content" 
-                    slot="content" 
-                    load-url={loadUrl} 
+                    id="content"
+                    slot="content"
+                    load-url={loadUrl}
                     autoLoad={autoLoad}
-                    fields={this.getFields} 
+                    fields={this.getFields}
+                    // render-record={this.renderRecord}
                     size={size}
                     selection={value === undefined ? value : [...value]}
-                    record-id={valueField}>
+                    record-id={valueField}
+                    pageable="false"
+                >
                 </gcl-data-grid>
             </gcl-dropdown>
         );
@@ -169,6 +174,15 @@ export class ComboBox extends Field {
                 width: '100%'
             }
         ];
+    }
+
+    renderRecord(record) {
+
+        const {
+            displayField
+        } = this.props;
+
+        return record[displayField];
     }
 }
 
