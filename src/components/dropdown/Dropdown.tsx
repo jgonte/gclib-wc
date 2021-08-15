@@ -143,7 +143,7 @@ export class Dropdown extends SelectableMixin(
         this.contentNode = contentSlot.assignedNodes({ flatten: true })[0];
 
         // Set the handler when the selection changes
-        this.contentNode.setProperty('selectionChanged', this.handleSelectionChanged);
+        this.contentNode.setProperty('selection-changed', this.handleSelectionChanged);
 
         // Set any initial selection
         const selection = this.contentNode.props.selection;

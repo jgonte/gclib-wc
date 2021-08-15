@@ -105,14 +105,22 @@ const DataMixin = Base =>
 
             if (data === undefined) { // The data has not been cached, load it
 
-                this.getData().then(data => {
+                if (this.props.data !== undefined) { // it has local data
+
+                    data = this.props.data;
+                }
+                else { // Request the remote data and return null, since setData will trigger a refresh
+
+                    this.getData().then(data => {
                     
-                    this.setData(data);
+                        this.setData(data);
+    
+                        this.data = data;
+                    });
+    
+                    return null;
+                }
 
-                    this.data = data;
-                });
-
-                return null;
             }
 
             // if (data === undefined) {

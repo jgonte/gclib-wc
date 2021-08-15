@@ -120,7 +120,7 @@ const CustomElementMetadataInitializerMixin = Base =>
                         this.setProperty(name, newValue);
                     }
 
-                    callback?.(newValue);
+                    callback?.call(this, newValue);
                 };
 
                 var setterName = this.getSetterName(name);

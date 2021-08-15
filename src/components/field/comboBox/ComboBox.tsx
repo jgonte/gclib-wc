@@ -30,7 +30,25 @@ export class ComboBox extends Field {
             attribute: 'auto-load',
             type: Boolean,
             value: true
-        }
+        },
+
+        /**
+         * The name of the property to map the value of the option
+         */
+         valueField: {
+            attribute: 'value-field',
+            type: String,
+            value: 'code'
+        },
+
+        /**
+         * The name of the property to map the description of the option
+         */
+         displayField: {
+            attribute: 'display-field',
+            type: String,
+            value: 'description'
+        },
     };
 
     constructor() {
@@ -74,9 +92,21 @@ export class ComboBox extends Field {
         }
     }
 
-    onValueSet(value) {
+    onValueSet(newValue) {
 
-        console.log(value);
+        //this.dropdown.setProperty('selection', [newValue]);
+    }
+
+    nodeDidConnect(node: HTMLElement) {
+
+        if (node.tagName !== 'GCL-ROW') { // Root node only
+
+            return;
+        }
+
+        super.nodeDidConnect?.(node);
+
+        this.dropdown = node.childNodes[1]; //gcl-dropdown
     }
 
     [renderField](): ElementNode {
@@ -86,13 +116,15 @@ export class ComboBox extends Field {
             value,
             loadUrl,
             autoLoad,
+            valueField,
+            displayField,
             size,
             //required,
             //disabled
         } = this.props;
 
         return (
-            <gcl-dropdown selection-changed={this.handleSelection} display-field="description">
+            <gcl-dropdown selection-changed={this.handleSelection} display-field={displayField}>
                 <gcl-display id="header" slot="header"></gcl-display>
                 <gcl-data-grid
                     id="content" 
@@ -102,7 +134,7 @@ export class ComboBox extends Field {
                     fields={this.getFields} 
                     size={size}
                     selection={value === undefined ? value : [...value]}
-                    record-id="description">
+                    record-id={valueField}>
                 </gcl-data-grid>
             </gcl-dropdown>
         );

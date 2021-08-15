@@ -3259,7 +3259,7 @@ const CustomElementMetadataInitializerMixin = Base => class CustomElementMetadat
                 else {
                     this.setProperty(name, newValue);
                 }
-                callback === null || callback === void 0 ? void 0 : callback(newValue);
+                callback === null || callback === void 0 ? void 0 : callback.call(this, newValue);
             };
             var setterName = this.getSetterName(name);
             this[setterName] = setter.bind(this);
@@ -3511,9 +3511,16 @@ class CustomElement extends VirtualDomMixin(CustomElementMetadataInitializerMixi
      * @param value The value of the property
      */
     setProperty(attribute, value) {
-        // Get the mapped property
-        const property = this.constructor.propertiesByAttribute[attribute];
-        const name = property !== undefined ? property.name : attribute;
+        // Get the mapped property by the name of the attribute
+        let property = this.constructor.propertiesByAttribute[attribute];
+        if (property === undefined) {
+            // Try to get it by the property name
+            property = this.constructor.properties[attribute];
+            if (property === undefined) {
+                throw Error(`There is no mapped property for attribute: ${attribute} in type: ${this.constructor.name}`);
+            }
+        }
+        const name = property.name;
         const oldValue = this.props[name];
         if (oldValue === value) {
             return;
@@ -4468,7 +4475,7 @@ class Dropdown extends SelectableMixin(SelectionHandlerMixin(CustomElement)) {
         }
         this.contentNode = contentSlot.assignedNodes({ flatten: true })[0];
         // Set the handler when the selection changes
-        this.contentNode.setProperty('selectionChanged', this.handleSelectionChanged);
+        this.contentNode.setProperty('selection-changed', this.handleSelectionChanged);
         // Set any initial selection
         const selection = this.contentNode.props.selection;
         if ((selection === null || selection === void 0 ? void 0 : selection.length) > 0) {
@@ -4669,11 +4676,16 @@ const DataMixin = Base => { var _a; return _a = class Data extends Base {
             const { fields } = this.props;
             let data = this.data;
             if (data === undefined) { // The data has not been cached, load it
-                this.getData().then(data => {
-                    this.setData(data);
-                    this.data = data;
-                });
-                return null;
+                if (this.props.data !== undefined) { // it has local data
+                    data = this.props.data;
+                }
+                else { // Request the remote data and return null, since setData will trigger a refresh
+                    this.getData().then(data => {
+                        this.setData(data);
+                        this.data = data;
+                    });
+                    return null;
+                }
             }
             // if (data === undefined) {
             //     return this.renderNoData();
@@ -6312,19 +6324,27 @@ class ComboBox extends Field {
             this.setValue(newValue);
         }
     }
-    onValueSet(value) {
-        console.log(value);
+    onValueSet(newValue) {
+        //this.dropdown.setProperty('selection', [newValue]);
+    }
+    nodeDidConnect(node) {
+        var _a;
+        if (node.tagName !== 'GCL-ROW') { // Root node only
+            return;
+        }
+        (_a = super.nodeDidConnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
+        this.dropdown = node.childNodes[1]; //gcl-dropdown
     }
     [renderField]() {
         const { 
         //name,
-        value, loadUrl, autoLoad, size,
+        value, loadUrl, autoLoad, valueField, displayField, size,
         //required,
         //disabled
          } = this.props;
-        return (h("gcl-dropdown", { "selection-changed": this.handleSelection, "display-field": "description" },
+        return (h("gcl-dropdown", { "selection-changed": this.handleSelection, "display-field": displayField },
             h("gcl-display", { id: "header", slot: "header" }),
-            h("gcl-data-grid", { id: "content", slot: "content", "load-url": loadUrl, autoLoad: autoLoad, fields: this.getFields, size: size, selection: value === undefined ? value : [...value], "record-id": "description" })));
+            h("gcl-data-grid", { id: "content", slot: "content", "load-url": loadUrl, autoLoad: autoLoad, fields: this.getFields, size: size, selection: value === undefined ? value : [...value], "record-id": valueField })));
         // return (
         //     <input
         //         type="text"
@@ -6376,7 +6396,23 @@ ComboBox.properties = {
         attribute: 'auto-load',
         type: Boolean,
         value: true
-    }
+    },
+    /**
+     * The name of the property to map the value of the option
+     */
+    valueField: {
+        attribute: 'value-field',
+        type: String,
+        value: 'code'
+    },
+    /**
+     * The name of the property to map the description of the option
+     */
+    displayField: {
+        attribute: 'display-field',
+        type: String,
+        value: 'description'
+    },
 };
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-combo-box`, ComboBox);
@@ -6552,25 +6588,21 @@ class FileField extends Field {
             return null;
         }
         const data = Array.isArray(value) ? value : [value]; // Ensure it is an array
-        return (h("gcl-list", { 
-            // id="listWithData"
-            size: size, 
-            // selection='["c"]'
-            // selectable
-            // selectionChanged={this.showSelection}
-            data: data, renderRecord: record => {
+        return (h("gcl-data-grid", { size: size, data: data, "render-record": record => {
                 const { name, size, content } = record;
                 // The content can be either read from the server or selected from a File object
                 const src = content.indexOf('blob:') === -1 ?
                     `data:image/jpeg;base64,${content}` :
                     content;
-                return (h("gcl-list-item", { value: name },
+                return (h("gcl-row", { value: name },
                     h("gcl-text", { "intl-key": "name" }, "Name:"),
                     h("gcl-text", null, name),
                     h("gcl-text", { "intl-key": "size" }, "Size:"),
                     h("gcl-text", null, formatSize(size)),
                     h("img", { style: "width: 48px; height: 48px;", src: src })));
-            } }));
+            }, 
+            // record-id="value" 
+            pageable: "false" }));
     }
 }
 // static component = {
@@ -7444,7 +7476,7 @@ const PageableMixin = Base => { var _a; return _a = class Pageable extends Base 
     _a; };
 
 //@ts-ignore
-class DataGrid extends PageableMixin(DataCollectionLoadableMixin(SelectionContainerMixin(SizableMixin(CustomElement)))) {
+class DataGrid extends PageableMixin(DataCollectionLoadableMixin(SelectionContainerMixin(SelectionHandlerMixin(SizableMixin(CustomElement))))) {
     render() {
         return (h("div", { card: true, style: "background-color: white;" },
             h("div", null,

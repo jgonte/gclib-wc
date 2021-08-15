@@ -6,13 +6,16 @@ import DataCollectionLoadableMixin from '../../mixins/data/DataCollectionLoadabl
 import DataFieldDefinition from '../../mixins/data/DataFieldDefinition';
 import SelectionContainerMixin from '../../mixins/selection-container/SelectionContainerMixin';
 import PageableMixin from '../../mixins/pageable/PageableMixin';
+import SelectionHandlerMixin from '../../mixins/selection/SelectionHandlerMixin';
 
 //@ts-ignore
 export class DataGrid extends
     PageableMixin(
         DataCollectionLoadableMixin(
             SelectionContainerMixin(
-                SizableMixin(CustomElement)
+                SelectionHandlerMixin(
+                    SizableMixin(CustomElement)
+                )               
             )
         )
     ) {

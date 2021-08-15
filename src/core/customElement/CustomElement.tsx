@@ -94,10 +94,21 @@ export default abstract class CustomElement extends
      */
     setProperty(attribute: string, value: any) {
 
-        // Get the mapped property
-        const property = (this.constructor as any).propertiesByAttribute[attribute];
+        // Get the mapped property by the name of the attribute
+        let property = (this.constructor as any).propertiesByAttribute[attribute];
 
-        const name = property !== undefined ? property.name : attribute;
+        if (property === undefined) {
+
+            // Try to get it by the property name
+            property = (this.constructor as any).properties[attribute];
+
+            if (property === undefined) {
+
+                throw Error(`There is no mapped property for attribute: ${attribute} in type: ${this.constructor.name}`)
+            }
+        }
+
+        const name = property.name;
 
         const oldValue = this.props[name];
 

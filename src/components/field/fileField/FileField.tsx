@@ -193,14 +193,10 @@ export class FileField extends Field {
         const data = Array.isArray(value) ? value : [value]; // Ensure it is an array
 
         return (
-            <gcl-list
-                // id="listWithData"
+            <gcl-data-grid
                 size={size}
-                // selection='["c"]'
-                // selectable
-                // selectionChanged={this.showSelection}
                 data={data}
-                renderRecord={record => {
+                render-record={record => {
 
                     const {
                         name,
@@ -214,18 +210,23 @@ export class FileField extends Field {
                         content;
 
                     return (
-                        <gcl-list-item value={name}>
+                        <gcl-row value={name}>
                             <gcl-text intl-key="name">Name:</gcl-text>
                             <gcl-text>{name}</gcl-text>
                             <gcl-text intl-key="size">Size:</gcl-text>
                             <gcl-text>{formatSize(size)}</gcl-text>
                             <img style="width: 48px; height: 48px;" src={src} />
-                        </gcl-list-item>
+                        </gcl-row>
                     );
-                }}>
-
-            </gcl-list>
+                }}
+                // record-id="value" 
+                pageable="false"
+            // selection='["c"]' 
+            // selection-changed="showSelection()"
+            >
+            </gcl-data-grid>
         );
+
     }
 }
 

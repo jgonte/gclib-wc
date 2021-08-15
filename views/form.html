@@ -12,7 +12,9 @@
         }' required>
     </gcl-select> -->
 
-    <gcl-combo-box label="Gender" name="gender" load-url="http://localhost:60314/api/genders"></gcl-combo-box>
+    <gcl-combo-box label="Gender" name="gender" load-url="http://localhost:60314/api/genders" value-field="code"
+        display-field="description">
+    </gcl-combo-box>
 
     <gcl-date-field label="Date of Birth" name="dateOfBirth" required></gcl-date-field>
 
