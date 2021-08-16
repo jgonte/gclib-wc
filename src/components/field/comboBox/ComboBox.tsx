@@ -133,8 +133,8 @@ export class ComboBox extends Field {
                     slot="content"
                     load-url={loadUrl}
                     autoLoad={autoLoad}
-                    fields={this.getFields}
-                    // render-record={this.renderRecord}
+                    //fields={this.getFields}
+                    render-record={this.renderRecord}
                     size={size}
                     selection={value === undefined ? value : [...value]}
                     record-id={valueField}

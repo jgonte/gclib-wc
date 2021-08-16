@@ -23,18 +23,18 @@ const SelectableOnClickMixin = Base =>
             this.toggleSelect = this.toggleSelect.bind(this);
         }
 
-        nodeDidConnect(node: Node) {
+        connectedCallback() {
 
-            super.nodeDidConnect?.(node);
-
-            const {
-                selectable
-            } = this.props;
-
-            if (selectable === true) {
-
-                node.addEventListener('click', this.toggleSelect);
-            }
+            super.connectedCallback?.();
+    
+            this.addEventListener('click', this.toggleSelect);
+        }
+    
+        disconnectedCallback() {
+    
+            super.disconnectedCallback?.();
+    
+            this.removeEventListener('click', this.toggleSelect);
         }
 
         // attributeChangedCallback(attributeName: string, oldValue: string, newValue: string) {

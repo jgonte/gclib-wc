@@ -6097,9 +6097,7 @@ class ComboBox extends Field {
          } = this.props;
         return (h("gcl-dropdown", { "selection-changed": this.handleSelection, "display-field": displayField },
             h("gcl-display", { id: "header", slot: "header" }),
-            h("gcl-data-grid", { id: "content", slot: "content", "load-url": loadUrl, autoLoad: autoLoad, fields: this.getFields, 
-                // render-record={this.renderRecord}
-                size: size, selection: value === undefined ? value : [...value], "record-id": valueField, pageable: "false" })));
+            h("gcl-data-grid", { id: "content", slot: "content", "load-url": loadUrl, autoLoad: autoLoad, "render-record": this.renderRecord, size: size, selection: value === undefined ? value : [...value], "record-id": valueField, pageable: "false" })));
         // return (
         //     <input
         //         type="text"
@@ -7101,14 +7099,28 @@ const SelectableOnClickMixin = Base => { var _a; return _a = class SelectableOnC
             super();
             this.toggleSelect = this.toggleSelect.bind(this);
         }
-        nodeDidConnect(node) {
+        connectedCallback() {
             var _a;
-            (_a = super.nodeDidConnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
-            const { selectable } = this.props;
-            if (selectable === true) {
-                node.addEventListener('click', this.toggleSelect);
-            }
+            (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+            this.addEventListener('click', this.toggleSelect);
         }
+        disconnectedCallback() {
+            var _a;
+            (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+            this.removeEventListener('click', this.toggleSelect);
+        }
+        // nodeDidConnect(node: HTMLElement) {
+        //     if (node.tagName === 'STYLE'){
+        //         return;
+        //     }
+        //     super.nodeDidConnect?.(node);
+        //     const {
+        //         selectable
+        //     } = this.props;
+        //     if (selectable === true) {
+        //         node.addEventListener('click', this.toggleSelect);
+        //     }
+        // }
         // attributeChangedCallback(attributeName: string, oldValue: string, newValue: string) {
         //     if (super.attributeChangedCallback) {
         //         super.attributeChangedCallback(attributeName, oldValue, newValue);
