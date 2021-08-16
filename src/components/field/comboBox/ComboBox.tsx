@@ -94,9 +94,9 @@ export class ComboBox extends Field {
         }
     }
 
-    onValueSet(newValue) {
+    async onValueSet(newValue) {
 
-        //this.dropdown.setProperty('selection', [newValue]);
+        await this.dropdown.handleSelectionChanged([newValue]);
     }
 
     nodeDidConnect(node: HTMLElement) {

@@ -6077,8 +6077,8 @@ class ComboBox extends Field {
             this.setValue(newValue);
         }
     }
-    onValueSet(newValue) {
-        //this.dropdown.setProperty('selection', [newValue]);
+    async onValueSet(newValue) {
+        await this.dropdown.handleSelectionChanged([newValue]);
     }
     nodeDidConnect(node) {
         var _a;
