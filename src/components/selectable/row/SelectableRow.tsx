@@ -31,7 +31,7 @@ export class SelectableRow extends
          */
         children: {
             type: ElementNode,
-            //required: true Not used by derived components
+            //required: true - Not used by derived components, therefore false
         }
     };
 

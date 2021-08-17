@@ -24,6 +24,11 @@ const dropdownManager = {
             return;
         }
 
+        if (Array.from(_shown.childNodes).includes(target)) { // TODO: Check for children recursively?
+
+            return;
+        }
+
         _shown.hide();
     }
 };

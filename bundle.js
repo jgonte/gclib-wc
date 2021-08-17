@@ -4430,6 +4430,9 @@ const dropdownManager = {
             target.dropdown === _shown) {
             return;
         }
+        if (Array.from(_shown.childNodes).includes(target)) { // TODO: Check for children recursively?
+            return;
+        }
         _shown.hide();
     }
 };
@@ -7176,7 +7179,7 @@ SelectableRow.properties = {
      */
     children: {
         type: ElementNode,
-        //required: true Not used by derived components
+        //required: true - Not used by derived components, therefore false
     }
 };
 //@ts-ignore
