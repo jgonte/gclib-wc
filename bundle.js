@@ -4422,15 +4422,20 @@ const dropdownManager = {
         _shown = shown;
     },
     hideShown(target) {
-        if (_shown !== undefined &&
-            _shown !== target) {
-            _shown.hide();
+        if (_shown === undefined ||
+            _shown === target) {
+            return;
         }
+        if (target.dropdown !== undefined &&
+            target.dropdown === _shown) {
+            return;
+        }
+        _shown.hide();
     }
 };
 // Close the dropdown menu if the user clicks outside of it
 window.onclick = function (event) {
-    //dropdownManager.hideShown(event.target);
+    dropdownManager.hideShown(event.target);
 };
 
 //@ts-ignore
@@ -7109,18 +7114,6 @@ const SelectableOnClickMixin = Base => { var _a; return _a = class SelectableOnC
             (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
             this.removeEventListener('click', this.toggleSelect);
         }
-        // nodeDidConnect(node: HTMLElement) {
-        //     if (node.tagName === 'STYLE'){
-        //         return;
-        //     }
-        //     super.nodeDidConnect?.(node);
-        //     const {
-        //         selectable
-        //     } = this.props;
-        //     if (selectable === true) {
-        //         node.addEventListener('click', this.toggleSelect);
-        //     }
-        // }
         // attributeChangedCallback(attributeName: string, oldValue: string, newValue: string) {
         //     if (super.attributeChangedCallback) {
         //         super.attributeChangedCallback(attributeName, oldValue, newValue);
