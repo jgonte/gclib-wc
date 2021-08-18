@@ -1,4 +1,5 @@
 import ContainerMixin from "../../../core/mixins/ContainerMixin";
+import { selectionChanged } from "../selectable/SelectableMixin";
 import SelectionHandlerMixin from "../selection/SelectionHandlerMixin";
 
 const SelectionContainerMixin = Base =>
@@ -72,7 +73,21 @@ const SelectionContainerMixin = Base =>
 
             if (selectable === true) {
 
-                this.addEventListener('selectionChanged', this.updateSelection);
+                this.addEventListener(selectionChanged, this.updateSelection);
+            }
+        }
+
+        disconnectedCallback() {
+
+            super.disconnectedCallback();
+
+            const {
+                selectable
+            } = this.props;
+
+            if (selectable === true) {
+
+                this.removeEventListener(selectionChanged, this.updateSelection);
             }
         }
 
@@ -84,7 +99,7 @@ const SelectionContainerMixin = Base =>
 
                 if (newValue === "true" || newValue === "") {
 
-                    this.addEventListener('selectionChanged', this.updateSelection);
+                    this.addEventListener(selectionChanged, this.updateSelection);
                 }
                 else { // newValue === "false"
 
@@ -93,32 +108,32 @@ const SelectionContainerMixin = Base =>
             }
         }
 
-        updateSelection(e) {
+        updateSelection(event) {
 
             const {
                 multiple,
-                selection
+                selection: oldSelection
             } = this.props;
 
             const {
                 child,
                 selectableValue,
-                selected
-            } = e.detail;
+                selection
+            } = event.detail;
 
             if (multiple !== undefined) { // Add values to the selection
 
-                if (selected === true) {
+                if (selection !== undefined) {
 
-                    this.setSelection([...selection, selectableValue]);
+                    this.setSelection([...oldSelection, selectableValue]);
                 }
                 else {
 
-                    const index = selection.indexOf(selectableValue);
+                    const index = oldSelection.indexOf(selectableValue);
 
-                    selection.splice(index, 1);
+                    oldSelection.splice(index, 1);
 
-                    this.setSelection(selection);
+                    this.setSelection(oldSelection);
                 }
             }
             else { // Replace the old selection with the new one
@@ -133,16 +148,9 @@ const SelectionContainerMixin = Base =>
                     selectedChild.setSelected(false);
                 }
 
-                if (selected === true) {
+                if (selection !== undefined) {
 
-                    if (selectableValue !== undefined) {
-
-                        this.setSelection([selectableValue]);
-                    }
-                    else {
-
-                        this.setSelection(selection);
-                    }
+                    this.setSelection(selection);
                     
                     this.setSelectedChild(child);
                 }

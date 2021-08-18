@@ -4301,8 +4301,8 @@ const SelectableMixin = Base => { var _a; return _a = class Selectable extends B
             this.dispatchEvent(new CustomEvent(selectionChanged, {
                 detail: {
                     child: this,
-                    selectableValue,
-                    selected: selection || this.props.selected // Need to read it again since the property was updated
+                    selection,
+                    selectableValue // Needed to determine what value to remove in a multiple selection when the new selection is undefined
                 },
                 bubbles: true,
                 composed: true
@@ -5528,6 +5528,36 @@ class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(Valued
         this.onInput = this.onInput.bind(this);
         this.onChange = this.onChange.bind(this);
     }
+    connectedCallback() {
+        var _a;
+        (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        this.addEventListener(selectionChanged, this.handleSelectionChanged);
+    }
+    disconnectedCallback() {
+        var _a;
+        (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
+        this.removeEventListener(selectionChanged, this.handleSelectionChanged);
+    }
+    handleSelectionChanged(event) {
+        let { selection } = event.detail;
+        selection = selection || [];
+        switch (selection.length) {
+            case 0: // No selection
+                {
+                    this.validate(undefined);
+                }
+                break;
+            case 1: // Single selection
+                {
+                    this.validate(selection[0]);
+                }
+                break;
+            default:
+                {
+                    this.validate(selection);
+                }
+        }
+    }
     [renderWhenVisible]() {
         const { validationWarnings, validationErrors } = this.state;
         const { size } = this.props;
@@ -5570,7 +5600,7 @@ class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(Valued
     // }
     attributeChangedCallback(attributeName, oldValue, newValue) {
         if (attributeName === 'required') {
-            if (newValue === "true") { // Add a required validator
+            if (newValue !== "false") { // Add a required validator
                 if (!this.hasRequiredValidator()) {
                     const { validators = [] } = this.props;
                     this.setValidators([...validators, new RequiredValidator()]);
@@ -5605,7 +5635,7 @@ class Field extends VisibleMixin(ValidatableMixin(SizableMixin(ChildMixin(Valued
         if (label === undefined) {
             label = name;
         }
-        else if (label.isVirtualText) {
+        else if (label.isText) {
             label = label.text;
         }
         // Reset warnings and errors
@@ -7142,12 +7172,15 @@ const SelectableOnClickMixin = Base => { var _a; return _a = class SelectableOnC
         //     }
         // }
         toggleSelect() {
-            const { selectable, selected } = this.props;
+            const { selectable, selectableValue } = this.props;
             if (!selectable) {
                 return;
             }
-            this.setSelected(!selected);
-            this.notifySelectionChanged(undefined);
+            let { selected } = this.props;
+            selected = !selected; // Toggle
+            this.setSelected(selected);
+            const selection = selected === true ? [selectableValue] : undefined;
+            this.notifySelectionChanged(selection);
         }
     },
     _a.component = {
@@ -7283,7 +7316,14 @@ class SelectionContainer extends SelectionHandlerMixin(ContainerMixin(Base)) {
             this.updateSelection = this.updateSelection.bind(this);
             const { selectable } = this.props;
             if (selectable === true) {
-                this.addEventListener('selectionChanged', this.updateSelection);
+                this.addEventListener(selectionChanged, this.updateSelection);
+            }
+        }
+        disconnectedCallback() {
+            super.disconnectedCallback();
+            const { selectable } = this.props;
+            if (selectable === true) {
+                this.removeEventListener(selectionChanged, this.updateSelection);
             }
         }
         attributeChangedCallback(attributeName, oldValue, newValue) {
@@ -7291,24 +7331,24 @@ class SelectionContainer extends SelectionHandlerMixin(ContainerMixin(Base)) {
             (_a = super.attributeChangedCallback) === null || _a === void 0 ? void 0 : _a.call(this, attributeName, oldValue, newValue);
             if (attributeName === "selectable") {
                 if (newValue === "true" || newValue === "") {
-                    this.addEventListener('selectionChanged', this.updateSelection);
+                    this.addEventListener(selectionChanged, this.updateSelection);
                 }
                 else { // newValue === "false"
                     this.removeEventListener('selectionChanged', this.updateSelection);
                 }
             }
         }
-        updateSelection(e) {
-            const { multiple, selection } = this.props;
-            const { child, selectableValue, selected } = e.detail;
+        updateSelection(event) {
+            const { multiple, selection: oldSelection } = this.props;
+            const { child, selectableValue, selection } = event.detail;
             if (multiple !== undefined) { // Add values to the selection
-                if (selected === true) {
-                    this.setSelection([...selection, selectableValue]);
+                if (selection !== undefined) {
+                    this.setSelection([...oldSelection, selectableValue]);
                 }
                 else {
-                    const index = selection.indexOf(selectableValue);
-                    selection.splice(index, 1);
-                    this.setSelection(selection);
+                    const index = oldSelection.indexOf(selectableValue);
+                    oldSelection.splice(index, 1);
+                    this.setSelection(oldSelection);
                 }
             }
             else { // Replace the old selection with the new one
@@ -7317,13 +7357,8 @@ class SelectionContainer extends SelectionHandlerMixin(ContainerMixin(Base)) {
                 if (selectedChild !== undefined) {
                     selectedChild.setSelected(false);
                 }
-                if (selected === true) {
-                    if (selectableValue !== undefined) {
-                        this.setSelection([selectableValue]);
-                    }
-                    else {
-                        this.setSelection(selection);
-                    }
+                if (selection !== undefined) {
+                    this.setSelection(selection);
                     this.setSelectedChild(child);
                 }
                 else {

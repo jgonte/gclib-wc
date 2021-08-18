@@ -8,6 +8,7 @@ import VisibleMixin, { renderWhenVisible } from '../mixins/visible/VisibleMixin'
 import { DataFieldModel, RequiredValidator } from 'gclib-utils';
 import Validator from 'gclib-utils/dist/types/data/validation/validators/Validator';
 import ValuedMixin from '../mixins/valued/ValuedMixin';
+import { selectionChanged } from '../mixins/selectable/SelectableMixin';
 
 export const renderField = Symbol('renderField');
 
@@ -19,7 +20,7 @@ export abstract class Field extends
                 ChildMixin(
                     ValuedMixin(
                         CustomElement
-                    )        
+                    )
                 )
             )
         )
@@ -74,6 +75,47 @@ export abstract class Field extends
         this.onInput = this.onInput.bind(this);
 
         this.onChange = this.onChange.bind(this);
+    }
+
+    connectedCallback() {
+
+        super.connectedCallback?.();
+
+        this.addEventListener(selectionChanged, this.handleSelectionChanged);
+    }
+
+    disconnectedCallback() {
+
+        super.disconnectedCallback?.();
+
+        this.removeEventListener(selectionChanged, this.handleSelectionChanged);
+    }
+
+    handleSelectionChanged(event) {
+
+        let {
+            selection
+        } = event.detail;
+
+        selection = selection || [];
+
+        switch (selection.length) {
+
+            case 0: // No selection
+                {
+                    this.validate(undefined);
+                }
+                break;
+            case 1: // Single selection
+                {
+                    this.validate(selection[0]);
+                }
+                break;
+            default:
+                {
+                    this.validate(selection);
+                }
+        }
     }
 
     [renderWhenVisible]() {
@@ -166,7 +208,7 @@ export abstract class Field extends
 
         if (attributeName === 'required') {
 
-            if (newValue === "true") { // Add a required validator
+            if (newValue !== "false") { // Add a required validator
 
                 if (!this.hasRequiredValidator()) {
 
@@ -228,7 +270,7 @@ export abstract class Field extends
 
             label = name;
         }
-        else if (label.isVirtualText) {
+        else if (label.isText) {
 
             label = label.text;
         }

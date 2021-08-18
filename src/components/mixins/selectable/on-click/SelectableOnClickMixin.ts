@@ -75,7 +75,7 @@ const SelectableOnClickMixin = Base =>
 
             const {
                 selectable,
-                selected
+                selectableValue                
             } = this.props;
 
             if (!selectable) {
@@ -83,9 +83,17 @@ const SelectableOnClickMixin = Base =>
                 return;
             }
 
-            this.setSelected(!selected);
+            let {
+                selected
+            } = this.props;
 
-            this.notifySelectionChanged(undefined);
+            selected = !selected; // Toggle
+
+            this.setSelected(selected);
+
+            const selection = selected === true ? [selectableValue] : undefined;
+
+            this.notifySelectionChanged(selection);
         }
     };
 

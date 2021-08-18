@@ -47,8 +47,8 @@ const SelectableMixin = Base =>
             this.dispatchEvent(new CustomEvent(selectionChanged, {
                 detail: {
                     child: this,
-                    selectableValue,
-                    selected: selection || this.props.selected // Need to read it again since the property was updated
+                    selection,
+                    selectableValue // Needed to determine what value to remove in a multiple selection when the new selection is undefined
                 },
                 bubbles: true,
                 composed: true
