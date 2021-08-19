@@ -46,6 +46,7 @@ export class DateField extends MinMaxMixin(Field) {
                 //required={required}
                 style={{ minWidth: '150px' }}
                 value={value !== undefined ? formatDate(value) : undefined}
+                onInput={this.onInput}
                 onChange={this.onChange}
                 // onFocus={onFocus}
                 onBlur={this.onBlur}

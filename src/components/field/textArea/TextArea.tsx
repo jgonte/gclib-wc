@@ -47,7 +47,7 @@ export class TextArea extends Field {
                 //required={required}
                 // style={{ maxWidth, width }}
                 // className={inputClass}
-
+                onInput={this.onInput}
                 onChange={this.onChange}
                 // onFocus={onFocus}
                 onBlur={this.onBlur}

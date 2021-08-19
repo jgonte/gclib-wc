@@ -5795,7 +5795,7 @@ class TextArea extends Field {
             //required={required}
             // style={{ maxWidth, width }}
             // className={inputClass}
-            onChange: this.onChange, 
+            onInput: this.onInput, onChange: this.onChange, 
             // onFocus={onFocus}
             onBlur: this.onBlur, 
             // title={error}
@@ -6250,7 +6250,7 @@ class NumberField extends MinMaxMixin(Field) {
             //required={required}
             // style={{ maxWidth, width }}
             // className={inputClass}
-            value: value, onChange: this.onChange, 
+            value: value, onInput: this.onInput, onChange: this.onChange, 
             // onFocus={onFocus}
             onBlur: this.onBlur, 
             // title={error}
@@ -6281,7 +6281,7 @@ class DateField extends MinMaxMixin(Field) {
             //class={this.getCSSClass()}
             min: min, max: max, size: size, 
             //required={required}
-            style: { minWidth: '150px' }, value: value !== undefined ? formatDate(value) : undefined, onChange: this.onChange, 
+            style: { minWidth: '150px' }, value: value !== undefined ? formatDate(value) : undefined, onInput: this.onInput, onChange: this.onChange, 
             // onFocus={onFocus}
             onBlur: this.onBlur, 
             // title={error}

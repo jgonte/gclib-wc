@@ -39,6 +39,7 @@ export class NumberField extends MinMaxMixin(Field) {
                 // style={{ maxWidth, width }}
                 // className={inputClass}
                 value={value}
+                onInput={this.onInput}
                 onChange={this.onChange}
                 // onFocus={onFocus}
                 onBlur={this.onBlur}
