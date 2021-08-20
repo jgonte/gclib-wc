@@ -1,4 +1,5 @@
-import { TextNode, diff, FragmentNode } from 'gclib-vdom';
+import { TextNode, diff, FragmentNode, NodeChanges } from 'gclib-vdom';
+import VirtualNode from 'gclib-vdom/dist/types/nodes/VirtualNode';
 
 /**
  * Connects the CustomElement or the FunctionalComponent to the virtual dom rendering cycle
@@ -12,30 +13,75 @@ const VirtualDomMixin = Base =>
          */
         private _isUpdating: boolean = false;
 
+        /**
+         * The new node being mounted/updated
+         */
+        private _mountingNode: VirtualNode;
+
         // The props and children are ignored for custom elements but they are needed for Functional Components
         // so they are included in the constructor
         constructor(props?: any, children?: any) {
 
             super(props, children);
 
-            if (this.nodeDidConnect !== undefined) {
+            this.nodeWillConnect = this.nodeWillConnect.bind(this);
 
-                this.nodeDidConnect = this.nodeDidConnect.bind(this);
+            this.nodeDidConnect = this.nodeDidConnect.bind(this);
+
+            this.nodeDidUpdate = this.nodeDidUpdate.bind(this);
+
+            this.nodeWillDisconnect = this.nodeWillDisconnect.bind(this);
+        }
+
+        nodeWillConnect(node: HTMLElement) {
+
+            super.nodeWillConnect?.(node);
+
+            if (node === this._mountingNode.dom &&
+                this.elementWillConnect !== undefined) {
+
+                console.log(`Calling elementWillConnect in element of type: ${this.constructor.name} and node id: ${node.id}`);
+
+                this.elementWillConnect(node);
             }
+        }
 
-            if (this.nodeWillConnect !== undefined) {
+        nodeDidConnect(node: HTMLElement) {
 
-                this.nodeWillConnect = this.nodeWillConnect.bind(this);
+            super.nodeDidConnect?.(node);
+
+            if (node === this._mountingNode.dom &&
+                this.elementDidConnect !== undefined) {
+
+                console.log(`Calling elementDidConnect in element of type: ${this.constructor.name} and node id: ${node.id}`);
+
+                this.elementDidConnect(node);
             }
+        }
 
-            if (this.nodeDidUpdate !== undefined) {
+        nodeDidUpdate(node: HTMLElement, nodeChanges: NodeChanges) {
 
-                this.nodeDidUpdate = this.nodeDidUpdate.bind(this);
+            super.nodeDidUpdate?.(node);
+
+            if (node === this._mountingNode.dom &&
+                this.elementDidUpdate !== undefined) {
+
+                console.log(`Calling elementDidUpdate in element of type: ${this.constructor.name} and node id: ${node.id}`);
+
+                this.elementDidUpdate(node, nodeChanges);
             }
+        }
 
-            if (this.nodeWillDisconnect !== undefined) {
+        nodeWillDisconnect(node: HTMLElement) {
 
-                this.nodeWillDisconnect = this.nodeWillDisconnect.bind(this);
+            super.nodeWillDisconnect?.(node);
+
+            if (node === this._mountingNode.dom &&
+                this.elementWillDisconnect !== undefined) {
+
+                console.log(`Calling elementWillDisconnect in element of type: ${this.constructor.name} and node id: ${node.id}`);
+
+                this.elementWillDisconnect(node);
             }
         }
 
@@ -51,7 +97,8 @@ const VirtualDomMixin = Base =>
                 return dom;
             }
 
-            // Once the document fragment is appended to its parent element. It looses all its children, so we need its parent element to apply the diff
+            // Once the document fragment is appended to its parent element. It looses all its children, 
+            // so we need its parent element to apply the diff
             if (dom instanceof DocumentFragment) {
 
                 return dom.parentElement || this.document;
@@ -101,6 +148,8 @@ const VirtualDomMixin = Base =>
                 node = new TextNode(node);
             }
 
+            this._mountingNode = node; // Set this so we can trigger the lifecycle of the element, but before we add styles
+
             // Modify the virtual node if necessary (i.e. add style) before diffing it, to keep it consistent with the mounted one
             if (this.onBeforeMount !== undefined) {
 
@@ -117,41 +166,13 @@ const VirtualDomMixin = Base =>
                 return false; // Nothing to mount   
             }
 
-            if (previousNode === undefined) { // Will mount
-
-                if (node !== null) {
-
-                    this.willMount?.();
-                }
-                // else { node === null
-
-                //     Do nothing
-                // }
+            if (previousNode === undefined) { // Mount
 
                 patches.applyPatches(this.document, undefined, this as any);
-
-                if (node != null) {
-
-                    this.didMount?.();
-                }
             }
             else { // previousNode !== undefined
 
-                if (node === null) {
-
-                    this.willUnmount?.();
-                }
-                else { // node !== null
-
-                    this.willUpdate?.();
-                }
-
                 patches.applyPatches(this.document, this.rootElement, this as any);
-
-                if (node != null) {
-
-                    this.didUpdate?.();
-                }
             }
 
             // Set the new mounted node

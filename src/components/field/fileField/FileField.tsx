@@ -112,9 +112,9 @@ export class FileField extends Field {
         this.document.getElementById(name).click();
     }
 
-    // nodeDidUpdate(node, nodeChanges) {
+    // elementDidUpdate(node, nodeChanges) {
 
-    //     super.nodeDidUpdate?.(node, nodeChanges);
+    //     super.elementDidUpdate?.(node, nodeChanges);
 
     //     const {
     //         name,

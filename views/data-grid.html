@@ -137,9 +137,13 @@
         selection='["c"]' selection-changed="showSelection()">
     </gcl-data-grid>
 
+    <h4>Grid with remote data</h4>
+
     <gcl-data-grid id="contactsList" load-url="http://localhost:60314/api/contacts" fields="getFields()" size="small"
         selection='[2]' selection-changed="showSelection()">
     </gcl-data-grid>
+
+    <h4>Grid with remote data and multiple selection</h4>
 
     <gcl-data-grid id="contactsListMultiple" load-url="http://localhost:60314/api/contacts" fields="getFields()"
         size="medium" selection='[1,3]' multiple selection-changed="showSelection()">

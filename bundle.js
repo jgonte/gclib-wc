@@ -2301,11 +2301,9 @@ function callHook(node, name, hooks) {
     var component = node.component;
     if (component !== undefined &&
         component[name] !== undefined) {
-        console.log("Calling hook: '" + name + "' of component: '" + component.constructor.name + "'");
         component[name](node);
     }
     else if (hooks[name] !== undefined) {
-        console.log("Calling hook: '" + name + "' of element: '" + hooks.constructor.name + "'");
         hooks[name](node);
     }
 }
@@ -3369,17 +3367,45 @@ const VirtualDomMixin = Base => class VirtualDom extends Base {
          * Flag to avoid re-requesting update if it is alaready requested
          */
         this._isUpdating = false;
-        if (this.nodeDidConnect !== undefined) {
-            this.nodeDidConnect = this.nodeDidConnect.bind(this);
+        this.nodeWillConnect = this.nodeWillConnect.bind(this);
+        this.nodeDidConnect = this.nodeDidConnect.bind(this);
+        this.nodeDidUpdate = this.nodeDidUpdate.bind(this);
+        this.nodeWillDisconnect = this.nodeWillDisconnect.bind(this);
+    }
+    nodeWillConnect(node) {
+        var _a;
+        (_a = super.nodeWillConnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
+        if (node === this._mountingNode.dom &&
+            this.elementWillConnect !== undefined) {
+            console.log(`Calling elementWillConnect in element of type: ${this.constructor.name} and node id: ${node.id}`);
+            this.elementWillConnect(node);
         }
-        if (this.nodeWillConnect !== undefined) {
-            this.nodeWillConnect = this.nodeWillConnect.bind(this);
+    }
+    nodeDidConnect(node) {
+        var _a;
+        (_a = super.nodeDidConnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
+        if (node === this._mountingNode.dom &&
+            this.elementDidConnect !== undefined) {
+            console.log(`Calling elementDidConnect in element of type: ${this.constructor.name} and node id: ${node.id}`);
+            this.elementDidConnect(node);
         }
-        if (this.nodeDidUpdate !== undefined) {
-            this.nodeDidUpdate = this.nodeDidUpdate.bind(this);
+    }
+    nodeDidUpdate(node, nodeChanges) {
+        var _a;
+        (_a = super.nodeDidUpdate) === null || _a === void 0 ? void 0 : _a.call(this, node);
+        if (node === this._mountingNode.dom &&
+            this.elementDidUpdate !== undefined) {
+            console.log(`Calling elementDidUpdate in element of type: ${this.constructor.name} and node id: ${node.id}`);
+            this.elementDidUpdate(node, nodeChanges);
         }
-        if (this.nodeWillDisconnect !== undefined) {
-            this.nodeWillDisconnect = this.nodeWillDisconnect.bind(this);
+    }
+    nodeWillDisconnect(node) {
+        var _a;
+        (_a = super.nodeWillDisconnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
+        if (node === this._mountingNode.dom &&
+            this.elementWillDisconnect !== undefined) {
+            console.log(`Calling elementWillDisconnect in element of type: ${this.constructor.name} and node id: ${node.id}`);
+            this.elementWillDisconnect(node);
         }
     }
     /**
@@ -3390,7 +3416,8 @@ const VirtualDomMixin = Base => class VirtualDom extends Base {
         if (dom === undefined) {
             return dom;
         }
-        // Once the document fragment is appended to its parent element. It looses all its children, so we need its parent element to apply the diff
+        // Once the document fragment is appended to its parent element. It looses all its children, 
+        // so we need its parent element to apply the diff
         if (dom instanceof DocumentFragment) {
             return dom.parentElement || this.document;
         }
@@ -3407,7 +3434,6 @@ const VirtualDomMixin = Base => class VirtualDom extends Base {
         });
     }
     update() {
-        var _a, _b, _c, _d, _e;
         let node = this.render();
         if (node === undefined) {
             console.error('Undefined virtual node. Ensure that you return the node from the render function');
@@ -3422,6 +3448,7 @@ const VirtualDomMixin = Base => class VirtualDom extends Base {
             nodeType === 'boolean') {
             node = new TextNode(node);
         }
+        this._mountingNode = node; // Set this so we can trigger the lifecycle of the element, but before we add styles
         // Modify the virtual node if necessary (i.e. add style) before diffing it, to keep it consistent with the mounted one
         if (this.onBeforeMount !== undefined) {
             node = this.onBeforeMount(node);
@@ -3432,30 +3459,11 @@ const VirtualDomMixin = Base => class VirtualDom extends Base {
         if (!patches.hasPatches()) {
             return false; // Nothing to mount   
         }
-        if (previousNode === undefined) { // Will mount
-            if (node !== null) {
-                (_a = this.willMount) === null || _a === void 0 ? void 0 : _a.call(this);
-            }
-            // else { node === null
-            //     Do nothing
-            // }
+        if (previousNode === undefined) { // Mount
             patches.applyPatches(this.document, undefined, this);
-            if (node != null) {
-                (_b = this.didMount) === null || _b === void 0 ? void 0 : _b.call(this);
-            }
         }
         else { // previousNode !== undefined
-            if (node === null) {
-                (_c = this.willUnmount) === null || _c === void 0 ? void 0 : _c.call(this);
-            }
-            else { // node !== null
-                (_d = this.willUpdate) === null || _d === void 0 ? void 0 : _d.call(// node !== null
-                this);
-            }
             patches.applyPatches(this.document, this.rootElement, this);
-            if (node != null) {
-                (_e = this.didUpdate) === null || _e === void 0 ? void 0 : _e.call(this);
-            }
         }
         // Set the new mounted node
         this.mountedVNode = node;
@@ -3842,7 +3850,9 @@ const ContainerMixin = Base => { var _a; return _a = class Container extends Bas
             const children = event.target.assignedElements();
             children.forEach(child => this.addChild(child));
         }
-        didMount() {
+        elementDidConnect(node) {
+            var _a;
+            (_a = super.elementDidConnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
             if (this.shadowRoot === null) {
                 return;
             }
@@ -3859,7 +3869,9 @@ const ContainerMixin = Base => { var _a; return _a = class Container extends Bas
                 slot.addEventListener('slotchange', this.addSlottedChildren);
             }
         }
-        willUnmount() {
+        elementWillDisconnect(node) {
+            var _a;
+            (_a = super.elementWillDisconnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
             if (this.shadowRoot === null) {
                 return;
             }
@@ -3869,10 +3881,8 @@ const ContainerMixin = Base => { var _a; return _a = class Container extends Bas
                 slot.removeEventListener('slotchange', this.addSlottedChildren);
             }
         }
-        // nodeDidUpdate(node, nodeChanges) {
-        //     if (super.nodeDidUpdate) {
-        //         super.nodeDidUpdate(node, nodeChanges);
-        //     }
+        // elementDidUpdate(node, nodeChanges) {
+        //     super.elementDidUpdate?.(node, nodeChanges);
         //     const {
         //         hasChildren,
         //         children
@@ -4466,13 +4476,9 @@ class Dropdown extends SelectableMixin(SelectionHandlerMixin(CustomElement)) {
         this.setShowing(showing);
         event.stopPropagation();
     }
-    nodeDidConnect(node) {
+    elementDidConnect(node, changes) {
         var _a;
-        if (node.tagName !== 'DIV' &&
-            node.className !== 'dropdown') {
-            return;
-        }
-        (_a = super.nodeDidConnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
+        (_a = super.elementDidConnect) === null || _a === void 0 ? void 0 : _a.call(this, node);
         const childNode = node.childNodes[0]; //gcl-row
         this.dropTool = Array.from(childNode.childNodes).filter(n => n.id === 'drop-tool')[0];
         const slots = node.querySelectorAll('slot');
@@ -4490,24 +4496,20 @@ class Dropdown extends SelectableMixin(SelectionHandlerMixin(CustomElement)) {
             this.handleSelectionChanged(selection);
         }
     }
-    async handleSelectionChanged(selection) {
-        //this.setValue(value, this.onValueSet); // Update the current value
-        //this.validate(value); // No need to validate again since this happens on input
-        const { hideOnSelection } = this.props;
-        const { showing } = this.state;
-        if (showing === true &&
-            hideOnSelection === true) {
-            this.hide();
-        }
+    async updateHeader(selection) {
         // Update the display of the header
         const header = this.headerSlot.assignedNodes({ flatten: true })[0];
-        if (this.contentData === undefined) {
-            this.contentData = await this.contentNode.getData();
-            if (this.contentData.payload !== undefined) {
-                this.contentData = this.contentData.payload;
-            }
+        if (header === undefined) {
+            return;
         }
-        const recordId = this.contentNode.props.recordId;
+        if (this.contentNode.data === undefined) {
+            this.contentNode.data = await this.contentNode.getData();
+        }
+        const { recordId } = this.contentNode.props;
+        let { data } = this.contentNode;
+        if (data.payload !== undefined) {
+            data = data.payload;
+        }
         switch (selection.length) {
             case 0:
                 {
@@ -4519,31 +4521,46 @@ class Dropdown extends SelectableMixin(SelectionHandlerMixin(CustomElement)) {
                 break;
             case 1:
                 {
-                    const records = this.contentData.filter(r => r[recordId] === selection[0]);
-                    const record = records[0];
-                    const { displayField } = this.props;
-                    if (typeof displayField === 'function') {
-                        if ("setContent" in header) {
-                            let node = displayField(record);
-                            if (typeof node === 'string') {
-                                node = markupToVDom(node.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
+                    const records = data.filter(r => r[recordId] === selection[0]);
+                    if (records.length > 0) {
+                        const record = records[0];
+                        const { displayField } = this.props;
+                        if (typeof displayField === 'function') {
+                            if ("setContent" in header) {
+                                let node = displayField(record);
+                                if (typeof node === 'string') {
+                                    node = markupToVDom(node.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
+                                }
+                                header.setContent(node);
                             }
-                            header.setContent(node);
+                        }
+                        else {
+                            const displayValue = record[displayField];
+                            header.setContent(displayValue);
                         }
                     }
                     else {
-                        const displayValue = record[displayField];
-                        header.setContent(displayValue);
+                        console.log(`The selected value: ${selection[0]} does not match any of the record fields with key: ${recordId}`);
                     }
-                    // header.setProperty('record', record);
                 }
                 break;
             default: // Multiple selection
                 {
-                    const records = this.contentData.filter(r => selection.includes(r[recordId]));
+                    const records = this.data.filter(r => selection.includes(r[recordId]));
                     header.setProperty('record', records);
                 }
         }
+    }
+    handleSelectionChanged(selection) {
+        //this.setValue(value, this.onValueSet); // Update the current value
+        //this.validate(value); // No need to validate again since this happens on input
+        const { hideOnSelection } = this.props;
+        const { showing } = this.state;
+        if (showing === true &&
+            hideOnSelection === true) {
+            this.hide();
+        }
+        this.updateHeader(selection);
         this.notifySelectionChanged(selection);
         this.callSelectionChanged(selection);
     }
@@ -4658,27 +4675,32 @@ const DataMixin = Base => { var _a; return _a = class Data extends Base {
         constructor(props, children) {
             super(props, children);
         }
+        async elementWillConnect() {
+            var _a;
+            (_a = super.elementWillConnect) === null || _a === void 0 ? void 0 : _a.call(this);
+            if (this.data === undefined) {
+                this.data = await this.getData();
+                if (this.data.payload !== undefined) {
+                    this.data = this.data.payload;
+                }
+            }
+        }
         async getData() {
             // If it is loadable (it has an URL to load from), then load it
             const { loadUrl } = this.props;
             if (loadUrl !== undefined) {
-                this.data = await this.load();
-                return this.data;
-            }
-            if (this.data !== undefined) { // Return the cached data if any
-                return this.data;
+                return await this.load();
             }
             const { data } = this.props;
             if (data === undefined) {
                 return undefined;
             }
             if (typeof data === 'function') { // If it is a function then call it
-                this.data = data();
+                return data();
             }
             else { // An array of records
-                this.data = data;
+                return data;
             }
-            return this.data;
         }
         renderData() {
             const { fields } = this.props;
@@ -4686,6 +4708,9 @@ const DataMixin = Base => { var _a; return _a = class Data extends Base {
             if (data === undefined) { // The data has not been cached, load it
                 if (this.props.data !== undefined) { // It has local data
                     data = this.props.data;
+                    if (typeof data === 'function') {
+                        data = data.call(this);
+                    }
                 }
                 else { // Request the remote data and return null, since setData will trigger a refresh
                     this.getData().then(data => {
@@ -4695,12 +4720,12 @@ const DataMixin = Base => { var _a; return _a = class Data extends Base {
                     return null;
                 }
             }
-            // if (data === undefined) {
-            //     return this.renderNoData();
-            // }
             if (data.payload !== undefined) {
                 data = data.payload;
             }
+            // if (data === undefined) {
+            //     return this.renderNoData();
+            // }
             if (data.length === 0) { // The data was provided but it was empty
                 return this.renderEmptyData();
             }
@@ -5198,13 +5223,30 @@ class Pager extends TargetViewHolderMixin(SizableMixin(CustomElement)) {
             this.renderSizeChanger()));
     }
     renderSizeChanger() {
-        const { pageSizes } = this.props;
+        const { pageSizes, size } = this.props;
         if (pageSizes === undefined) {
             return null;
         }
         return (h("gcl-row", null,
-            h("gcl-select", { data: pageSizes, style: { minWidth: '4rem', width: '4rem' }, change: this.changePageSize }),
+            h("gcl-dropdown", { size: size, "selection-changed": this.changePageSize },
+                h("gcl-display", { slot: "header" }),
+                h("gcl-data-grid", { slot: "content", size: size, data: pageSizes, 
+                    // render-record="renderRecord()"
+                    // record-id="value"
+                    //selection={["10"]}
+                    pageable: "false" })),
             h("span", null, "/ Page")));
+        // return (
+        //     <gcl-row>
+        //         <gcl-select
+        //             data={pageSizes}
+        //             style={{ minWidth: '4rem', width: '4rem' }}
+        //             change={this.changePageSize}
+        //         >
+        //         </gcl-select>
+        //         <span>/ Page</span>
+        //     </gcl-row>
+        // );
     }
     changePageSize(value) {
         const pageIndex = 1; // Reset to start
@@ -6336,8 +6378,8 @@ class FileField extends Field {
         const { name } = this.props;
         this.document.getElementById(name).click();
     }
-    // nodeDidUpdate(node, nodeChanges) {
-    //     super.nodeDidUpdate?.(node, nodeChanges);
+    // elementDidUpdate(node, nodeChanges) {
+    //     super.elementDidUpdate?.(node, nodeChanges);
     //     const {
     //         name,
     //         value

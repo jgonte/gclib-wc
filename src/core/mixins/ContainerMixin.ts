@@ -30,7 +30,9 @@ const ContainerMixin = Base =>
             children.forEach(child => this.addChild(child));
         }
 
-        didMount() {
+        elementDidConnect(node: HTMLElement) {
+
+            super.elementDidConnect?.(node);
 
             if (this.shadowRoot === null) {
 
@@ -57,7 +59,9 @@ const ContainerMixin = Base =>
             }
         }
 
-        willUnmount() {
+        elementWillDisconnect(node: HTMLElement) {
+
+            super.elementWillDisconnect?.(node);
 
             if (this.shadowRoot === null) {
 
@@ -73,12 +77,9 @@ const ContainerMixin = Base =>
             }
         }
 
-        // nodeDidUpdate(node, nodeChanges) {
+        // elementDidUpdate(node, nodeChanges) {
 
-        //     if (super.nodeDidUpdate) {
-
-        //         super.nodeDidUpdate(node, nodeChanges);
-        //     }
+        //     super.elementDidUpdate?.(node, nodeChanges);
 
         //     const {
         //         hasChildren,

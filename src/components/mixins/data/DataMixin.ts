@@ -55,6 +55,21 @@ const DataMixin = Base =>
             super(props, children);
         }
 
+        async elementWillConnect() {
+
+            super.elementWillConnect?.();
+
+            if (this.data === undefined) {
+    
+                this.data = await this.getData();
+    
+                if (this.data.payload !== undefined) {
+    
+                    this.data = this.data.payload;
+                }
+            }
+        }
+
         async getData() {
 
             // If it is loadable (it has an URL to load from), then load it
@@ -64,14 +79,7 @@ const DataMixin = Base =>
 
             if (loadUrl !== undefined) {
 
-                this.data = await this.load();
-
-                return this.data;
-            }
-
-            if (this.data !== undefined) { // Return the cached data if any
-
-                return this.data;
+                return await this.load();
             }
 
             const {
@@ -85,14 +93,12 @@ const DataMixin = Base =>
 
             if (typeof data === 'function') { // If it is a function then call it
 
-                this.data = data();
+                return data();
             }
             else { // An array of records
 
-                this.data = data;
+                return data;
             }
-
-            return this.data;
         }
 
         renderData(): ElementNode | TextNode | string {
@@ -108,6 +114,11 @@ const DataMixin = Base =>
                 if (this.props.data !== undefined) { // It has local data
 
                     data = this.props.data;
+
+                    if (typeof data === 'function') {
+
+                        data = data.call(this);
+                    }
                 }
                 else { // Request the remote data and return null, since setData will trigger a refresh
 
@@ -123,15 +134,15 @@ const DataMixin = Base =>
 
             }
 
-            // if (data === undefined) {
-
-            //     return this.renderNoData();
-            // }
-
             if (data.payload !== undefined) {
 
                 data = data.payload;
             }
+
+            // if (data === undefined) {
+
+            //     return this.renderNoData();
+            // }
 
             if (data.length === 0) { // The data was provided but it was empty
 

@@ -6,20 +6,24 @@
 
 :host([type='info']) {
     background-color: var(--gcl-background-color-info);
+    color: var(--gcl-color-info);
     border: var(--gcl-border-width) solid var(--gcl-color-info);
 }
 
 :host([type='success']) {
     background-color: var(--gcl-background-color-success);
+    color: var(--gcl-color-success);
     border: var(--gcl-border-width) solid var(--gcl-color-success);
 }
 
 :host([type='warning']) {
     background-color: var(--gcl-background-color-warning);
+    color: var(--gcl-color-warning);
     border: var(--gcl-border-width) solid var(--gcl-color-warning);
 }
 
 :host([type='error']) {
     background-color: var(--gcl-background-color-danger);
+    color: var(--gcl-color-danger);
     border: var(--gcl-border-width) solid var(--gcl-color-danger);
 }

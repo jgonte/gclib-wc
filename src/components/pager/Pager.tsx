@@ -212,7 +212,8 @@ export class Pager extends
     renderSizeChanger() {
 
         const {
-            pageSizes
+            pageSizes,
+            size
         } = this.props;
 
         if (pageSizes === undefined) {
@@ -222,15 +223,39 @@ export class Pager extends
 
         return (
             <gcl-row>
-                <gcl-select
-                    data={pageSizes}
-                    style={{ minWidth: '4rem', width: '4rem' }}
-                    change={this.changePageSize}
+                <gcl-dropdown
+                    size={size}
+                    selection-changed={this.changePageSize}
+                // display-field="renderRecord()" 
+                // empty-display="--Select--"
                 >
-                </gcl-select>
+                    <gcl-display slot="header"></gcl-display>
+                    <gcl-data-grid
+                        slot="content"
+                        size={size}
+                        data={pageSizes}
+                        // render-record="renderRecord()"
+                        // record-id="value"
+                        //selection={["10"]}
+                        pageable="false"
+                    >
+                    </gcl-data-grid>
+                </gcl-dropdown>
                 <span>/ Page</span>
             </gcl-row>
         );
+
+        // return (
+        //     <gcl-row>
+        //         <gcl-select
+        //             data={pageSizes}
+        //             style={{ minWidth: '4rem', width: '4rem' }}
+        //             change={this.changePageSize}
+        //         >
+        //         </gcl-select>
+        //         <span>/ Page</span>
+        //     </gcl-row>
+        // );
     }
 
     changePageSize(value) {
