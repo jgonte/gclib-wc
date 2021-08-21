@@ -1,4 +1,5 @@
-import { markupToVDom, ElementNode, TextNode } from "gclib-vdom";
+import { isPrimitive } from "gclib-utils";
+import { markupToVDom, ElementNode, TextNode, h } from "gclib-vdom";
 import oneOf from "../../../core/helpers/oneOf";
 
 /**
@@ -60,11 +61,11 @@ const DataMixin = Base =>
             super.elementWillConnect?.();
 
             if (this.data === undefined) {
-    
+
                 this.data = await this.getData();
-    
+
                 if (this.data.payload !== undefined) {
-    
+
                     this.data = this.data.payload;
                 }
             }
@@ -104,7 +105,9 @@ const DataMixin = Base =>
         renderData(): ElementNode | TextNode | string {
 
             const {
-                fields
+                fields,
+                size,
+                selectable
             } = this.props;
 
             let data = this.data;
@@ -123,12 +126,12 @@ const DataMixin = Base =>
                 else { // Request the remote data and return null, since setData will trigger a refresh
 
                     this.getData().then(data => {
-                    
+
                         this.setData(data);
-    
+
                         this.data = data;
                     });
-    
+
                     return null;
                 }
 
@@ -188,7 +191,32 @@ const DataMixin = Base =>
             }
             else { // Show the user the data
 
-                return JSON.stringify(data);
+                // Sample the data to see if the are an array of primitives
+                const firstItem = data[0];
+
+                // If it is an array of primitives then
+                if (isPrimitive(firstItem)) {
+
+                    return data.map((item, index) => {
+
+                        return (
+                            <gcl-selectable-row
+                                hoverable={true}
+                                children={(<span style={{width: '100%'}}>{item}</span>)}
+                                size={size}
+                                selectable={selectable}
+                                selectable-value={item}
+                                key={item || index}
+                                index={index}
+                            >
+                            </gcl-selectable-row>
+                        );
+                    });
+                }
+                else {
+
+                    return JSON.stringify(data);
+                }
             }
         }
 

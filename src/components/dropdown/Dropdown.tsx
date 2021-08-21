@@ -1,3 +1,4 @@
+import { isPrimitive } from 'gclib-utils';
 import { h, markupToVDom, NodeChanges } from 'gclib-vdom';
 import CustomElement from '../../core/customElement/CustomElement';
 import oneOf from '../../core/helpers/oneOf';
@@ -184,7 +185,7 @@ export class Dropdown extends SelectableMixin(
                 break;
             case 1:
                 {
-                    const records = data.filter(r => r[recordId] === selection[0]);
+                    let records = data.filter(r => r[recordId] === selection[0]);
 
                     if (records.length > 0) {
 
@@ -215,7 +216,23 @@ export class Dropdown extends SelectableMixin(
                     }
                     else {
 
-                        console.log(`The selected value: ${selection[0]} does not match any of the record fields with key: ${recordId}`);
+                        // Sample the data to see if the are an array of primitives
+                        const firstItem = data[0];
+
+                        // If it is an array of primitives then
+                        if (isPrimitive(firstItem)) {
+
+                            records = data.filter(r => r === selection[0]);
+
+                            const displayValue = records[0];
+
+                            header.setContent(displayValue);
+                        }
+                        else {
+
+                            console.log(`The selected value: ${selection[0]} does not match any of the record fields with key: ${recordId}`);
+                        }
+
                     }
 
                 }

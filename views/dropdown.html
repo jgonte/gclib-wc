@@ -73,14 +73,14 @@
             console.log('Selection: ' + JSON.stringify(selection));
         }
 
-        function getRecord() {
+        // function getRecord() {
 
-            return {
-                name: "Sarah",
-                reputation: 9,
-                description: 'Smart and beautiful'
-            };
-        }
+        //     return {
+        //         name: "Sarah",
+        //         reputation: 9,
+        //         description: 'Smart and beautiful'
+        //     };
+        // }
 
         function getField() {
 
@@ -106,32 +106,42 @@
 
 <body>
 
-    <!-- <gcl-data-cell record="getRecord()" field="getField()"></gcl-data-cell> -->
+    <h4>Dropdown with grid with local primitives</h4>
 
-    <!-- <gcl-data-row record="getRecord()" fields="getFields()"></gcl-data-row> -->
+    <gcl-dropdown id="local-primitive-dropdown" size="large" selection-changed="showSelection()"
+        display-field="renderRecord()">
+        <gcl-display slot="header"></gcl-display>
+        <gcl-data-grid slot="content" size="large" data="getPrimitiveValues()" selection='[25]' pageable="false">
+        </gcl-data-grid>
+    </gcl-dropdown>
 
-    <h4>Grid with local primitives</h4>
+    <h4>Dropdown with local data</h4>
 
-    <gcl-data-grid id="local-primitive-data-grid" slot="content" size="large" data="getPrimitiveValues()"
-        selection='[25]' pageable="false">
-    </gcl-data-grid>
+    <gcl-dropdown id="local-data-dropdown" size="small" selection-changed="showSelection()"
+        display-field="renderRecord()">
+        <span slot="header">Dropdown 1</span>
+        <gcl-data-grid slot="content" size="small" data="getData()" render-record="renderRecord()" record-id="value"
+            pageable="false" selection='["c"]'>
+        </gcl-data-grid>
+    </gcl-dropdown>
 
-    <h4>Grid with local data</h4>
+    <h4>Dropdown with local data and display selection</h4>
 
-    <gcl-data-grid id="local-complex-data=grid" size="small" data="getData()" render-record="renderRecord()" record-id="value" pageable="false"
-        selection='["c"]' selection-changed="showSelection()">
-    </gcl-data-grid>
+    <gcl-dropdown id="local-data-and-display-dropdown" size="small" selection-changed="showSelection()"
+        display-field="renderRecord()" empty-display="--Select--">
+        <gcl-display slot="header"></gcl-display>
+        <gcl-data-grid slot="content" size="small" data="getData()" render-record="renderRecord()" record-id="value"
+            pageable="false" selection='["c"]'>
+        </gcl-data-grid>
+    </gcl-dropdown>
 
-    <h4>Grid with remote data</h4>
+    <h4>Dropdown with remote data and display selection</h4>
 
-    <gcl-data-grid id="contactsList" load-url="http://localhost:60314/api/contacts" fields="getFields()" size="small"
-        selection='[2]' selection-changed="showSelection()">
-    </gcl-data-grid>
-
-    <h4>Grid with remote data and multiple selection</h4>
-
-    <gcl-data-grid id="contactsListMultiple" load-url="http://localhost:60314/api/contacts" fields="getFields()"
-        size="medium" selection='[1,3]' multiple selection-changed="showSelection()">
-    </gcl-data-grid>
+    <gcl-dropdown id="remote-data-and-display-dropdown" selection-changed="showSelection()" display-field="name">
+        <gcl-display slot="header"></gcl-display>
+        <gcl-data-grid slot="content" load-url="http://localhost:60314/api/contacts" fields="getFields()" size="small"
+            selection='[2]'>
+        </gcl-data-grid>
+    </gcl-dropdown>
 
 </body>

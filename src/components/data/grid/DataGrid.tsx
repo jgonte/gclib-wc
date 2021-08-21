@@ -15,7 +15,7 @@ export class DataGrid extends
             SelectionContainerMixin(
                 SelectionHandlerMixin(
                     SizableMixin(CustomElement)
-                )               
+                )
             )
         )
     ) {
@@ -78,6 +78,7 @@ export class DataGrid extends
 
         return (
             <gcl-selectable-row
+                style={{ width: '100%' }}
                 hoverable={rowIsHoverable}
                 children={children}
                 size={size}
@@ -139,7 +140,7 @@ export class DataGrid extends
             size,
             selectable,
         } = this.props;
-        
+
         return data.map((record, index) => {
 
             const value = record[recordId];

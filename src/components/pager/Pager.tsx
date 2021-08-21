@@ -227,10 +227,11 @@ export class Pager extends
                     size={size}
                     selection-changed={this.changePageSize}
                 // display-field="renderRecord()" 
-                // empty-display="--Select--"
+                empty-display="--Select--"
                 >
                     <gcl-display slot="header"></gcl-display>
                     <gcl-data-grid
+                        id="pager-data-grid"
                         slot="content"
                         size={size}
                         data={pageSizes}

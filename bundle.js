@@ -1667,6 +1667,13 @@ var OidcProvider = (function () {
     return OidcProvider;
 }());
 
+function isPrimitive(o) {
+    return (typeof o === 'string' ||
+        typeof o === 'number' ||
+        typeof o === 'bigint' ||
+        typeof o === 'boolean');
+}
+
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation.
 
@@ -4521,7 +4528,7 @@ class Dropdown extends SelectableMixin(SelectionHandlerMixin(CustomElement)) {
                 break;
             case 1:
                 {
-                    const records = data.filter(r => r[recordId] === selection[0]);
+                    let records = data.filter(r => r[recordId] === selection[0]);
                     if (records.length > 0) {
                         const record = records[0];
                         const { displayField } = this.props;
@@ -4540,7 +4547,17 @@ class Dropdown extends SelectableMixin(SelectionHandlerMixin(CustomElement)) {
                         }
                     }
                     else {
-                        console.log(`The selected value: ${selection[0]} does not match any of the record fields with key: ${recordId}`);
+                        // Sample the data to see if the are an array of primitives
+                        const firstItem = data[0];
+                        // If it is an array of primitives then
+                        if (isPrimitive(firstItem)) {
+                            records = data.filter(r => r === selection[0]);
+                            const displayValue = records[0];
+                            header.setContent(displayValue);
+                        }
+                        else {
+                            console.log(`The selected value: ${selection[0]} does not match any of the record fields with key: ${recordId}`);
+                        }
                     }
                 }
                 break;
@@ -4703,7 +4720,7 @@ const DataMixin = Base => { var _a; return _a = class Data extends Base {
             }
         }
         renderData() {
-            const { fields } = this.props;
+            const { fields, size, selectable } = this.props;
             let data = this.data;
             if (data === undefined) { // The data has not been cached, load it
                 if (this.props.data !== undefined) { // It has local data
@@ -4754,7 +4771,17 @@ const DataMixin = Base => { var _a; return _a = class Data extends Base {
                 return this.renderFields(fds, data);
             }
             else { // Show the user the data
-                return JSON.stringify(data);
+                // Sample the data to see if the are an array of primitives
+                const firstItem = data[0];
+                // If it is an array of primitives then
+                if (isPrimitive(firstItem)) {
+                    return data.map((item, index) => {
+                        return (h("gcl-selectable-row", { hoverable: true, children: (h("span", { style: { width: '100%' } }, item)), size: size, selectable: selectable, "selectable-value": item, key: item || index, index: index }));
+                    });
+                }
+                else {
+                    return JSON.stringify(data);
+                }
             }
         }
         // renderField(field: DataFieldDefinition, data: any) : ElementNode {
@@ -5228,9 +5255,9 @@ class Pager extends TargetViewHolderMixin(SizableMixin(CustomElement)) {
             return null;
         }
         return (h("gcl-row", null,
-            h("gcl-dropdown", { size: size, "selection-changed": this.changePageSize },
+            h("gcl-dropdown", { size: size, "selection-changed": this.changePageSize, "empty-display": "--Select--" },
                 h("gcl-display", { slot: "header" }),
-                h("gcl-data-grid", { slot: "content", size: size, data: pageSizes, 
+                h("gcl-data-grid", { id: "pager-data-grid", slot: "content", size: size, data: pageSizes, 
                     // render-record="renderRecord()"
                     // record-id="value"
                     //selection={["10"]}
@@ -7512,7 +7539,7 @@ class DataGrid extends PageableMixin(DataCollectionLoadableMixin(SelectionContai
     wrapRecord(record, index, children) {
         const { rowIsHoverable, recordId, size, selectable } = this.props;
         const value = record[recordId];
-        return (h("gcl-selectable-row", { hoverable: rowIsHoverable, children: children, size: size, selectable: selectable, "selectable-value": value, key: value || index, index: index }));
+        return (h("gcl-selectable-row", { style: { width: '100%' }, hoverable: rowIsHoverable, children: children, size: size, selectable: selectable, "selectable-value": value, key: value || index, index: index }));
     }
     renderHeader() {
         const { fields, size } = this.props;
