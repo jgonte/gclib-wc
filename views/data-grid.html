@@ -118,19 +118,19 @@
 
     <h4>Grid with local data</h4>
 
-    <gcl-data-grid id="local-complex-data=grid" size="small" data="getData()" render-record="renderRecord()" record-id="value" pageable="false"
+    <gcl-data-grid id="local-complex-data-grid" size="small" data="getData()" render-record="renderRecord()" record-id="value" pageable="false"
         selection='["c"]' selection-changed="showSelection()">
     </gcl-data-grid>
 
     <h4>Grid with remote data</h4>
 
-    <gcl-data-grid id="contactsList" load-url="http://localhost:60314/api/contacts" fields="getFields()" size="small"
+    <gcl-data-grid id="remote-complex-data-grid" load-url="http://localhost:60314/api/contacts" fields="getFields()" size="small"
         selection='[2]' selection-changed="showSelection()">
     </gcl-data-grid>
 
     <h4>Grid with remote data and multiple selection</h4>
 
-    <gcl-data-grid id="contactsListMultiple" load-url="http://localhost:60314/api/contacts" fields="getFields()"
+    <gcl-data-grid id="remote-complex-multiple-selection-data-grid" load-url="http://localhost:60314/api/contacts" fields="getFields()"
         size="medium" selection='[1,3]' multiple selection-changed="showSelection()">
     </gcl-data-grid>
 

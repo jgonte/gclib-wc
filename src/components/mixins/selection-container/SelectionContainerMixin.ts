@@ -108,7 +108,7 @@ const SelectionContainerMixin = Base =>
             }
         }
 
-        updateSelection(event) {
+        updateSelection(event: CustomEvent) {
 
             const {
                 multiple,

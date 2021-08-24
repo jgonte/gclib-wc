@@ -7,15 +7,17 @@ import { config } from '../config';
 import SelectableMixin from '../mixins/selectable/SelectableMixin';
 import SelectionHandlerMixin from '../mixins/selection/SelectionHandlerMixin';
 import { dropChanged, DropTool } from '../tool/drop/DropTool';
-import dropdownManager from './dropdownManager';
+import popupManager from '../popupManager';
+import PopupSourceMixin from '../mixins/popup-source/PopupSource';
 
-//@ts-ignore
-export class Dropdown extends SelectableMixin(
-    SelectionHandlerMixin(
-        CustomElement
-    )
-)
-{
+export class Dropdown extends
+    PopupSourceMixin(
+        SelectableMixin(
+            SelectionHandlerMixin(
+                CustomElement
+            )
+        )
+    ) {
     static component = {
 
         styleUrls: [
@@ -83,32 +85,31 @@ export class Dropdown extends SelectableMixin(
 
         super.connectedCallback?.();
 
-        this.addEventListener(dropChanged, this.onDropChanged);
+        this.addEventListener(dropChanged, this.handleDropChanged);
     }
 
     disconnectedCallback() {
 
         super.disconnectedCallback?.();
 
-        this.removeEventListener(dropChanged, this.onDropChanged);
+        this.removeEventListener(dropChanged, this.handleDropChanged);
     }
 
-    onDropChanged(event: CustomEvent) {
+    handleDropChanged(evt: CustomEvent) {
+
+        evt.stopImmediatePropagation();
 
         const {
-            showing
-        } = event.detail;
+            showing,
+            //dropElement
+        } = evt.detail;
 
-        if (showing === true) { // Hide the contents of other showing dropdowns abd set this one as being shown
+        if (showing === true) { // Hide the contents of other showing dropdowns and set this one as being shown
 
-            dropdownManager.hideShown(this);
-
-            dropdownManager.setShown(this);
+            popupManager.updateTarget(this as any);
         }
 
         this.setShowing(showing);
-
-        event.stopPropagation();
     }
 
     elementDidConnect(node: HTMLElement, changes: NodeChanges) {
@@ -264,7 +265,7 @@ export class Dropdown extends SelectableMixin(
 
             hideOnSelection === true) {
 
-            this.hide();
+            this.hideContent();
         }
 
         this.updateHeader(selection);
@@ -293,7 +294,7 @@ export class Dropdown extends SelectableMixin(
         );
     }
 
-    hide() {
+    hideContent() {
 
         this.dropTool.hideContent();
     }

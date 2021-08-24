@@ -223,11 +223,9 @@ export class Pager extends
 
         return (
             <gcl-row>
-                <gcl-dropdown
+                <gcl-dropdown id="pager-dropdown"
                     size={size}
                     selection-changed={this.changePageSize}
-                // display-field="renderRecord()" 
-                empty-display="--Select--"
                 >
                     <gcl-display slot="header"></gcl-display>
                     <gcl-data-grid
@@ -235,9 +233,7 @@ export class Pager extends
                         slot="content"
                         size={size}
                         data={pageSizes}
-                        // render-record="renderRecord()"
-                        // record-id="value"
-                        //selection={["10"]}
+                        //selection='[10]'
                         pageable="false"
                     >
                     </gcl-data-grid>

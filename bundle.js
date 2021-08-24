@@ -4419,7 +4419,7 @@ class DropTool extends Tool {
         this.dispatchEvent(new CustomEvent(dropChanged, {
             detail: {
                 showing,
-                dropElement: this // To track the element in a container if needed
+                dropElement: this // To track the element in a container/manager if needed
             },
             bubbles: true,
             composed: true
@@ -4432,34 +4432,71 @@ DropTool.state = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-drop-tool`, DropTool);
 
-// Manages hiding the dropdowns when clicked outside
-let _shown;
-const dropdownManager = {
-    setShown(shown) {
-        _shown = shown;
-    },
-    hideShown(target) {
-        if (_shown === undefined ||
-            _shown === target) {
+// Manages hiding the content of the drop tools when clicked outside of the content of the drop tool
+let _popupSrc;
+const popupManager = {
+    updateTarget(target) {
+        if (target.isPopupSource &&
+            _popupSrc === undefined) {
+            _popupSrc = target;
             return;
         }
-        if (target.dropdown !== undefined &&
-            target.dropdown === _shown) {
-            return;
+        if (target.isPopupSource) {
+            if (_popupSrc !== target) {
+                _popupSrc.hideContent();
+                _popupSrc = target;
+            }
+            // else {
+            //     // Do nothing
+            // }
         }
-        if (Array.from(_shown.childNodes).includes(target)) { // TODO: Check for children recursively?
-            return;
+        else { // Target is any other element, it might be outside of drop tool or inside the content the droptool shows
+            // The global click object can pass any target
+            if (_popupSrc !== undefined
+                && !_popupSrc.contains(target)) {
+                _popupSrc.hideContent();
+                _popupSrc = undefined;
+            }
         }
-        _shown.hide();
     }
 };
-// Close the dropdown menu if the user clicks outside of it
 window.onclick = function (event) {
-    dropdownManager.hideShown(event.target);
+    popupManager.updateTarget(event.target);
 };
 
-//@ts-ignore
-class Dropdown extends SelectableMixin(SelectionHandlerMixin(CustomElement)) {
+//import { config } from "../../config";
+const PopupSourceMixin = Base => class PopupSource extends Base {
+    constructor() {
+        super(...arguments);
+        /**
+         * Marker to flag if the element produces popups
+         */
+        this.isPopupSource = true;
+        // static component = {
+        //     styleUrls: [
+        //         `${config.assetsFolder}/mixins/direction/PopupSource.css`
+        //     ]
+        // };
+        // static properties = {
+        //     /**
+        //      * The direction of the element
+        //      */
+        //     flipRtl: {
+        //         attribute: 'flip-rtl',
+        //         type: Boolean,
+        //         value: true,
+        //         mutable: true,
+        //         reflect: true,
+        //         passToChildren: true
+        //     }
+        // };
+        // getDir() {
+        //     return this.dir || document.dir;
+        // }
+    }
+};
+
+class Dropdown extends PopupSourceMixin(SelectableMixin(SelectionHandlerMixin(CustomElement))) {
     constructor() {
         super();
         this.handleSelectionChanged = this.handleSelectionChanged.bind(this);
@@ -4467,21 +4504,22 @@ class Dropdown extends SelectableMixin(SelectionHandlerMixin(CustomElement)) {
     connectedCallback() {
         var _a;
         (_a = super.connectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
-        this.addEventListener(dropChanged, this.onDropChanged);
+        this.addEventListener(dropChanged, this.handleDropChanged);
     }
     disconnectedCallback() {
         var _a;
         (_a = super.disconnectedCallback) === null || _a === void 0 ? void 0 : _a.call(this);
-        this.removeEventListener(dropChanged, this.onDropChanged);
+        this.removeEventListener(dropChanged, this.handleDropChanged);
     }
-    onDropChanged(event) {
-        const { showing } = event.detail;
-        if (showing === true) { // Hide the contents of other showing dropdowns abd set this one as being shown
-            dropdownManager.hideShown(this);
-            dropdownManager.setShown(this);
+    handleDropChanged(evt) {
+        evt.stopImmediatePropagation();
+        const { showing,
+        //dropElement
+         } = evt.detail;
+        if (showing === true) { // Hide the contents of other showing dropdowns and set this one as being shown
+            popupManager.updateTarget(this);
         }
         this.setShowing(showing);
-        event.stopPropagation();
     }
     elementDidConnect(node, changes) {
         var _a;
@@ -4575,7 +4613,7 @@ class Dropdown extends SelectableMixin(SelectionHandlerMixin(CustomElement)) {
         const { showing } = this.state;
         if (showing === true &&
             hideOnSelection === true) {
-            this.hide();
+            this.hideContent();
         }
         this.updateHeader(selection);
         this.notifySelectionChanged(selection);
@@ -4590,7 +4628,7 @@ class Dropdown extends SelectableMixin(SelectionHandlerMixin(CustomElement)) {
             h("div", { class: `dropdown-content ${showing ? 'show' : ''}` },
                 h("slot", { name: "content" }))));
     }
-    hide() {
+    hideContent() {
         this.dropTool.hideContent();
     }
 }
@@ -5255,12 +5293,10 @@ class Pager extends TargetViewHolderMixin(SizableMixin(CustomElement)) {
             return null;
         }
         return (h("gcl-row", null,
-            h("gcl-dropdown", { size: size, "selection-changed": this.changePageSize, "empty-display": "--Select--" },
+            h("gcl-dropdown", { id: "pager-dropdown", size: size, "selection-changed": this.changePageSize },
                 h("gcl-display", { slot: "header" }),
                 h("gcl-data-grid", { id: "pager-data-grid", slot: "content", size: size, data: pageSizes, 
-                    // render-record="renderRecord()"
-                    // record-id="value"
-                    //selection={["10"]}
+                    //selection='[10]'
                     pageable: "false" })),
             h("span", null, "/ Page")));
         // return (
