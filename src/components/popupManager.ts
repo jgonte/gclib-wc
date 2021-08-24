@@ -1,4 +1,5 @@
 import CustomElement from "../core/customElement/CustomElement";
+import getAllChildren from "../core/helpers/getAllChildren";
 
 // Manages hiding the content of the drop tools when clicked outside of the content of the drop tool
 let _popupSrc: HTMLElement | CustomElement;
@@ -6,7 +7,7 @@ let _popupSrc: HTMLElement | CustomElement;
 const popupManager = {
 
     updateTarget(target: HTMLElement | CustomElement): void {
-        
+
         if ((target as any).isPopupSource &&
             _popupSrc === undefined) {
 
@@ -17,7 +18,8 @@ const popupManager = {
 
         if ((target as any).isPopupSource) {
 
-            if (_popupSrc !== target) {
+            if (_popupSrc !== target
+                && !getAllChildren(_popupSrc as any).includes(target as any)) { // Do not close nested popups
 
                 (_popupSrc as any).hideContent();
 
@@ -30,8 +32,9 @@ const popupManager = {
         else { // Target is any other element, it might be outside of drop tool or inside the content the droptool shows
 
             // The global click object can pass any target
-            if (_popupSrc !== undefined 
-                && !_popupSrc.contains(target)) {
+            if (_popupSrc !== undefined
+                && !_popupSrc.contains(target)
+                && (target as any).dropdown !== _popupSrc) { // handle combo boxes
 
                 (_popupSrc as any).hideContent();
 
@@ -39,6 +42,11 @@ const popupManager = {
             }
 
         }
+    },
+
+    reset() {
+
+        _popupSrc = undefined;
     }
 };
 

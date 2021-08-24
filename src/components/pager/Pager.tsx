@@ -37,7 +37,7 @@ export class Pager extends
         pageSizes: {
             attribute: 'page-sizes',
             type: Array,
-            value: ['10', '25', '50', '100']
+            value: [10, 25, 50, 100]
         }
     };
 
@@ -226,6 +226,7 @@ export class Pager extends
                 <gcl-dropdown id="pager-dropdown"
                     size={size}
                     selection-changed={this.changePageSize}
+                    notify-if-selection-changed="false"
                 >
                     <gcl-display slot="header"></gcl-display>
                     <gcl-data-grid
@@ -233,6 +234,7 @@ export class Pager extends
                         slot="content"
                         size={size}
                         data={pageSizes}
+                        selected-index="0"
                         //selection='[10]'
                         pageable="false"
                     >

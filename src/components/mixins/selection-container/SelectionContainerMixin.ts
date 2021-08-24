@@ -110,6 +110,8 @@ const SelectionContainerMixin = Base =>
 
         updateSelection(event: CustomEvent) {
 
+            event.stopPropagation();
+
             const {
                 multiple,
                 selection: oldSelection

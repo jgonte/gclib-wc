@@ -49,6 +49,15 @@ export class Dropdown extends
             attribute: 'empty-display',
             type: oneOf(String, Function),
             value: 'Please select'
+        },
+
+        /**
+         * Whether to emit a custom event to the parent elements if the selection changed 
+         */
+        notifyIfSelectionChanged: {
+            attribute: 'notify-if-selection-changed',
+            type: Boolean,
+            value: true
         }
     };
 
@@ -97,7 +106,7 @@ export class Dropdown extends
 
     handleDropChanged(evt: CustomEvent) {
 
-        evt.stopImmediatePropagation();
+        evt.stopPropagation();
 
         const {
             showing,
@@ -186,54 +195,69 @@ export class Dropdown extends
                 break;
             case 1:
                 {
-                    let records = data.filter(r => r[recordId] === selection[0]);
+                    // Sample the data to see if the are an array of primitives
+                    const firstItem = data[0];
 
-                    if (records.length > 0) {
+                    // If it is an array of primitives then
+                    if (isPrimitive(firstItem)) {
 
-                        const record = records[0];
+                        let records = data.filter(r => r === selection[0]);
 
-                        const { displayField } = this.props;
+                        const displayValue = records[0];
 
-                        if (typeof displayField === 'function') {
+                        header.setContent(displayValue);
+                    }
+                    else {
 
-                            if ("setContent" in header) {
+                        let records = data.filter(r => r[recordId] === selection[0]);
 
-                                let node = displayField(record);
+                        if (records.length > 0) {
 
-                                if (typeof node === 'string') {
+                            const record = records[0];
 
-                                    node = markupToVDom(node.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
+                            const { displayField } = this.props;
+
+                            if (typeof displayField === 'function') {
+
+                                if ("setContent" in header) {
+
+                                    let node = displayField(record);
+
+                                    if (typeof node === 'string') {
+
+                                        node = markupToVDom(node.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
+                                    }
+
+                                    header.setContent(node);
                                 }
+                            }
+                            else {
 
-                                header.setContent(node);
+                                const displayValue = record[displayField];
+
+                                header.setContent(displayValue);
                             }
                         }
                         else {
 
-                            const displayValue = record[displayField];
+                            // Sample the data to see if the are an array of primitives
+                            const firstItem = data[0];
 
-                            header.setContent(displayValue);
+                            // If it is an array of primitives then
+                            if (isPrimitive(firstItem)) {
+
+                                records = data.filter(r => r === selection[0]);
+
+                                const displayValue = records[0];
+
+                                header.setContent(displayValue);
+                            }
+                            else {
+
+                                console.log(`The selected value: ${selection[0]} does not match any of the record fields with key: ${recordId}`);
+                            }
+
                         }
-                    }
-                    else {
-
-                        // Sample the data to see if the are an array of primitives
-                        const firstItem = data[0];
-
-                        // If it is an array of primitives then
-                        if (isPrimitive(firstItem)) {
-
-                            records = data.filter(r => r === selection[0]);
-
-                            const displayValue = records[0];
-
-                            header.setContent(displayValue);
-                        }
-                        else {
-
-                            console.log(`The selected value: ${selection[0]} does not match any of the record fields with key: ${recordId}`);
-                        }
-
                     }
 
                 }
@@ -244,6 +268,7 @@ export class Dropdown extends
 
                     header.setProperty('record', records);
                 }
+                break;
         }
     }
 
@@ -254,7 +279,8 @@ export class Dropdown extends
         //this.validate(value); // No need to validate again since this happens on input
 
         const {
-            hideOnSelection
+            hideOnSelection,
+            notifyIfSelectionChanged
         } = this.props;
 
         const {
@@ -270,7 +296,10 @@ export class Dropdown extends
 
         this.updateHeader(selection);
 
-        this.notifySelectionChanged(selection);
+        if (notifyIfSelectionChanged === true) {
+
+            this.notifySelectionChanged(selection);
+        }
 
         this.callSelectionChanged(selection);
     }
@@ -297,6 +326,8 @@ export class Dropdown extends
     hideContent() {
 
         this.dropTool.hideContent();
+
+        popupManager.reset();
     }
 }
 

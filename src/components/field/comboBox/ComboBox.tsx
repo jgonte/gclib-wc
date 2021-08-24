@@ -3,7 +3,7 @@ import { config } from '../../config';
 import { Field, renderField } from '../Field';
 
 //@ts-ignore
-export class ComboBox extends Field {
+export class ComboBox extends Field  {
 
     // static component = {
 
@@ -90,7 +90,7 @@ export class ComboBox extends Field {
 
         if (value !== newValue) {
 
-            this.setValue(newValue);
+            this.updateValue(newValue);
         }
     }
 
@@ -163,17 +163,6 @@ export class ComboBox extends Field {
         //         disabled={disabled}
         //     />
         // );
-    }
-
-    getFields() {
-
-        return [
-            {
-                name: "description",
-                display: "Gender",
-                width: '100%'
-            }
-        ];
     }
 
     renderRecord(record) {

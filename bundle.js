@@ -2937,7 +2937,7 @@ function toVDom(node, options) {
                     throw Error('Script elements are not allowed unless the allowScripts option is set to true');
                 }
                 var props = getProps(element.attributes);
-                var children = getChildren$1(element.childNodes, options);
+                var children = getChildren$2(element.childNodes, options);
                 return new ElementNode(nodeName, props, children);
             }
         case 3:
@@ -2968,7 +2968,7 @@ function getProps(attributes) {
     }
     return props;
 }
-function getChildren$1(childNodes, options) {
+function getChildren$2(childNodes, options) {
     var vnodes = [];
     childNodes.forEach(function (childNode) {
         var vnode = toVDom(childNode, options);
@@ -3792,7 +3792,7 @@ Display.properties = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-display`, Display);
 
-function getChildren(node) {
+function getChildren$1(node) {
     if (node instanceof HTMLElement) {
         const slot = node.querySelector('slot');
         if (slot !== null) {
@@ -3809,7 +3809,7 @@ function getChildren(node) {
 function visitChildren(children, visit) {
     children.forEach(child => {
         visit(child);
-        visitChildren(getChildren(child), visit);
+        visitChildren(getChildren$1(child), visit);
     });
 }
 
@@ -4432,6 +4432,38 @@ DropTool.state = {
 //@ts-ignore
 customElements.define(`${config.tagPrefix}-drop-tool`, DropTool);
 
+function getChildren(node) {
+    const children = [];
+    if (node instanceof HTMLElement) {
+        // Add the nodes of the slots if any
+        let slots = node.querySelectorAll('slot');
+        slots.forEach(slot => {
+            const childNodes = slot.assignedNodes({ flatten: true });
+            children.push(...childNodes);
+        });
+        // Add the child nodes that are not in a slot
+        let childNodes = Array.from(node.childNodes);
+        children.push(...childNodes);
+        if (node.shadowRoot === null) {
+            return children;
+        }
+        // Do the same for the shadow root
+        node = node.shadowRoot;
+        // It seems that the slots from the shadowRoot and host are the same so we don't need to repeat the operation for the shadowRoot
+        // Add the child nodes that are not in a slot
+        childNodes = Array.from(node.childNodes);
+        children.push(...childNodes);
+    }
+    return children;
+}
+function getAllChildren(node) {
+    const children = [node];
+    getChildren(node).forEach((child) => {
+        children.push(...getAllChildren(child));
+    });
+    return children;
+}
+
 // Manages hiding the content of the drop tools when clicked outside of the content of the drop tool
 let _popupSrc;
 const popupManager = {
@@ -4442,7 +4474,8 @@ const popupManager = {
             return;
         }
         if (target.isPopupSource) {
-            if (_popupSrc !== target) {
+            if (_popupSrc !== target
+                && !getAllChildren(_popupSrc).includes(target)) { // Do not close nested popups
                 _popupSrc.hideContent();
                 _popupSrc = target;
             }
@@ -4453,11 +4486,15 @@ const popupManager = {
         else { // Target is any other element, it might be outside of drop tool or inside the content the droptool shows
             // The global click object can pass any target
             if (_popupSrc !== undefined
-                && !_popupSrc.contains(target)) {
+                && !_popupSrc.contains(target)
+                && target.dropdown !== _popupSrc) { // handle combo boxes
                 _popupSrc.hideContent();
                 _popupSrc = undefined;
             }
         }
+    },
+    reset() {
+        _popupSrc = undefined;
     }
 };
 window.onclick = function (event) {
@@ -4512,7 +4549,7 @@ class Dropdown extends PopupSourceMixin(SelectableMixin(SelectionHandlerMixin(Cu
         this.removeEventListener(dropChanged, this.handleDropChanged);
     }
     handleDropChanged(evt) {
-        evt.stopImmediatePropagation();
+        evt.stopPropagation();
         const { showing,
         //dropElement
          } = evt.detail;
@@ -4566,35 +4603,45 @@ class Dropdown extends PopupSourceMixin(SelectableMixin(SelectionHandlerMixin(Cu
                 break;
             case 1:
                 {
-                    let records = data.filter(r => r[recordId] === selection[0]);
-                    if (records.length > 0) {
-                        const record = records[0];
-                        const { displayField } = this.props;
-                        if (typeof displayField === 'function') {
-                            if ("setContent" in header) {
-                                let node = displayField(record);
-                                if (typeof node === 'string') {
-                                    node = markupToVDom(node.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
+                    // Sample the data to see if the are an array of primitives
+                    const firstItem = data[0];
+                    // If it is an array of primitives then
+                    if (isPrimitive(firstItem)) {
+                        let records = data.filter(r => r === selection[0]);
+                        const displayValue = records[0];
+                        header.setContent(displayValue);
+                    }
+                    else {
+                        let records = data.filter(r => r[recordId] === selection[0]);
+                        if (records.length > 0) {
+                            const record = records[0];
+                            const { displayField } = this.props;
+                            if (typeof displayField === 'function') {
+                                if ("setContent" in header) {
+                                    let node = displayField(record);
+                                    if (typeof node === 'string') {
+                                        node = markupToVDom(node.trim(), 'xml', { excludeTextWithWhiteSpacesOnly: true });
+                                    }
+                                    header.setContent(node);
                                 }
-                                header.setContent(node);
+                            }
+                            else {
+                                const displayValue = record[displayField];
+                                header.setContent(displayValue);
                             }
                         }
                         else {
-                            const displayValue = record[displayField];
-                            header.setContent(displayValue);
-                        }
-                    }
-                    else {
-                        // Sample the data to see if the are an array of primitives
-                        const firstItem = data[0];
-                        // If it is an array of primitives then
-                        if (isPrimitive(firstItem)) {
-                            records = data.filter(r => r === selection[0]);
-                            const displayValue = records[0];
-                            header.setContent(displayValue);
-                        }
-                        else {
-                            console.log(`The selected value: ${selection[0]} does not match any of the record fields with key: ${recordId}`);
+                            // Sample the data to see if the are an array of primitives
+                            const firstItem = data[0];
+                            // If it is an array of primitives then
+                            if (isPrimitive(firstItem)) {
+                                records = data.filter(r => r === selection[0]);
+                                const displayValue = records[0];
+                                header.setContent(displayValue);
+                            }
+                            else {
+                                console.log(`The selected value: ${selection[0]} does not match any of the record fields with key: ${recordId}`);
+                            }
                         }
                     }
                 }
@@ -4604,19 +4651,22 @@ class Dropdown extends PopupSourceMixin(SelectableMixin(SelectionHandlerMixin(Cu
                     const records = this.data.filter(r => selection.includes(r[recordId]));
                     header.setProperty('record', records);
                 }
+                break;
         }
     }
     handleSelectionChanged(selection) {
         //this.setValue(value, this.onValueSet); // Update the current value
         //this.validate(value); // No need to validate again since this happens on input
-        const { hideOnSelection } = this.props;
+        const { hideOnSelection, notifyIfSelectionChanged } = this.props;
         const { showing } = this.state;
         if (showing === true &&
             hideOnSelection === true) {
             this.hideContent();
         }
         this.updateHeader(selection);
-        this.notifySelectionChanged(selection);
+        if (notifyIfSelectionChanged === true) {
+            this.notifySelectionChanged(selection);
+        }
         this.callSelectionChanged(selection);
     }
     render() {
@@ -4630,6 +4680,7 @@ class Dropdown extends PopupSourceMixin(SelectableMixin(SelectionHandlerMixin(Cu
     }
     hideContent() {
         this.dropTool.hideContent();
+        popupManager.reset();
     }
 }
 Dropdown.component = {
@@ -4658,6 +4709,14 @@ Dropdown.properties = {
         attribute: 'empty-display',
         type: oneOf(String, Function),
         value: 'Please select'
+    },
+    /**
+     * Whether to emit a custom event to the parent elements if the selection changed
+     */
+    notifyIfSelectionChanged: {
+        attribute: 'notify-if-selection-changed',
+        type: Boolean,
+        value: true
     }
 };
 Dropdown.state = {
@@ -5293,9 +5352,9 @@ class Pager extends TargetViewHolderMixin(SizableMixin(CustomElement)) {
             return null;
         }
         return (h("gcl-row", null,
-            h("gcl-dropdown", { id: "pager-dropdown", size: size, "selection-changed": this.changePageSize },
+            h("gcl-dropdown", { id: "pager-dropdown", size: size, "selection-changed": this.changePageSize, "notify-if-selection-changed": "false" },
                 h("gcl-display", { slot: "header" }),
-                h("gcl-data-grid", { id: "pager-data-grid", slot: "content", size: size, data: pageSizes, 
+                h("gcl-data-grid", { id: "pager-data-grid", slot: "content", size: size, data: pageSizes, "selected-index": "0", 
                     //selection='[10]'
                     pageable: "false" })),
             h("span", null, "/ Page")));
@@ -5337,7 +5396,7 @@ Pager.properties = {
     pageSizes: {
         attribute: 'page-sizes',
         type: Array,
-        value: ['10', '25', '50', '100']
+        value: [10, 25, 50, 100]
     }
 };
 Pager.state = {
@@ -6217,7 +6276,7 @@ class ComboBox extends Field {
                 break;
         }
         if (value !== newValue) {
-            this.setValue(newValue);
+            this.updateValue(newValue);
         }
     }
     async onValueSet(newValue) {
@@ -6260,15 +6319,6 @@ class ComboBox extends Field {
         //         disabled={disabled}
         //     />
         // );
-    }
-    getFields() {
-        return [
-            {
-                name: "description",
-                display: "Gender",
-                width: '100%'
-            }
-        ];
     }
     renderRecord(record) {
         const { displayField } = this.props;
@@ -7444,6 +7494,7 @@ class SelectionContainer extends SelectionHandlerMixin(ContainerMixin(Base)) {
             }
         }
         updateSelection(event) {
+            event.stopPropagation();
             const { multiple, selection: oldSelection } = this.props;
             const { child, selectableValue, selection } = event.detail;
             if (multiple !== undefined) { // Add values to the selection
