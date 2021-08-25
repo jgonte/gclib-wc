@@ -39,8 +39,6 @@ const SelectionContainerMixin = Base =>
                 reflect: true
             },
 
-
-
             /**
              * The name of the property that identifies the record id
              */

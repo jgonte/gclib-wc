@@ -73,6 +73,45 @@ const SelectableOnClickMixin = Base =>
 
         toggleSelect() {
 
+            let {
+                selected
+            } = this.props;
+
+            selected = !selected; // Toggle
+
+            this._setSelection(selected);
+        }
+
+        select() {
+
+            let {
+                selected
+            } = this.props;
+
+            if (selected === true) {
+
+                return;
+            }
+
+            this._setSelection(true);
+        }
+
+        deselect() {
+
+            let {
+                selected
+            } = this.props;
+
+            if (selected === false) {
+
+                return;
+            }
+
+            this._setSelection(false);
+        }
+
+        private _setSelection(selected: boolean) {
+
             const {
                 selectable,
                 selectableValue                
@@ -83,11 +122,6 @@ const SelectableOnClickMixin = Base =>
                 return;
             }
 
-            let {
-                selected
-            } = this.props;
-
-            selected = !selected; // Toggle
 
             this.setSelected(selected);
 

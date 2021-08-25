@@ -40,6 +40,7 @@ const ContainerMixin = Base =>
             }
 
             // Add the listener to listen for changes in the slot
+            // We are assuming the container has one single slot. If not, this needs to change
             const slot = this.shadowRoot.querySelector('slot');
 
             if (slot === null) {

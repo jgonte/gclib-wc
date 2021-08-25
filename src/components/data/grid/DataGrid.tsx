@@ -30,14 +30,36 @@ export class DataGrid extends
     static properties = {
 
         /**
-         * The record to render the row from
+         * Whether the row highlights on hover
          */
         rowIsHoverable: {
             attribute: 'row-is-hoverable',
             type: Boolean,
             value: true
+        },
+
+        /**
+         * Any index initially selected
+         */
+        selectedIndex: {
+            attribute: 'selected-index',
+            type: Number
         }
     };
+
+    onChildAdded(child: HTMLElement) {
+
+        super.onChildAdded?.(child);
+
+        const {
+            selectedIndex
+        } = this.props;
+
+        if (selectedIndex === (child as any).props.index) {
+
+            (child as any).select();
+        }
+    }
 
     render() {
 
@@ -49,9 +71,7 @@ export class DataGrid extends
                     {this.renderError()}
                 </div>
 
-                <div style="background-color: var(--gcl-header-background-color);">
-                    {this.renderHeader()}
-                </div>
+                {this.renderHeader()}
 
                 <div class="body">
                     {this.renderData()}
@@ -128,7 +148,10 @@ export class DataGrid extends
         });
 
         return (
-            <gcl-row>{children}</gcl-row>
+            <gcl-row id="data-grid-header"
+                style="background-color: var(--gcl-header-background-color);">
+                {children}
+            </gcl-row>
         );
     }
 

@@ -13,8 +13,8 @@ export class SelectableRow extends
         HoverableMixin(
             SizableMixin(
                 ChildMixin(CustomElement)
-            )  
-        )   
+            )
+        )
     ) {
 
     static component = {
@@ -32,6 +32,13 @@ export class SelectableRow extends
         children: {
             type: ElementNode,
             //required: true - Not used by derived components, therefore false
+        },
+
+        /**
+         * The index of the row
+         */
+        index: {
+            type: Number
         }
     };
 
@@ -42,12 +49,19 @@ export class SelectableRow extends
             size,
             selected,
             hoverable,
+            index
         } = this.props;
 
         const children = this.renderFields();
 
         return (
-            <Fragment value={value} hoverable={hoverable} size={size} selected={selected}>
+            <Fragment
+                value={value}
+                hoverable={hoverable}
+                size={size}
+                selected={selected}
+                index={index}
+            >
                 {children}
             </Fragment>
         );

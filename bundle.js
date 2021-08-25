@@ -3864,6 +3864,7 @@ const ContainerMixin = Base => { var _a; return _a = class Container extends Bas
                 return;
             }
             // Add the listener to listen for changes in the slot
+            // We are assuming the container has one single slot. If not, this needs to change
             const slot = this.shadowRoot.querySelector('slot');
             if (slot === null) {
                 return; // There is no slot to get the children from
@@ -7327,12 +7328,29 @@ const SelectableOnClickMixin = Base => { var _a; return _a = class SelectableOnC
         //     }
         // }
         toggleSelect() {
+            let { selected } = this.props;
+            selected = !selected; // Toggle
+            this._setSelection(selected);
+        }
+        select() {
+            let { selected } = this.props;
+            if (selected === true) {
+                return;
+            }
+            this._setSelection(true);
+        }
+        deselect() {
+            let { selected } = this.props;
+            if (selected === false) {
+                return;
+            }
+            this._setSelection(false);
+        }
+        _setSelection(selected) {
             const { selectable, selectableValue } = this.props;
             if (!selectable) {
                 return;
             }
-            let { selected } = this.props;
-            selected = !selected; // Toggle
             this.setSelected(selected);
             const selection = selected === true ? [selectableValue] : undefined;
             this.notifySelectionChanged(selection);
@@ -7348,9 +7366,9 @@ const SelectableOnClickMixin = Base => { var _a; return _a = class SelectableOnC
 //@ts-ignore
 class SelectableRow extends SelectableOnClickMixin(HoverableMixin(SizableMixin(ChildMixin(CustomElement)))) {
     render() {
-        const { value, size, selected, hoverable, } = this.props;
+        const { value, size, selected, hoverable, index } = this.props;
         const children = this.renderFields();
-        return (h(Fragment, { value: value, hoverable: hoverable, size: size, selected: selected }, children));
+        return (h(Fragment, { value: value, hoverable: hoverable, size: size, selected: selected, index: index }, children));
     }
     renderFields() {
         return this.props.children;
@@ -7368,6 +7386,12 @@ SelectableRow.properties = {
     children: {
         type: ElementNode,
         //required: true - Not used by derived components, therefore false
+    },
+    /**
+     * The index of the row
+     */
+    index: {
+        type: Number
     }
 };
 //@ts-ignore
@@ -7614,12 +7638,20 @@ const PageableMixin = Base => { var _a; return _a = class Pageable extends Base 
 
 //@ts-ignore
 class DataGrid extends PageableMixin(DataCollectionLoadableMixin(SelectionContainerMixin(SelectionHandlerMixin(SizableMixin(CustomElement))))) {
+    onChildAdded(child) {
+        var _a;
+        (_a = super.onChildAdded) === null || _a === void 0 ? void 0 : _a.call(this, child);
+        const { selectedIndex } = this.props;
+        if (selectedIndex === child.props.index) {
+            child.select();
+        }
+    }
     render() {
         return (h("div", { card: true, style: "background-color: white;" },
             h("div", null,
                 this.renderLoading(),
                 this.renderError()),
-            h("div", { style: "background-color: var(--gcl-header-background-color);" }, this.renderHeader()),
+            this.renderHeader(),
             h("div", { class: "body" }, this.renderData()),
             h("div", { style: "background-color: var(--gcl-header-background-color);" }, this.renderPager())));
     }
@@ -7644,7 +7676,7 @@ class DataGrid extends PageableMixin(DataCollectionLoadableMixin(SelectionContai
                 f.display,
                 sorter));
         });
-        return (h("gcl-row", null, children));
+        return (h("gcl-row", { id: "data-grid-header", style: "background-color: var(--gcl-header-background-color);" }, children));
     }
     renderFields(fields, data) {
         const { recordId, rowIsHoverable, size, selectable, } = this.props;
@@ -7668,12 +7700,19 @@ DataGrid.component = {
 };
 DataGrid.properties = {
     /**
-     * The record to render the row from
+     * Whether the row highlights on hover
      */
     rowIsHoverable: {
         attribute: 'row-is-hoverable',
         type: Boolean,
         value: true
+    },
+    /**
+     * Any index initially selected
+     */
+    selectedIndex: {
+        attribute: 'selected-index',
+        type: Number
     }
 };
 //@ts-ignore

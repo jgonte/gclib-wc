@@ -116,6 +116,12 @@
         selection='[25]' pageable="false">
     </gcl-data-grid>
 
+    <h4>Grid with local primitives selected by index</h4>
+
+    <gcl-data-grid id="local-primitive-data-grid-selected-index" slot="content" size="large" data="getPrimitiveValues()"
+        selected-index="3" pageable="false">
+    </gcl-data-grid>
+
     <h4>Grid with local data</h4>
 
     <gcl-data-grid id="local-complex-data-grid" size="small" data="getData()" render-record="renderRecord()" record-id="value" pageable="false"
