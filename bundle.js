@@ -4465,8 +4465,6 @@ function getAllChildren(node) {
     return children;
 }
 
-// Manages hiding the content of the drop tools when clicked outside of the content of the drop tool
-//let _popupSrc: HTMLElement | CustomElement;
 // The elements being shown
 let _shownElements = [];
 // After the setShown method gets called, the global handler gets called with the same element as a target
@@ -4534,39 +4532,8 @@ window.onclick = function (event) {
     popupManager.handleGlobal(event.target);
 };
 
-//import { config } from "../../config";
-const PopupSourceMixin = Base => class PopupSource extends Base {
-    constructor() {
-        super(...arguments);
-        /**
-         * Marker to flag if the element produces popups
-         */
-        this.isPopupSource = true;
-        // static component = {
-        //     styleUrls: [
-        //         `${config.assetsFolder}/mixins/direction/PopupSource.css`
-        //     ]
-        // };
-        // static properties = {
-        //     /**
-        //      * The direction of the element
-        //      */
-        //     flipRtl: {
-        //         attribute: 'flip-rtl',
-        //         type: Boolean,
-        //         value: true,
-        //         mutable: true,
-        //         reflect: true,
-        //         passToChildren: true
-        //     }
-        // };
-        // getDir() {
-        //     return this.dir || document.dir;
-        // }
-    }
-};
-
-class Dropdown extends PopupSourceMixin(SelectableMixin(SelectionHandlerMixin(CustomElement))) {
+//@ts-ignore
+class Dropdown extends SelectableMixin(SelectionHandlerMixin(CustomElement)) {
     constructor() {
         super();
         this.handleSelectionChanged = this.handleSelectionChanged.bind(this);

@@ -8,14 +8,12 @@ import SelectableMixin from '../mixins/selectable/SelectableMixin';
 import SelectionHandlerMixin from '../mixins/selection/SelectionHandlerMixin';
 import { dropChanged, DropTool } from '../tool/drop/DropTool';
 import popupManager from '../popupManager';
-import PopupSourceMixin from '../mixins/popup-source/PopupSource';
 
+//@ts-ignore
 export class Dropdown extends
-    PopupSourceMixin(
-        SelectableMixin(
-            SelectionHandlerMixin(
-                CustomElement
-            )
+    SelectableMixin(
+        SelectionHandlerMixin(
+            CustomElement
         )
     ) {
     static component = {

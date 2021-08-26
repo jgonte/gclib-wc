@@ -1,9 +1,6 @@
 import CustomElement from "../core/customElement/CustomElement";
 import getAllChildren from "../core/helpers/getAllChildren";
 
-// Manages hiding the content of the drop tools when clicked outside of the content of the drop tool
-//let _popupSrc: HTMLElement | CustomElement;
-
 // The elements being shown
 let _shownElements: (HTMLElement | CustomElement)[] = [];
 
