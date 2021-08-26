@@ -115,7 +115,7 @@ export class Dropdown extends
 
         if (showing === true) { // Hide the contents of other showing dropdowns and set this one as being shown
 
-            popupManager.updateTarget(this as any);
+            popupManager.setShown(this as any);
         }
 
         this.setShowing(showing);
@@ -327,7 +327,7 @@ export class Dropdown extends
 
         this.dropTool.hideContent();
 
-        popupManager.reset();
+        popupManager.setHidden(this as any);
     }
 }
 

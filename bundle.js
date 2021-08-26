@@ -4466,40 +4466,72 @@ function getAllChildren(node) {
 }
 
 // Manages hiding the content of the drop tools when clicked outside of the content of the drop tool
-let _popupSrc;
+//let _popupSrc: HTMLElement | CustomElement;
+// The elements being shown
+let _shownElements = [];
+// After the setShown method gets called, the global handler gets called with the same element as a target
+// So to avoid extra processing we set this variable to test if set in the global handler
+let _justShown;
 const popupManager = {
-    updateTarget(target) {
-        if (target.isPopupSource &&
-            _popupSrc === undefined) {
-            _popupSrc = target;
-            return;
-        }
-        if (target.isPopupSource) {
-            if (_popupSrc !== target
-                && !getAllChildren(_popupSrc).includes(target)) { // Do not close nested popups
-                _popupSrc.hideContent();
-                _popupSrc = target;
+    /**
+     * Called when a popup source is going to show its content so other popups need to be hidden
+     * @param element The popup source that is going to be shown
+     */
+    setShown(element) {
+        let count = _shownElements.length;
+        while (count > 0) {
+            const shownElement = _shownElements[count - 1]; // Peek the last element
+            if (shownElement !== element &&
+                !getAllChildren(shownElement).includes(element)) { // Do not close nested popups
+                shownElement.hideContent(); // Hide the shown element (and this causes the element to call setHidden which pops the element as well)
             }
-            // else {
-            //     // Do nothing
-            // }
+            --count;
         }
-        else { // Target is any other element, it might be outside of drop tool or inside the content the droptool shows
-            // The global click object can pass any target
-            if (_popupSrc !== undefined
-                && !_popupSrc.contains(target)
-                && target.dropdown !== _popupSrc) { // handle combo boxes
-                _popupSrc.hideContent();
-                _popupSrc = undefined;
+        _shownElements.push(element);
+        _justShown = element;
+    },
+    /**
+     * Called when a popup source is going to hide its content so it can be removed from the shown items in the manager
+     * @param element  The popup source that is going to be hidden
+     */
+    setHidden(element) {
+        while (_shownElements.length > 0) {
+            const shownElement = _shownElements[_shownElements.length - 1]; // Peek the last element
+            if (shownElement !== element) { // Hide any nested elements of the element
+                shownElement.hideContent(); // Hide the shown element
+                _shownElements.pop(); // Remove the now hidden element
+            }
+            else { // Remove the element itself
+                _shownElements.pop(); // Remove the now hidden element
+                break; // Done
             }
         }
     },
-    reset() {
-        _popupSrc = undefined;
+    /**
+     * Any target clicked and captured using the global click handler
+     * @param target
+     */
+    handleGlobal(target) {
+        if (_justShown !== undefined) { // If the target was just requested to shown, do nothing
+            _justShown = undefined;
+            return;
+        }
+        let count = _shownElements.length;
+        while (count > 0) {
+            const shownElement = _shownElements[count - 1]; // Peek the last element
+            if (!shownElement.contains(target)
+                && target.dropdown !== shownElement) { // handle combo boxes
+                shownElement.hideContent(); // Hide the shown element (and this causes the element to call setHidden which pops the element as well)
+            }
+            else {
+                break; // Done when the above condition is not longer true
+            }
+            --count;
+        }
     }
 };
 window.onclick = function (event) {
-    popupManager.updateTarget(event.target);
+    popupManager.handleGlobal(event.target);
 };
 
 //import { config } from "../../config";
@@ -4555,7 +4587,7 @@ class Dropdown extends PopupSourceMixin(SelectableMixin(SelectionHandlerMixin(Cu
         //dropElement
          } = evt.detail;
         if (showing === true) { // Hide the contents of other showing dropdowns and set this one as being shown
-            popupManager.updateTarget(this);
+            popupManager.setShown(this);
         }
         this.setShowing(showing);
     }
@@ -4681,7 +4713,7 @@ class Dropdown extends PopupSourceMixin(SelectableMixin(SelectionHandlerMixin(Cu
     }
     hideContent() {
         this.dropTool.hideContent();
-        popupManager.reset();
+        popupManager.setHidden(this);
     }
 }
 Dropdown.component = {
