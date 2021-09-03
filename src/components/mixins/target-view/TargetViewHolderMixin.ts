@@ -19,9 +19,9 @@ const TargetViewHolderMixin = Base =>
         /**
          * Called when the node and siblings have been connected
          */
-        nodeDidConnect() {
+        nodeDidConnect(node: HTMLElement) {
 
-            super.nodeDidConnect?.();
+            super.nodeDidConnect?.(node);
     
             const {
                 targetView
@@ -46,9 +46,9 @@ const TargetViewHolderMixin = Base =>
             }
         }
     
-        nodeWillDisconnect() {
+        nodeWillDisconnect(node: HTMLElement) {
     
-            super.disconnectedCallback?.();
+            super.disconnectedCallback?.(node);
     
             this.targetView = null;
         }

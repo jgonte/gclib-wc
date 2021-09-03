@@ -2,7 +2,13 @@ function getChildren(node: Node): Node[] {
 
     const children: Node[] = [];
 
-    if (node instanceof HTMLElement) {
+    if (node instanceof HTMLSlotElement) {
+
+        const childNodes = node.assignedNodes({ flatten: true });
+
+        children.push(...childNodes);
+    }
+    else if (node instanceof HTMLElement) {
 
         // Add the nodes of the slots if any
         let slots = (node as any).querySelectorAll('slot');
@@ -33,7 +39,6 @@ function getChildren(node: Node): Node[] {
         childNodes = Array.from(node.childNodes);
 
         children.push(...childNodes);
-
     }
 
     return children;

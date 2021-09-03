@@ -323,7 +323,9 @@ export class Dropdown extends
 
     hideContent() {
 
-        this.dropTool.hideContent();
+        const dropTool = this.shadowRoot.childNodes[0].childNodes[0].childNodes[1];
+
+        dropTool.hideContent();
 
         popupManager.setHidden(this as any);
     }

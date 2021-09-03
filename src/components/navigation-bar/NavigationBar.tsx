@@ -77,7 +77,7 @@ export class NavigationBar extends
             links
         } = this.props;
 
-        return links.map(link => <gcl-nav-link path={link.path} view={link.view} size={link.size}>{link.Label}</gcl-nav-link>);
+        return links.map(link => <gcl-nav-link path={link.path} key={link.path} view={link.view} size={link.size}>{link.Label}</gcl-nav-link>);
     }
 
     linkClicked(event) {
@@ -143,9 +143,9 @@ export class NavigationBar extends
         }
     }
 
-    nodeDidConnect() {
+    nodeDidConnect(node: HTMLElement) {
 
-        super.nodeDidConnect?.();
+        super.nodeDidConnect?.(node);
 
         if (this.route !== undefined) {
 

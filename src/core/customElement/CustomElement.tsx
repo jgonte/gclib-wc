@@ -1,12 +1,15 @@
+import { FragmentNode, h } from 'gclib-vdom';
 import { CustomElementConstructor } from './Interfaces';
 import CustomElementMetadataInitializerMixin from './mixins/CustomElementMetadataInitializerMixin';
 import VirtualDomMixin from '../mixins/VirtualDomMixin';
-import { FragmentNode, h } from 'gclib-vdom';
+import MountedNotifierMixin from '../mixins/MountedNotifierMixin';
 
 export default abstract class CustomElement extends
-    VirtualDomMixin(
-        CustomElementMetadataInitializerMixin(
-            HTMLElement
+    MountedNotifierMixin(
+        VirtualDomMixin(
+            CustomElementMetadataInitializerMixin(
+                HTMLElement
+            )
         )
     ) {
 
@@ -22,9 +25,13 @@ export default abstract class CustomElement extends
 
             this.attachShadow({ mode: 'open' });
         }
+
+        console.log(`CustomElement - Constructor called for type: ${this.constructor.name}`)
     }
 
     connectedCallback() {
+
+        super.connectedCallback?.();
 
         // Validate that all the required properties have been set
         const {

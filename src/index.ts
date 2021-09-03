@@ -86,3 +86,8 @@ export { DataGrid } from './components/data/grid/DataGrid';
 export { MyTable } from '../examples/my-table';
 
 export { MyCounter } from '../examples/my-counter';
+
+// tests
+export { ParentLifecycle } from '../test/core/components/ParentLifecycle';
+
+export { ChildLifecycle } from '../test/core/components/ChildLifecycle';

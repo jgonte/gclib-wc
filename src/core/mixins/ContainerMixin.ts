@@ -12,6 +12,7 @@ const ContainerMixin = Base =>
              * The children elements that opted to register with this container
              */
             children: {
+                
                 value: []
             }
         };

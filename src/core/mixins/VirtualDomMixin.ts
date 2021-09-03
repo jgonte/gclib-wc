@@ -33,14 +33,23 @@ const VirtualDomMixin = Base =>
             this.nodeWillDisconnect = this.nodeWillDisconnect.bind(this);
         }
 
+        private _isRootNode(node: HTMLElement) {
+
+            if (node == undefined) {
+
+                throw Error('Node cannot be undefined');
+            }
+             
+            return node === this._mountingNode.dom || 
+                node.firstChild === this._mountingNode.dom;
+        }
+
         nodeWillConnect(node: HTMLElement) {
 
             super.nodeWillConnect?.(node);
 
-            if (node === this._mountingNode.dom &&
+            if (this._isRootNode(node) &&
                 this.elementWillConnect !== undefined) {
-
-                console.log(`Calling elementWillConnect in element of type: ${this.constructor.name} and node id: ${node.id}`);
 
                 this.elementWillConnect(node);
             }
@@ -50,10 +59,8 @@ const VirtualDomMixin = Base =>
 
             super.nodeDidConnect?.(node);
 
-            if (node === this._mountingNode.dom &&
+            if (this._isRootNode(node) &&
                 this.elementDidConnect !== undefined) {
-
-                console.log(`Calling elementDidConnect in element of type: ${this.constructor.name} and node id: ${node.id}`);
 
                 this.elementDidConnect(node);
             }
@@ -63,10 +70,8 @@ const VirtualDomMixin = Base =>
 
             super.nodeDidUpdate?.(node);
 
-            if (node === this._mountingNode.dom &&
+            if (this._isRootNode(node) &&
                 this.elementDidUpdate !== undefined) {
-
-                console.log(`Calling elementDidUpdate in element of type: ${this.constructor.name} and node id: ${node.id}`);
 
                 this.elementDidUpdate(node, nodeChanges);
             }
@@ -76,10 +81,8 @@ const VirtualDomMixin = Base =>
 
             super.nodeWillDisconnect?.(node);
 
-            if (node === this._mountingNode.dom &&
+            if (this._isRootNode(node) &&
                 this.elementWillDisconnect !== undefined) {
-
-                console.log(`Calling elementWillDisconnect in element of type: ${this.constructor.name} and node id: ${node.id}`);
 
                 this.elementWillDisconnect(node);
             }
@@ -168,15 +171,28 @@ const VirtualDomMixin = Base =>
 
             if (previousNode === undefined) { // Mount
 
+                this.willMountCallback?.();
+
                 patches.applyPatches(this.document, undefined, this as any);
+
+                this._mountedCallback(); // Internal callback to notify the element has been mounted
             }
-            else { // previousNode !== undefined
+            else { // previousNode !== undefined - Either will update or unmount
+
+                // Peek at the patches to determine whether is an update or unmount
+                //this.willUpdateCallback();
 
                 patches.applyPatches(this.document, this.rootElement, this as any);
             }
 
             // Set the new mounted node
             this.mountedVNode = node;
+        }
+
+        // The "oficial" mounted callback
+        mountedCallback() {
+
+            console.log(`Calling mountedCallback for element ${this.constructor.name}`)
         }
     };
 

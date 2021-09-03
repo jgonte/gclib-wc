@@ -1,6 +1,8 @@
-import { h, ElementNode } from 'gclib-vdom';
+import { h } from 'gclib-vdom';
 import CustomElement from '../../core/customElement/CustomElement';
+import getAllChildren from '../../core/helpers/getAllChildren';
 import { config } from '../config';
+//import { selectionChanged } from '../mixins/selectable/SelectableMixin';
 
 const texts = {
     // Comparison operators
@@ -42,14 +44,6 @@ export class FilterField extends
     static properties = {
 
         /**
-         * The field to render 
-         */
-        field: {
-            type: ElementNode,
-            required: true
-        },
-
-        /**
          * The operators of the filter
          */
         operators: {
@@ -82,10 +76,13 @@ export class FilterField extends
         this.valueChanged = this.valueChanged.bind(this);
     }
 
-    render() {
+    elementDidConnect(node: HTMLElement) {
 
+        super.elementDidConnect?.(node);
+
+        // Inject the dropdown in the slot after-label
         const {
-            field,
+            //field,
             operators
         } = this.props;
 
@@ -103,13 +100,48 @@ export class FilterField extends
             </gcl-select >
         );
 
-        this.fieldName = field.props['name'];
+        console.dir(select);
 
-        field.props['input'] = this.valueChanged;
+        const field = getAllChildren(node.childNodes[0]);
 
-        (field as ElementNode).children.push(select);
+        console.dir(field);
 
-        return field;
+    }
+
+    render() {
+
+        // const {
+        //     //field,
+        //     operators
+        // } = this.props;
+
+        // const select = (
+        //     <gcl-select
+        //         slot="after-label"
+        //         name="operator"
+        //         empty-option={{
+        //             description: '--Select Operator--',
+        //             code: ''
+        //         }}
+        //         data={this.operatorsToOptions(operators)}
+        //         change={this.operatorChanged}
+        //     >
+        //     </gcl-select >
+        // );
+
+        // this.fieldName = field.props['name'];
+
+        // field.props['input'] = this.valueChanged;
+
+        // (field as ElementNode).children.push(select);
+
+        // return field;
+
+        return (
+            <gcl-row>
+                <slot/>
+            </gcl-row>
+        );
     }
 
     operatorsToOptions(operators) {

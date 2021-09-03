@@ -124,20 +124,32 @@
 
     <h4>Grid with local data</h4>
 
-    <gcl-data-grid id="local-complex-data-grid" size="small" data="getData()" render-record="renderRecord()" record-id="value" pageable="false"
-        selection='["c"]' selection-changed="showSelection()">
+    <gcl-data-grid id="local-complex-data-grid" size="small" data="getData()" render-record="renderRecord()"
+        record-id="value" pageable="false" selection='["c"]' selection-changed="showSelection()">
     </gcl-data-grid>
 
-    <h4>Grid with remote data</h4>
+    <h4>Grid with remote data single selection</h4>
 
-    <gcl-data-grid id="remote-complex-data-grid" load-url="http://localhost:60314/api/contacts" fields="getFields()" size="small"
-        selection='[2]' selection-changed="showSelection()">
+    <gcl-filter-panel target-view="remote-complex-data-grid">
+
+        <gcl-filter-field operators='["contains"]'>
+            <gcl-number-field label="Id" name="id"></gcl-number-field>
+        </gcl-filter-field>
+
+        <gcl-filter-field operators='["contains"]'>
+            <gcl-text-field label="Name" name="name"></gcl-text-field>
+        </gcl-filter-field>
+
+    </gcl-filter-panel>
+
+    <gcl-data-grid id="remote-complex-data-grid" load-url="http://localhost:60314/api/contacts" fields="getFields()"
+        size="small" selection='[2]' selection-changed="showSelection()">
     </gcl-data-grid>
 
     <h4>Grid with remote data and multiple selection</h4>
 
-    <gcl-data-grid id="remote-complex-multiple-selection-data-grid" load-url="http://localhost:60314/api/contacts" fields="getFields()"
-        size="medium" selection='[1,3]' multiple selection-changed="showSelection()">
+    <gcl-data-grid id="remote-complex-multiple-selection-data-grid" load-url="http://localhost:60314/api/contacts"
+        fields="getFields()" size="medium" selection='[1,3]' multiple selection-changed="showSelection()">
     </gcl-data-grid>
 
 </body>
