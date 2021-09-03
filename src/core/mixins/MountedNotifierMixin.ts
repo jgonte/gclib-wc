@@ -100,6 +100,11 @@ const MountedNotifierMixin = Base =>
 
             if (this._hasChildren()) { // Element has children
 
+                if (this._childrenToMount === undefined) {
+
+                    this._childrenToMount = new Set<CustomElement>(); // Create the collection to monitor the children that need to be mounted in the parent
+                }
+
                 this.addEventListener(childMounted, this.handleChildMounted);
             }
 

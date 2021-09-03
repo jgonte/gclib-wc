@@ -39,7 +39,7 @@
 	<br /> -->
 
 
-	<gcl-test-parent-lifecycle>
+	<!-- <gcl-test-parent-lifecycle>
 
 		<div>
 			<gcl-test-child-lifecycle id="child1"></gcl-test-child-lifecycle>
@@ -47,18 +47,34 @@
 				<gcl-icon name="alarm-fill" variant="secondary"></gcl-icon>
 				<gcl-text>Some text</gcl-text>
 				<gcl-icon name="archive" variant="tertiary"></gcl-icon>
+				<gcl-test-child-lifecycle id="child2"></gcl-test-child-lifecycle>
 			</gcl-button>
 		</div>
 
 		<div>
 			<span>
-				<gcl-test-child-lifecycle id="child2"></gcl-test-child-lifecycle>
+				<gcl-test-child-lifecycle id="child3"></gcl-test-child-lifecycle>
 			</span>
 
 		</div>
 
-	</gcl-test-parent-lifecycle>
+	</gcl-test-parent-lifecycle> -->
 
+	<!-- <gcl-filter-panel target-view="remote-complex-data-grid">
+
+        <gcl-filter-field operators='["contains"]'>
+            <gcl-number-field label="Id" name="id"></gcl-number-field>
+        </gcl-filter-field>
+
+    </gcl-filter-panel>
+
+    <gcl-data-grid id="remote-complex-data-grid" load-url="http://localhost:60314/api/contacts" fields="getFields()"
+        size="small" selection='[2]' selection-changed="showSelection()">
+    </gcl-data-grid> -->
+
+	<gcl-filter-field operators='["contains"]'>
+		<gcl-number-field label="Id" name="id"></gcl-number-field>
+	</gcl-filter-field>
 
 	<!-- <gcl-app>
 
